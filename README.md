@@ -1,6 +1,9 @@
 # quantum-computing-skill
 
+基于 [QPanda-lite](https://github.com/Agony5757/QPanda-lite) 的 Claude Code 量子编程 Skill
+
 A Claude Code skill for quantum programming with [QPanda-lite](https://github.com/Agony5757/QPanda-lite).
+
 
 ## Overview
 
