@@ -1,13 +1,13 @@
 # Circuit Building Reference
 
-Complete API reference for the QPanda-lite `Circuit` class and related types.
+Complete API reference for the UnifiedQuantum `Circuit` class and related types.
 
 ## Circuit Class
 
 ### Initialization
 
 ```python
-from qpandalite.circuit_builder import Circuit
+from uniqc.circuit_builder import Circuit
 
 # Empty circuit (qubits auto-detected from gate usage)
 c = Circuit()
@@ -182,7 +182,7 @@ c.barrier(0, 1, 2)  # Insert barrier on specified qubits
 ### Qubit
 
 ```python
-from qpandalite.circuit_builder import Qubit
+from uniqc.circuit_builder import Qubit
 
 q = Qubit(name="data", index=0, base_index=0)
 # int(q) -> 0
@@ -191,7 +191,7 @@ q = Qubit(name="data", index=0, base_index=0)
 ### QReg
 
 ```python
-from qpandalite.circuit_builder import QReg
+from uniqc.circuit_builder import QReg
 
 qr = QReg(name="data", size=4, base_index=0)
 # qr.qubits -> list of Qubit objects
@@ -202,7 +202,7 @@ qr = QReg(name="data", size=4, base_index=0)
 ### Parameters
 
 ```python
-from qpandalite.circuit_builder import Parameter, Parameters
+from uniqc.circuit_builder import Parameter, Parameters
 
 # Named parameter
 p = Parameter("theta")

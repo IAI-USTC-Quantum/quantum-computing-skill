@@ -1,13 +1,13 @@
 # CLI Guide Reference
 
-Complete reference for the QPanda-lite command-line interface.
+Complete reference for the UnifiedQuantum command-line interface.
 
 ## Overview
 
 The CLI is built with Typer and accessible via:
 ```bash
-qpandalite <command> [options]
-python -m qpandalite <command> [options]
+uniqc <command> [options]
+python -m uniqc <command> [options]
 ```
 
 Available commands: `circuit`, `simulate`, `submit`, `result`, `task`, `config`
@@ -17,7 +17,7 @@ Available commands: `circuit`, `simulate`, `submit`, `result`, `task`, `config`
 Convert between OriginIR and OpenQASM 2.0 formats, display circuit statistics.
 
 ```bash
-qpandalite circuit <input_file> [options]
+uniqc circuit <input_file> [options]
 ```
 
 ### Arguments
@@ -38,13 +38,13 @@ qpandalite circuit <input_file> [options]
 
 ```bash
 # Convert OriginIR to QASM
-qpandalite circuit bell_state.oir --format qasm -o bell_state.qasm
+uniqc circuit bell_state.oir --format qasm -o bell_state.qasm
 
 # Show circuit info
-qpandalite circuit bell_state.oir --info
+uniqc circuit bell_state.oir --info
 
 # Convert QASM to OriginIR
-qpandalite circuit bell_state.qasm --format originir
+uniqc circuit bell_state.qasm --format originir
 ```
 
 ## simulate - Local Simulation
@@ -52,7 +52,7 @@ qpandalite circuit bell_state.qasm --format originir
 Simulate quantum circuits locally using statevector or density matrix backends.
 
 ```bash
-qpandalite simulate <input_file> [options]
+uniqc simulate <input_file> [options]
 ```
 
 ### Arguments
@@ -74,16 +74,16 @@ qpandalite simulate <input_file> [options]
 
 ```bash
 # Basic statevector simulation
-qpandalite simulate circuit.oir
+uniqc simulate circuit.oir
 
 # With specific shot count
-qpandalite simulate circuit.oir --shots 4096
+uniqc simulate circuit.oir --shots 4096
 
 # Density matrix backend with JSON output
-qpandalite simulate circuit.oir --backend density --format json
+uniqc simulate circuit.oir --backend density --format json
 
 # Save results to file
-qpandalite simulate circuit.oir --shots 1024 -o results.json
+uniqc simulate circuit.oir --shots 1024 -o results.json
 ```
 
 ## submit - Cloud Submission
@@ -91,7 +91,7 @@ qpandalite simulate circuit.oir --shots 1024 -o results.json
 Submit circuit files to quantum cloud platforms.
 
 ```bash
-qpandalite submit <input_files...> [options]
+uniqc submit <input_files...> [options]
 ```
 
 ### Arguments
@@ -115,40 +115,40 @@ qpandalite submit <input_files...> [options]
 ### Platform Details
 
 **OriginQ (`originq`)**:
-- Requires `QPANDA_API_KEY` environment variable or config entry
+- Requires token in config (`uniqc config set originq.token YOUR_TOKEN`)
 - Available chips: varies by account
 
 **Quafu (`quafu`)**:
-- Requires `QUAFU_API_TOKEN` environment variable or config entry
+- Requires token in config (`uniqc config set quafu.token YOUR_TOKEN`)
 - Chips: `ScQ-P10`, `ScQ-P18`, `ScQ-P136`, etc.
 - Specify chip with `--chip-id`
 
 **IBM Quantum (`ibm`)**:
-- Requires `IBM_TOKEN` environment variable or config entry
+- Requires token in config (`uniqc config set ibm.token YOUR_TOKEN`)
 - Uses Qiskit adapter internally
 
 **Dummy (`dummy`)**:
 - No credentials required
 - Local simulation for testing
-- Enable globally: `export QPANDALITE_DUMMY=true`
+- Enable globally: `export UNIQC_DUMMY=true`
 
 ### Examples
 
 ```bash
 # Submit to OriginQ
-qpandalite submit circuit.oir --platform originq --shots 1000
+uniqc submit circuit.oir --platform originq --shots 1000
 
 # Submit to Quafu with specific chip
-qpandalite submit circuit.oir --platform quafu --chip-id ScQ-P10 --shots 2000
+uniqc submit circuit.oir --platform quafu --chip-id ScQ-P10 --shots 2000
 
 # Submit and wait for result
-qpandalite submit circuit.oir --platform originq --wait --timeout 600
+uniqc submit circuit.oir --platform originq --wait --timeout 600
 
 # Submit multiple circuits
-qpandalite submit circuit1.oir circuit2.oir --platform originq --name "batch-experiment"
+uniqc submit circuit1.oir circuit2.oir --platform originq --name "batch-experiment"
 
 # Test with dummy platform
-qpandalite submit circuit.oir --platform dummy --shots 100
+uniqc submit circuit.oir --platform dummy --shots 100
 ```
 
 ## result - Query Results
@@ -156,7 +156,7 @@ qpandalite submit circuit.oir --platform dummy --shots 100
 Query task results from quantum cloud platforms.
 
 ```bash
-qpandalite result <task_id> [options]
+uniqc result <task_id> [options]
 ```
 
 ### Arguments
@@ -178,10 +178,10 @@ qpandalite result <task_id> [options]
 
 ```bash
 # Get result
-qpandalite result abc-123-def --platform originq
+uniqc result abc-123-def --platform originq
 
 # Wait for running task
-qpandalite result abc-123-def --platform originq --wait --timeout 600
+uniqc result abc-123-def --platform originq --wait --timeout 600
 ```
 
 ## task - Task Management
@@ -189,7 +189,7 @@ qpandalite result abc-123-def --platform originq --wait --timeout 600
 Manage submitted quantum computing tasks.
 
 ```bash
-qpandalite task <subcommand> [options]
+uniqc task <subcommand> [options]
 ```
 
 ### Subcommands
@@ -197,7 +197,7 @@ qpandalite task <subcommand> [options]
 #### list - List Tasks
 
 ```bash
-qpandalite task list [options]
+uniqc task list [options]
 ```
 
 | Option | Short | Default | Description |
@@ -210,13 +210,13 @@ qpandalite task list [options]
 #### show - Show Task Details
 
 ```bash
-qpandalite task show <task_id>
+uniqc task show <task_id>
 ```
 
 #### clear - Clear Task History
 
 ```bash
-qpandalite task clear
+uniqc task clear
 ```
 
 ## config - Configuration
@@ -224,7 +224,7 @@ qpandalite task clear
 Manage API keys, tokens, and configuration profiles.
 
 ```bash
-qpandalite config <subcommand> [options]
+uniqc config <subcommand> [options]
 ```
 
 ### Subcommands
@@ -232,62 +232,62 @@ qpandalite config <subcommand> [options]
 #### init - Initialize Configuration
 
 ```bash
-qpandalite config init
+uniqc config init
 ```
 
-Creates `~/.qpandalite/qpandalite.yml` with default structure.
+Creates `~/.uniqc/uniqc.yml` with default structure.
 
 #### set - Set Configuration Value
 
 ```bash
-qpandalite config set <key> <value>
+uniqc config set <key> <value>
 ```
 
 Common keys:
 ```bash
-qpandalite config set originq.token YOUR_TOKEN
-qpandalite config set originq.submit_url https://...
-qpandalite config set originq.query_url https://...
-qpandalite config set quafu.token YOUR_TOKEN
-qpandalite config set ibm.token YOUR_TOKEN
+uniqc config set originq.token YOUR_TOKEN
+uniqc config set quafu.token YOUR_TOKEN
+uniqc config set ibm.token YOUR_TOKEN
 ```
 
 #### get - Get Configuration Value
 
 ```bash
-qpandalite config get <key>
+uniqc config get <key>
 ```
 
 #### list - List All Configuration
 
 ```bash
-qpandalite config list
+uniqc config list
 ```
 
 #### validate - Validate Configuration
 
 ```bash
-qpandalite config validate
+uniqc config validate
 ```
 
-Checks that all required tokens and URLs are set for configured platforms.
+Checks that all required tokens are set for configured platforms.
 
 #### profile - Manage Profiles
 
 ```bash
-qpandalite config profile list              # List profiles
-qpandalite config profile create <name>      # Create new profile
-qpandalite config profile use <name>         # Switch active profile
+uniqc config profile list              # List profiles
+uniqc config profile create <name>      # Create new profile
+uniqc config profile use <name>         # Switch active profile
 ```
+
+Alternatively, set `UNIQC_PROFILE=<name>` to override the active profile for a single invocation.
 
 ## Complete CLI Session Example
 
 ```bash
 # 1. Initialize configuration
-qpandalite config init
+uniqc config init
 
 # 2. Set up API tokens
-qpandalite config set originq.token YOUR_TOKEN
+uniqc config set originq.token YOUR_TOKEN
 
 # 3. Create a circuit file
 cat > bell_state.oir << 'EOF'
@@ -300,23 +300,23 @@ MEASURE q[1],c[1]
 EOF
 
 # 4. Check circuit info
-qpandalite circuit bell_state.oir --info
+uniqc circuit bell_state.oir --info
 
 # 5. Convert to QASM
-qpandalite circuit bell_state.oir --format qasm -o bell_state.qasm
+uniqc circuit bell_state.oir --format qasm -o bell_state.qasm
 
 # 6. Simulate locally
-qpandalite simulate bell_state.oir --shots 4096 --format json
+uniqc simulate bell_state.oir --shots 4096 --format json
 
 # 7. Submit to cloud
-qpandalite submit bell_state.oir --platform originq --shots 1000 --name "bell-test"
+uniqc submit bell_state.oir --platform originq --shots 1000 --name "bell-test"
 
 # 8. Check task status
-qpandalite task list --platform originq
+uniqc task list --platform originq
 
 # 9. Get result (when ready)
-qpandalite result <task-id> --platform originq
+uniqc result <task-id> --platform originq
 
 # 10. Test with dummy platform
-qpandalite submit bell_state.oir --platform dummy --shots 100
+uniqc submit bell_state.oir --platform dummy --shots 100
 ```

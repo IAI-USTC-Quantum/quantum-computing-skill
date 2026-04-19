@@ -17,8 +17,8 @@ import argparse
 import numpy as np
 from scipy.optimize import minimize
 
-from qpandalite.algorithmics.ansatz import hea
-from qpandalite.simulator import OriginIR_Simulator
+from uniqc.algorithmics.ansatz import hea
+from uniqc.simulator import OriginIR_Simulator
 
 
 # ============================================================================

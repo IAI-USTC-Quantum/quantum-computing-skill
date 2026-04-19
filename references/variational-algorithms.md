@@ -1,6 +1,6 @@
 # Variational Algorithms Reference
 
-Complete reference for variational quantum algorithms in QPanda-lite.
+Complete reference for variational quantum algorithms in UnifiedQuantum.
 
 ## Available Ansatzes
 
@@ -9,7 +9,7 @@ Complete reference for variational quantum algorithms in QPanda-lite.
 Hardware-efficient parameterized circuit suitable for NISQ devices.
 
 ```python
-from qpandalite.algorithmics.ansatz import hea
+from uniqc.algorithmics.ansatz import hea
 
 circuit = hea(
     n_qubits=4,       # Number of qubits
@@ -45,7 +45,7 @@ Each layer consists of:
 
 ```python
 import numpy as np
-from qpandalite.algorithmics.ansatz import hea
+from uniqc.algorithmics.ansatz import hea
 
 # Create 4-qubit HEA with 2 layers (16 parameters)
 circuit = hea(n_qubits=4, depth=2)
@@ -64,7 +64,7 @@ circuit = hea(n_qubits=4, depth=3)
 Chemistry-native ansatz for molecular simulation.
 
 ```python
-from qpandalite.algorithmics.ansatz import uccsd_ansatz
+from uniqc.algorithmics.ansatz import uccsd_ansatz
 
 circuit = uccsd_ansatz(
     n_qubits=4,       # Number of qubits
@@ -86,7 +86,7 @@ Use for: molecular ground state search, chemistry VQE.
 Ansatz for combinatorial optimization problems.
 
 ```python
-from qpandalite.algorithmics.ansatz import qaoa_ansatz
+from uniqc.algorithmics.ansatz import qaoa_ansatz
 
 circuit = qaoa_ansatz(
     cost_terms,        # Cost Hamiltonian terms
@@ -119,8 +119,8 @@ cost_terms = [
 ```python
 import numpy as np
 from scipy.optimize import minimize
-from qpandalite.algorithmics.ansatz import hea
-from qpandalite.simulator import OriginIR_Simulator
+from uniqc.algorithmics.ansatz import hea
+from uniqc.simulator import OriginIR_Simulator
 
 sim = OriginIR_Simulator(backend_type='statevector')
 
@@ -174,7 +174,7 @@ def coordinate_descent(objective, n_params, max_iter=50):
 ### Parameter-Shift Gradient
 
 ```python
-from qpandalite.pytorch import compute_all_gradients
+from uniqc.pytorch import compute_all_gradients
 
 def gradient_based_optimization(circuit_template, expectation_fn, n_steps=100, lr=0.01):
     """Optimize using parameter-shift rule for gradients."""
@@ -196,8 +196,8 @@ def gradient_based_optimization(circuit_template, expectation_fn, n_steps=100, l
 ## VQE Workflow Pattern
 
 ```python
-from qpandalite.algorithmics.ansatz import hea
-from qpandalite.simulator import OriginIR_Simulator
+from uniqc.algorithmics.ansatz import hea
+from uniqc.simulator import OriginIR_Simulator
 from scipy.optimize import minimize
 
 def vqe(hamiltonian, n_qubits, ansatz_depth=2, maxiter=200):

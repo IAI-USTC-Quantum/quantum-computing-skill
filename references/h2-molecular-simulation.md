@@ -53,8 +53,8 @@ Use HEA ansatz instead of the more common UCCSD for H2 simulation. While HEA is 
 ```python
 import numpy as np
 from scipy.optimize import minimize
-from qpandalite.algorithmics.ansatz import hea
-from qpandalite.simulator import OriginIR_Simulator
+from uniqc.algorithmics.ansatz import hea
+from uniqc.simulator import OriginIR_Simulator
 
 def compute_pauli_z_expectation(statevector, qubit_idx, n_qubits):
     """Compute <Z_qubit_idx> from statevector."""

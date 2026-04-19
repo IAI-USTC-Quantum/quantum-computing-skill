@@ -8,13 +8,13 @@ This example demonstrates:
 - Simulating the circuit locally
 """
 
-from qpandalite.circuit_builder import Circuit
-from qpandalite.simulator import OriginIR_Simulator
+from uniqc.circuit_builder import Circuit
+from uniqc.simulator import OriginIR_Simulator
 
 
 def main():
     print("=" * 60)
-    print("QPanda-lite Basic Circuit Example: Bell State")
+    print("UnifiedQuantum Basic Circuit Example: Bell State")
     print("=" * 60)
 
     # Create a 2-qubit circuit

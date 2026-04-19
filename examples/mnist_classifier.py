@@ -8,7 +8,7 @@ This example demonstrates:
 - PyTorch integration for training
 
 Requirements:
-    pip install qpandalite[pytorch] torchvision scikit-learn
+    pip install unified-quantum[pytorch] torchvision scikit-learn
 
 Usage:
     python mnist_classifier.py --n-samples 500 --epochs 20
@@ -26,13 +26,13 @@ try:
     from sklearn.preprocessing import StandardScaler
 except ImportError as e:
     print(f"Missing dependency: {e}")
-    print("Install with: pip install qpandalite[pytorch] torchvision scikit-learn")
+    print("Install with: pip install unified-quantum[pytorch] torchvision scikit-learn")
     raise
 
-from qpandalite.circuit_builder import Circuit, Parameters
-from qpandalite.algorithmics.ansatz import hea
-from qpandalite.simulator import OriginIR_Simulator
-from qpandalite.pytorch import batch_execute_with_params
+from uniqc.circuit_builder import Circuit, Parameters
+from uniqc.algorithmics.ansatz import hea
+from uniqc.simulator import OriginIR_Simulator
+from uniqc.pytorch import batch_execute_with_params
 
 
 # ============================================================================

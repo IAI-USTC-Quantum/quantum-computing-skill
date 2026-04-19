@@ -1,16 +1,16 @@
 ---
 name: quantum-computing-skill
-description: Guide quantum programming with QPanda-lite. Use when the user asks about "quantum circuit", "QPanda", "VQE", "QAOA", "variational quantum", "NISQ", "quantum machine learning", "submit to quantum cloud", "H2 simulation", "HEA ansatz", "UCCSD", "originir", "qasm", "quantum simulator", or discusses building quantum programs, variational algorithms, quantum neural networks, or molecular simulation. Covers circuit construction, CLI commands, local simulation, cloud task submission, and algorithm implementation.
+description: Guide quantum programming with UnifiedQuantum. Use when the user asks about "quantum circuit", "UnifiedQuantum", "uniqc", "VQE", "QAOA", "variational quantum", "NISQ", "quantum machine learning", "submit to quantum cloud", "H2 simulation", "HEA ansatz", "UCCSD", "originir", "qasm", "quantum simulator", or discusses building quantum programs, variational algorithms, quantum neural networks, or molecular simulation. Covers circuit construction, CLI commands, local simulation, cloud task submission, and algorithm implementation.
 version: 1.0.0
 ---
 
-# QPanda-lite Quantum Programming Skill
+# UnifiedQuantum Quantum Programming Skill
 
-Provide guidance for quantum programming using QPanda-lite, a lightweight Python-native quantum computing framework for NISQ devices.
+Provide guidance for quantum programming using UnifiedQuantum, a lightweight Python-native quantum computing aggregation framework for NISQ devices.
 
 ## Overview
 
-QPanda-lite enables quantum circuit construction, simulation, and execution on real quantum hardware. Core workflow:
+UnifiedQuantum enables quantum circuit construction, simulation, and execution on real quantum hardware through a unified interface that aggregates multiple cloud platforms. Core workflow:
 
 1. **Build circuits** using the `Circuit` class with intuitive gate methods
 2. **Simulate locally** with statevector or density matrix backends
@@ -18,7 +18,7 @@ QPanda-lite enables quantum circuit construction, simulation, and execution on r
 
 Installation:
 ```bash
-pip install qpandalite
+pip install unified-quantum
 ```
 
 ## Circuit Construction Quick Reference
@@ -26,7 +26,7 @@ pip install qpandalite
 Create circuits with the `Circuit` class:
 
 ```python
-from qpandalite.circuit_builder import Circuit
+from uniqc.circuit_builder import Circuit
 
 # Basic initialization
 c = Circuit()          # Empty circuit
@@ -100,20 +100,20 @@ qasm = c.qasm          # OpenQASM 2.0 format string
 
 ## CLI Commands Quick Reference
 
-QPanda-lite provides a Typer-based CLI accessible via `qpandalite` or `python -m qpandalite`.
+UnifiedQuantum provides a Typer-based CLI accessible via `uniqc` or `python -m uniqc`.
 
 ### circuit - Format Conversion
 
 ```bash
-qpandalite circuit input.oir --format qasm -o output.qasm
-qpandalite circuit input.oir --info  # Show circuit statistics
+uniqc circuit input.oir --format qasm -o output.qasm
+uniqc circuit input.oir --info  # Show circuit statistics
 ```
 
 ### simulate - Local Simulation
 
 ```bash
-qpandalite simulate circuit.oir --backend statevector --shots 1024
-qpandalite simulate circuit.oir --backend density --format json
+uniqc simulate circuit.oir --backend statevector --shots 1024
+uniqc simulate circuit.oir --backend density --format json
 ```
 
 Options:
@@ -125,8 +125,8 @@ Options:
 ### submit - Cloud Submission
 
 ```bash
-qpandalite submit circuit.oir --platform originq --shots 1000
-qpandalite submit circuit.oir --platform quafu --chip-id ScQ-P10 --wait
+uniqc submit circuit.oir --platform originq --shots 1000
+uniqc submit circuit.oir --platform quafu --chip-id ScQ-P10 --wait
 ```
 
 Options:
@@ -139,24 +139,24 @@ Options:
 ### result - Query Results
 
 ```bash
-qpandalite result <task-id> --platform originq --wait --timeout 60
+uniqc result <task-id> --platform originq --wait --timeout 60
 ```
 
 ### task - Task Management
 
 ```bash
-qpandalite task list --status running --platform originq
-qpandalite task show <task-id>
-qpandalite task clear
+uniqc task list --status running --platform originq
+uniqc task show <task-id>
+uniqc task clear
 ```
 
 ### config - Configuration
 
 ```bash
-qpandalite config init                    # Initialize config file
-qpandalite config set originq.token TOKEN # Set API token
-qpandalite config list                    # Show all settings
-qpandalite config validate                # Validate configuration
+uniqc config init                    # Initialize config file
+uniqc config set originq.token TOKEN # Set API token
+uniqc config list                    # Show all settings
+uniqc config validate                # Validate configuration
 ```
 
 ## Simulator Usage Patterns
@@ -164,7 +164,7 @@ qpandalite config validate                # Validate configuration
 ### OriginIR Simulator
 
 ```python
-from qpandalite.simulator import OriginIR_Simulator
+from uniqc.simulator import OriginIR_Simulator
 
 # Statevector backend (pure states)
 sim = OriginIR_Simulator(backend_type='statevector')
@@ -191,7 +191,7 @@ sim = OriginIR_Simulator(
 ### QASM Simulator
 
 ```python
-from qpandalite.simulator import QASM_Simulator
+from uniqc.simulator import QASM_Simulator
 
 sim = QASM_Simulator(backend_type='statevector')
 result = sim.simulate_shots(qasm_circuit, shots=1000)
@@ -201,28 +201,35 @@ result = sim.simulate_shots(qasm_circuit, shots=1000)
 
 ### Configuration
 
-**Environment variables:**
+UnifiedQuantum uses a unified YAML config at `~/.uniqc/uniqc.yml`. Populate it via the CLI:
+
 ```bash
-export QPANDA_API_KEY="your-originq-token"
-export QUAFU_API_TOKEN="your-quafu-token"
-export IBM_TOKEN="your-ibm-token"
+uniqc config init
+uniqc config set originq.token YOUR_ORIGINQ_TOKEN
+uniqc config set quafu.token   YOUR_QUAFU_TOKEN
+uniqc config set ibm.token     YOUR_IBM_TOKEN
+uniqc config validate
 ```
 
-**Config file (`~/.qpandalite/qpandalite.yml`):**
+Resulting file structure:
+
 ```yaml
-originq:
-  token: your-originq-token
-  submit_url: https://...
-  query_url: https://...
-quafu:
-  token: your-quafu-token
+default:
+  originq:
+    token: your-originq-token
+  quafu:
+    token: your-quafu-token
+  ibm:
+    token: your-ibm-token
 ```
+
+Switch profiles with the `UNIQC_PROFILE` environment variable or `uniqc config profile use <name>`.
 
 ### Programmatic Submission
 
 ```python
-from qpandalite import submit_task, wait_for_result
-from qpandalite.circuit_builder import Circuit
+from uniqc import submit_task, wait_for_result
+from uniqc.circuit_builder import Circuit
 
 # Build circuit
 c = Circuit(2)
@@ -242,7 +249,7 @@ result = wait_for_result(task_id, backend='originq', timeout=300)
 ```python
 # Via environment variable
 import os
-os.environ['QPANDALITE_DUMMY'] = 'true'
+os.environ['UNIQC_DUMMY'] = 'true'
 
 # Or explicitly
 task_id = submit_task(c.originir, backend='originq', dummy=True)
@@ -262,7 +269,7 @@ task_id = submit_task(c.originir, backend='originq', dummy=True)
 ### HEA - Hardware-Efficient Ansatz
 
 ```python
-from qpandalite.algorithmics.ansatz import hea
+from uniqc.algorithmics.ansatz import hea
 
 # Create HEA circuit
 circuit = hea(n_qubits=4, depth=2)
@@ -281,7 +288,7 @@ Structure per layer:
 ### UCCSD - Unitary Coupled-Cluster
 
 ```python
-from qpandalite.algorithmics.ansatz import uccsd_ansatz
+from uniqc.algorithmics.ansatz import uccsd_ansatz
 
 circuit = uccsd_ansatz(n_qubits=4, n_electrons=2)
 ```
@@ -289,7 +296,7 @@ circuit = uccsd_ansatz(n_qubits=4, n_electrons=2)
 ### QAOA - Quantum Approximate Optimization
 
 ```python
-from qpandalite.algorithmics.ansatz import qaoa_ansatz
+from uniqc.algorithmics.ansatz import qaoa_ansatz
 
 # Define cost Hamiltonian terms
 cost_terms = [("Z0Z1", 0.5), ("Z1Z2", 0.5), ("Z0Z2", 0.5)]
@@ -301,15 +308,15 @@ circuit = qaoa_ansatz(cost_terms, p=2)
 ### QuantumLayer
 
 ```python
-from qpandalite.pytorch import QuantumLayer
-from qpandalite.algorithmics.ansatz import hea
+from uniqc.pytorch import QuantumLayer
+from uniqc.algorithmics.ansatz import hea
 
 # Create ansatz circuit template
 circuit_template = hea(n_qubits=4, depth=2)
 
 # Define expectation function
 def expectation_fn(circuit):
-    from qpandalite.simulator import OriginIR_Simulator
+    from uniqc.simulator import OriginIR_Simulator
     sim = OriginIR_Simulator()
     probs = sim.simulate_pmeasure(circuit.originir)
     return probs[0]  # Probability of |00...0>
@@ -325,7 +332,7 @@ qlayer = QuantumLayer(
 ### Parameter-Shift Gradient
 
 ```python
-from qpandalite.pytorch import parameter_shift_gradient, compute_all_gradients
+from uniqc.pytorch import parameter_shift_gradient, compute_all_gradients
 
 # Single parameter gradient
 grad = parameter_shift_gradient(circuit, param_name, expectation_fn)
@@ -337,7 +344,7 @@ grads = compute_all_gradients(circuit, expectation_fn)
 ### Batch Execution
 
 ```python
-from qpandalite.pytorch import batch_execute, batch_execute_with_params
+from uniqc.pytorch import batch_execute, batch_execute_with_params
 
 # Execute multiple circuits in parallel
 results = batch_execute(circuits, executor, n_workers=4)

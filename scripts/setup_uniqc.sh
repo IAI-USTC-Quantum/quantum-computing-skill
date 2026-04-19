@@ -1,11 +1,11 @@
 #!/bin/bash
-# Installation verification script for QPanda-lite skill
+# Installation verification script for UnifiedQuantum skill
 #
-# This script checks if QPanda-lite is properly installed and
+# This script checks if UnifiedQuantum is properly installed and
 # verifies that key components are working.
 #
 # Usage:
-#   ./setup_qpandalite.sh
+#   ./setup_uniqc.sh
 #
 # Exit codes:
 #   0 - All checks passed
@@ -14,7 +14,7 @@
 set -e
 
 echo "============================================================"
-echo "QPanda-lite Installation Verification"
+echo "UnifiedQuantum Installation Verification"
 echo "============================================================"
 
 # Colors for output
@@ -51,24 +51,24 @@ echo "------------------------------------------------------------"
 PYTHON_VERSION=$(python3 --version 2>&1 || echo "not found")
 echo "   Python: $PYTHON_VERSION"
 
-if python3 -c "import sys; exit(0 if sys.version_info >= (3, 9) else 1)" 2>/dev/null; then
-    check_pass "Python >= 3.9 (compatible)"
+if python3 -c "import sys; exit(0 if sys.version_info >= (3, 10) else 1)" 2>/dev/null; then
+    check_pass "Python >= 3.10 (compatible)"
 else
-    check_fail "Python >= 3.9 required (QPanda-lite needs 3.9+)"
+    check_fail "Python >= 3.10 required (UnifiedQuantum needs 3.10+)"
 fi
 
 # ------------------------------------------------------------
-# 2. Check qpandalite installation
+# 2. Check uniqc installation
 # ------------------------------------------------------------
 echo ""
-echo "2. QPanda-lite installation"
+echo "2. UnifiedQuantum installation"
 echo "------------------------------------------------------------"
 
-if python3 -c "import qpandalite" 2>/dev/null; then
-    VERSION=$(python3 -c "import qpandalite; print(getattr(qpandalite, '__version__', 'unknown'))")
-    check_pass "qpandalite imported successfully (version: $VERSION)"
+if python3 -c "import uniqc" 2>/dev/null; then
+    VERSION=$(python3 -c "import uniqc; print(getattr(uniqc, '__version__', 'unknown'))")
+    check_pass "uniqc imported successfully (version: $VERSION)"
 else
-    check_fail "qpandalite not found - install with: pip install qpandalite"
+    check_fail "uniqc not found - install with: pip install unified-quantum"
 fi
 
 # ------------------------------------------------------------
@@ -94,11 +94,11 @@ echo ""
 echo "4. CLI installation"
 echo "------------------------------------------------------------"
 
-if command -v qpandalite &>/dev/null; then
-    check_pass "qpandalite CLI available"
-    qpandalite --help &>/dev/null && check_pass "CLI help works" || check_fail "CLI help failed"
-elif python3 -m qpandalite --help &>/dev/null; then
-    check_pass "qpandalite available via python -m qpandalite"
+if command -v uniqc &>/dev/null; then
+    check_pass "uniqc CLI available"
+    uniqc --help &>/dev/null && check_pass "CLI help works" || check_fail "CLI help failed"
+elif python3 -m uniqc --help &>/dev/null; then
+    check_pass "uniqc available via python -m uniqc"
 else
     check_fail "CLI not available"
 fi
@@ -133,7 +133,7 @@ echo "------------------------------------------------------------"
 
 TEST_CIRCUIT=$(python3 << 'EOF'
 try:
-    from qpandalite.circuit_builder import Circuit
+    from uniqc.circuit_builder import Circuit
     c = Circuit(2)
     c.h(0)
     c.cnot(0, 1)
@@ -158,8 +158,8 @@ echo "------------------------------------------------------------"
 
 TEST_SIM=$(python3 << 'EOF'
 try:
-    from qpandalite.circuit_builder import Circuit
-    from qpandalite.simulator import OriginIR_Simulator
+    from uniqc.circuit_builder import Circuit
+    from uniqc.simulator import OriginIR_Simulator
 
     c = Circuit(2)
     c.h(0)
@@ -196,14 +196,14 @@ echo -e "Failed: ${RED}$FAILED${NC}"
 
 if [ $FAILED -eq 0 ]; then
     echo ""
-    echo -e "${GREEN}All checks passed! QPanda-lite is ready to use.${NC}"
+    echo -e "${GREEN}All checks passed! UnifiedQuantum is ready to use.${NC}"
     exit 0
 else
     echo ""
     echo -e "${YELLOW}Some checks failed. Please install missing dependencies.${NC}"
     echo ""
     echo "Installation commands:"
-    echo "  pip install qpandalite          # Core package"
-    echo "  pip install qpandalite[pytorch] # With PyTorch support"
+    echo "  pip install unified-quantum           # Core package"
+    echo "  pip install unified-quantum[pytorch]  # With PyTorch support"
     exit 1
 fi

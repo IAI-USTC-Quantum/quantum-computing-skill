@@ -1,5 +1,5 @@
 #!/bin/bash
-# CLI demonstration script for QPanda-lite
+# CLI demonstration script for UnifiedQuantum
 #
 # This script demonstrates the main CLI commands:
 # - circuit: format conversion and circuit info
@@ -10,7 +10,7 @@
 set -e
 
 echo "============================================================"
-echo "QPanda-lite CLI Demonstration"
+echo "UnifiedQuantum CLI Demonstration"
 echo "============================================================"
 
 # Create a temporary directory for demo files
@@ -38,18 +38,18 @@ echo "   Created: bell_state.oir"
 echo ""
 echo "2. Circuit info:"
 echo "------------------------------------------------------------"
-qpandalite circuit bell_state.oir --info
+uniqc circuit bell_state.oir --info
 
 echo ""
 echo "3. Convert to QASM format:"
 echo "------------------------------------------------------------"
-qpandalite circuit bell_state.oir --format qasm -o bell_state.qasm
+uniqc circuit bell_state.oir --format qasm -o bell_state.qasm
 cat bell_state.qasm
 
 echo ""
 echo "4. Convert QASM back to OriginIR:"
 echo "------------------------------------------------------------"
-qpandalite circuit bell_state.qasm --format originir
+uniqc circuit bell_state.qasm --format originir
 
 # ------------------------------------------------------------
 # 3. Local simulation
@@ -57,12 +57,12 @@ qpandalite circuit bell_state.qasm --format originir
 echo ""
 echo "5. Simulate with statevector backend:"
 echo "------------------------------------------------------------"
-qpandalite simulate bell_state.oir --backend statevector --shots 1024 --format table
+uniqc simulate bell_state.oir --backend statevector --shots 1024 --format table
 
 echo ""
 echo "6. Simulate with JSON output:"
 echo "------------------------------------------------------------"
-qpandalite simulate bell_state.oir --shots 4096 --format json | head -20
+uniqc simulate bell_state.oir --shots 4096 --format json | head -20
 
 # ------------------------------------------------------------
 # 4. Configuration (show current config)
@@ -70,7 +70,7 @@ qpandalite simulate bell_state.oir --shots 4096 --format json | head -20
 echo ""
 echo "7. Current configuration:"
 echo "------------------------------------------------------------"
-qpandalite config list 2>/dev/null || echo "   (No configuration file found - run 'qpandalite config init' to create)"
+uniqc config list 2>/dev/null || echo "   (No configuration file found - run 'uniqc config init' to create)"
 
 # ------------------------------------------------------------
 # 5. Cloud submission (commented out - requires API tokens)
@@ -79,23 +79,23 @@ echo ""
 echo "8. Cloud submission examples (commented out):"
 echo "------------------------------------------------------------"
 cat << 'EXAMPLES'
-# Submit to OriginQ (requires qpandalite config set originq.token YOUR_TOKEN)
-# qpandalite submit bell_state.oir --platform originq --shots 1000 --name "bell-test"
+# Submit to OriginQ (requires uniqc config set originq.token YOUR_TOKEN)
+# uniqc submit bell_state.oir --platform originq --shots 1000 --name "bell-test"
 
-# Submit to Quafu (requires qpandalite config set quafu.token YOUR_TOKEN)
-# qpandalite submit bell_state.oir --platform quafu --chip-id ScQ-P10 --shots 1000
+# Submit to Quafu (requires uniqc config set quafu.token YOUR_TOKEN)
+# uniqc submit bell_state.oir --platform quafu --chip-id ScQ-P10 --shots 1000
 
 # Submit and wait for result
-# qpandalite submit bell_state.oir --platform originq --shots 1000 --wait --timeout 300
+# uniqc submit bell_state.oir --platform originq --shots 1000 --wait --timeout 300
 
 # Test with dummy platform (no tokens required)
-qpandalite submit bell_state.oir --platform dummy --shots 100
+uniqc submit bell_state.oir --platform dummy --shots 100
 EXAMPLES
 
 # Run dummy platform test
 echo ""
 echo "   Testing with dummy platform:"
-qpandalite submit bell_state.oir --platform dummy --shots 100
+uniqc submit bell_state.oir --platform dummy --shots 100
 
 # ------------------------------------------------------------
 # Cleanup

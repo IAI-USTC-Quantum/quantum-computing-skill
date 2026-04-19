@@ -1,10 +1,10 @@
 # PyTorch Integration Reference
 
-Complete reference for using QPanda-lite with PyTorch for quantum machine learning.
+Complete reference for using UnifiedQuantum with PyTorch for quantum machine learning.
 
 ## Overview
 
-QPanda-lite provides PyTorch integration for hybrid quantum-classical models:
+UnifiedQuantum provides PyTorch integration for hybrid quantum-classical models:
 
 - `QuantumLayer`: PyTorch `nn.Module` wrapping a quantum circuit
 - `parameter_shift_gradient`: Compute gradients via parameter-shift rule
@@ -16,7 +16,7 @@ QPanda-lite provides PyTorch integration for hybrid quantum-classical models:
 Wraps a quantum circuit as a differentiable PyTorch layer.
 
 ```python
-from qpandalite.pytorch import QuantumLayer
+from uniqc.pytorch import QuantumLayer
 
 qlayer = QuantumLayer(
     circuit,              # Circuit template (with Parameter objects)
@@ -42,9 +42,9 @@ qlayer = QuantumLayer(
 ```python
 import torch
 import torch.nn as nn
-from qpandalite.circuit_builder import Circuit, Parameter
-from qpandalite.pytorch import QuantumLayer
-from qpandalite.simulator import OriginIR_Simulator
+from uniqc.circuit_builder import Circuit, Parameter
+from uniqc.pytorch import QuantumLayer
+from uniqc.simulator import OriginIR_Simulator
 
 # Create circuit template with Parameters
 circuit = Circuit(4)
@@ -80,7 +80,7 @@ Compute the gradient of an expectation value with respect to a single parameter 
 where `s` is the shift (default: π/2).
 
 ```python
-from qpandalite.pytorch import parameter_shift_gradient
+from uniqc.pytorch import parameter_shift_gradient
 
 grad = parameter_shift_gradient(
     circuit,              # Circuit with bound parameter
@@ -96,7 +96,7 @@ grad = parameter_shift_gradient(
 Compute gradients for all parameters simultaneously:
 
 ```python
-from qpandalite.pytorch import compute_all_gradients
+from uniqc.pytorch import compute_all_gradients
 
 grads = compute_all_gradients(
     circuit,              # Circuit with parameters
@@ -113,7 +113,7 @@ grads = compute_all_gradients(
 Evaluate multiple circuits in parallel:
 
 ```python
-from qpandalite.pytorch import batch_execute
+from uniqc.pytorch import batch_execute
 
 results = batch_execute(
     circuits,             # list[Circuit] to evaluate
@@ -128,7 +128,7 @@ results = batch_execute(
 Evaluate a circuit template with different parameter values:
 
 ```python
-from qpandalite.pytorch import batch_execute_with_params
+from uniqc.pytorch import batch_execute_with_params
 
 results = batch_execute_with_params(
     circuit_template,                    # Circuit with Parameters
@@ -150,7 +150,7 @@ results = batch_execute_with_params(
 ```python
 import torch
 import torch.nn as nn
-from qpandalite.pytorch import QuantumLayer
+from uniqc.pytorch import QuantumLayer
 
 class HybridModel(nn.Module):
     def __init__(self, n_qubits, qlayer):

@@ -1,57 +1,56 @@
 # Cloud Platforms Reference
 
-Complete reference for submitting quantum circuits to cloud platforms via QPanda-lite.
+Complete reference for submitting quantum circuits to cloud platforms via UnifiedQuantum.
 
 ## Configuration
 
 ### Environment Variables
 
-| Variable | Platform | Description |
-|----------|----------|-------------|
-| `QPANDA_API_KEY` | OriginQ | API key for Origin Quantum Cloud |
-| `QPANDA_SUBMIT_URL` | OriginQ | Custom submit endpoint URL |
-| `QPANDA_QUERY_URL` | OriginQ | Custom query endpoint URL |
-| `QUAFU_API_TOKEN` | Quafu | API token for BAQIS Quafu |
-| `IBM_TOKEN` | IBM Quantum | IBM Quantum API token |
-| `QPANDALITE_DUMMY` | Dummy | Set to `true`/`1`/`yes` for local simulation |
+| Variable | Scope | Description |
+|----------|-------|-------------|
+| `UNIQC_PROFILE` | All | Override active config profile for a single invocation |
+| `UNIQC_DUMMY` | Dummy | Set to `true`/`1`/`yes` to force local dummy simulation |
+
+All platform credentials (OriginQ, Quafu, IBM) are resolved through the config file rather than environment variables.
 
 ### Config File
 
-Location: `~/.qpandalite/qpandalite.yml`
+Location: `~/.uniqc/uniqc.yml`
 
 ```yaml
-originq:
-  token: your-originq-token
-  submit_url: https://qcloud.originqc.com.cn/api/submit
-  query_url: https://qcloud.originqc.com.cn/api/query
-
-quafu:
-  token: your-quafu-token
-
-ibm:
-  token: your-ibm-token
-
-default_platform: originq
+default:
+  originq:
+    token: your-originq-token
+    available_qubits: []
+    available_topology: []
+    task_group_size: 200
+  quafu:
+    token: your-quafu-token
+  ibm:
+    token: your-ibm-token
+    proxy:
+      http: ""
+      https: ""
 ```
 
-Initialize with `qpandalite config init`.
+Initialize with `uniqc config init`.
 
 ### CLI Configuration
 
 ```bash
 # Initialize
-qpandalite config init
+uniqc config init
 
 # Set tokens
-qpandalite config set originq.token YOUR_TOKEN
-qpandalite config set quafu.token YOUR_TOKEN
-qpandalite config set ibm.token YOUR_TOKEN
+uniqc config set originq.token YOUR_TOKEN
+uniqc config set quafu.token YOUR_TOKEN
+uniqc config set ibm.token YOUR_TOKEN
 
 # Validate
-qpandalite config validate
+uniqc config validate
 
 # View configuration
-qpandalite config list
+uniqc config list
 ```
 
 ### Profile Management
@@ -59,17 +58,19 @@ qpandalite config list
 Multiple profiles for different environments:
 
 ```bash
-qpandalite config profile create dev
-qpandalite config profile use dev
-qpandalite config profile list
+uniqc config profile create dev
+uniqc config profile use dev
+uniqc config profile list
 ```
+
+Set `UNIQC_PROFILE=<name>` to override the active profile for a single command.
 
 ## Platform Adapters
 
 ### OriginQ (Origin Quantum Cloud)
 
 ```python
-from qpandalite.task.adapters import OriginQAdapter
+from uniqc.task.adapters import OriginQAdapter
 
 adapter = OriginQAdapter()
 # Circuit translation and submission handled internally
@@ -85,7 +86,7 @@ adapter = OriginQAdapter()
 ### Quafu (BAQIS)
 
 ```python
-from qpandalite.task.adapters import QuafuAdapter
+from uniqc.task.adapters import QuafuAdapter
 
 adapter = QuafuAdapter()
 ```
@@ -104,7 +105,7 @@ adapter = QuafuAdapter()
 ### IBM Quantum
 
 ```python
-from qpandalite.task.adapters import QiskitAdapter
+from uniqc.task.adapters import QiskitAdapter
 
 adapter = QiskitAdapter()
 ```
@@ -117,7 +118,7 @@ adapter = QiskitAdapter()
 ### Dummy (Local Testing)
 
 ```python
-from qpandalite.task.adapters import DummyAdapter
+from uniqc.task.adapters import DummyAdapter
 
 adapter = DummyAdapter()
 ```
@@ -133,7 +134,7 @@ adapter = DummyAdapter()
 ### submit_task
 
 ```python
-from qpandalite import submit_task
+from uniqc import submit_task
 
 task_id = submit_task(
     circuit,           # Circuit object or OriginIR string
@@ -149,7 +150,7 @@ task_id = submit_task(
 ### submit_batch
 
 ```python
-from qpandalite import submit_batch
+from uniqc import submit_batch
 
 task_ids = submit_batch(
     circuits,          # List of Circuit objects or OriginIR strings
@@ -164,7 +165,7 @@ task_ids = submit_batch(
 ### query_task
 
 ```python
-from qpandalite import query_task
+from uniqc import query_task
 
 info = query_task(
     task_id='abc-123',
@@ -176,7 +177,7 @@ info = query_task(
 ### wait_for_result
 
 ```python
-from qpandalite import wait_for_result
+from uniqc import wait_for_result
 
 result = wait_for_result(
     task_id='abc-123',
@@ -218,11 +219,11 @@ class TaskInfo:
 
 ```python
 import os
-from qpandalite.circuit_builder import Circuit
-from qpandalite import submit_task, wait_for_result
+from uniqc.circuit_builder import Circuit
+from uniqc import submit_task, wait_for_result
 
 # Enable dummy mode for testing
-os.environ['QPANDALITE_DUMMY'] = 'true'
+os.environ['UNIQC_DUMMY'] = 'true'
 
 # Build circuit
 c = Circuit(4)
@@ -244,17 +245,17 @@ print(f"Result: {result}")
 
 ```bash
 # Submit and wait
-qpandalite submit circuit.oir --platform originq --shots 1000 --wait
+uniqc submit circuit.oir --platform originq --shots 1000 --wait
 
 # Check status separately
-qpandalite task list --platform originq
-qpandalite result <task-id> --platform originq --wait
+uniqc task list --platform originq
+uniqc result <task-id> --platform originq --wait
 ```
 
 ## Error Handling
 
 ```python
-from qpandalite import submit_task, wait_for_result
+from uniqc import submit_task, wait_for_result
 
 try:
     task_id = submit_task(c.originir, backend='originq', shots=1000)

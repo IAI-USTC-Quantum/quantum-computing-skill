@@ -3,7 +3,7 @@
 
 This example demonstrates:
 - Formulating MaxCut as a QAOA problem
-- Using QPanda-lite's built-in QAOA ansatz
+- Using UnifiedQuantum's built-in QAOA ansatz
 - Classical optimization loop
 - Solution interpretation
 
@@ -18,8 +18,8 @@ import argparse
 import numpy as np
 from scipy.optimize import minimize
 
-from qpandalite.algorithmics.ansatz import qaoa_ansatz
-from qpandalite.simulator import OriginIR_Simulator
+from uniqc.algorithmics.ansatz import qaoa_ansatz
+from uniqc.simulator import OriginIR_Simulator
 
 
 # ============================================================================

@@ -1,6 +1,6 @@
 # Simulators Reference
 
-Complete reference for QPanda-lite simulation backends.
+Complete reference for UnifiedQuantum simulation backends.
 
 ## Simulator Classes
 
@@ -9,7 +9,7 @@ Complete reference for QPanda-lite simulation backends.
 Primary simulator for circuits in OriginIR format.
 
 ```python
-from qpandalite.simulator import OriginIR_Simulator
+from uniqc.simulator import OriginIR_Simulator
 
 sim = OriginIR_Simulator(
     backend_type='statevector',
@@ -32,7 +32,7 @@ sim = OriginIR_Simulator(
 Simulator for circuits in OpenQASM 2.0 format.
 
 ```python
-from qpandalite.simulator import QASM_Simulator
+from uniqc.simulator import QASM_Simulator
 
 sim = QASM_Simulator(
     backend_type='statevector',
@@ -44,7 +44,7 @@ sim = QASM_Simulator(
 ### Noisy Simulators
 
 ```python
-from qpandalite.simulator import OriginIR_NoisySimulator, QASM_Noisy_Simulator
+from uniqc.simulator import OriginIR_NoisySimulator, QASM_Noisy_Simulator
 
 sim = OriginIR_NoisySimulator(
     backend_type='statevector',
@@ -193,7 +193,7 @@ result = sim.simulate_shots(circuit.originir, shots=1000)
 Custom gate error models via the `ErrorLoader` interface:
 
 ```python
-from qpandalite.simulator import ErrorLoader
+from uniqc.simulator import ErrorLoader
 
 class CustomErrorLoader(ErrorLoader):
     def get_gate_error(self, gate_name, qubits):
@@ -206,7 +206,7 @@ class CustomErrorLoader(ErrorLoader):
 Use `get_backend` for a unified interface:
 
 ```python
-from qpandalite.simulator import get_backend
+from uniqc.simulator import get_backend
 
 # OriginIR statevector backend
 sim = get_backend(program_type='originir', backend_type='statevector')
@@ -221,7 +221,7 @@ sim = get_backend(program_type='qasm', backend_type='densitymatrix')
 
 ```python
 import numpy as np
-from qpandalite.simulator import OriginIR_Simulator
+from uniqc.simulator import OriginIR_Simulator
 
 def compute_expectation(circuit_originir, pauli_string):
     """Compute <psi|P|psi> for a Pauli operator P."""
@@ -235,7 +235,7 @@ def compute_expectation(circuit_originir, pauli_string):
 ### Shot-Based Measurement
 
 ```python
-from qpandalite.simulator import OriginIR_Simulator
+from uniqc.simulator import OriginIR_Simulator
 
 sim = OriginIR_Simulator()
 counts = sim.simulate_shots(circuit.originir, shots=8192)
@@ -248,7 +248,7 @@ probs = {k: v / total for k, v in counts.items()}
 ### Noisy Circuit Simulation
 
 ```python
-from qpandalite.simulator import OriginIR_NoisySimulator
+from uniqc.simulator import OriginIR_NoisySimulator
 
 sim = OriginIR_NoisySimulator(
     backend_type='statevector',

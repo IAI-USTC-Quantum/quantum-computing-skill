@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cloud platform submission example for QPanda-lite.
+"""Cloud platform submission example for UnifiedQuantum.
 
 This example demonstrates:
 - Building quantum circuits programmatically
@@ -8,23 +8,27 @@ This example demonstrates:
 - Error handling
 
 Configuration:
-    Set environment variables or use config file:
-    - QPANDA_API_KEY (OriginQ)
-    - QUAFU_API_TOKEN (Quafu)
-    - IBM_TOKEN (IBM Quantum)
-
-    Or run: qpandalite config init
-            qpandalite config set originq.token YOUR_TOKEN
+    Platform credentials live in the unified config file.
+    Initialize and populate it with:
+        uniqc config init
+        uniqc config set originq.token YOUR_TOKEN
+        uniqc config set quafu.token YOUR_TOKEN
+        uniqc config set ibm.token YOUR_TOKEN
 
 Usage:
     python cloud_submission.py
 """
 
 import os
-import time
 
-from qpandalite.circuit_builder import Circuit
-from qpandalite import submit_task, query_task, wait_for_result
+from uniqc.circuit_builder import Circuit
+from uniqc import submit_task, wait_for_result
+from uniqc.config import (
+    get_originq_config,
+    get_quafu_config,
+    get_ibm_config,
+    ConfigError,
+)
 
 
 # ============================================================================
@@ -90,17 +94,7 @@ def create_random_circuit(n_qubits=4, depth=3):
 # ============================================================================
 
 def submit_to_originq(circuit, shots=1000, wait=True, timeout=300):
-    """Submit circuit to OriginQ cloud platform.
-
-    Args:
-        circuit: Circuit object
-        shots: Number of measurement shots
-        wait: Whether to wait for result
-        timeout: Maximum wait time in seconds
-
-    Returns:
-        dict or str: Result dict or task ID
-    """
+    """Submit circuit to OriginQ cloud platform."""
     print("\nSubmitting to OriginQ...")
 
     try:
@@ -123,18 +117,7 @@ def submit_to_originq(circuit, shots=1000, wait=True, timeout=300):
 
 
 def submit_to_quafu(circuit, chip_id='ScQ-P10', shots=1000, wait=True, timeout=300):
-    """Submit circuit to Quafu (BAQIS) cloud platform.
-
-    Args:
-        circuit: Circuit object
-        chip_id: Target chip (e.g., 'ScQ-P10', 'ScQ-P18')
-        shots: Number of measurement shots
-        wait: Whether to wait for result
-        timeout: Maximum wait time in seconds
-
-    Returns:
-        dict or str: Result dict or task ID
-    """
+    """Submit circuit to Quafu (BAQIS) cloud platform."""
     print(f"\nSubmitting to Quafu (chip: {chip_id})...")
 
     try:
@@ -161,18 +144,11 @@ def submit_to_dummy(circuit, shots=1000):
     """Submit circuit using dummy adapter (local simulation).
 
     This is useful for testing without cloud credentials.
-
-    Args:
-        circuit: Circuit object
-        shots: Number of measurement shots
-
-    Returns:
-        dict: Simulated measurement results
     """
     print("\nSubmitting to dummy adapter (local simulation)...")
 
-    # Set dummy mode
-    os.environ['QPANDALITE_DUMMY'] = 'true'
+    # Force dummy mode for this run
+    os.environ['UNIQC_DUMMY'] = 'true'
 
     task_id = submit_task(
         circuit.originir,
@@ -186,16 +162,25 @@ def submit_to_dummy(circuit, shots=1000):
 
 
 # ============================================================================
+# Configuration Helpers
+# ============================================================================
+
+def _has_token(loader):
+    """Return True if the config loader yields a non-empty token."""
+    try:
+        cfg = loader()
+    except ConfigError:
+        return False
+    token = cfg.get("token") if isinstance(cfg, dict) else None
+    return bool(token)
+
+
+# ============================================================================
 # Result Processing
 # ============================================================================
 
 def print_results(result, n_qubits):
-    """Pretty print measurement results.
-
-    Args:
-        result: Result dict from cloud
-        n_qubits: Number of qubits for bit string formatting
-    """
+    """Pretty print measurement results."""
     if result is None:
         print("No results available")
         return
@@ -232,7 +217,7 @@ def print_results(result, n_qubits):
 
 def main():
     print("=" * 60)
-    print("QPanda-lite Cloud Submission Example")
+    print("UnifiedQuantum Cloud Submission Example")
     print("=" * 60)
 
     # Create circuits
@@ -240,11 +225,15 @@ def main():
     ghz_circuit = create_ghz_circuit(n_qubits=4)
     print(f"GHZ circuit: {ghz_circuit.qubit_num} qubits, depth {ghz_circuit.depth}")
 
-    # Check configuration
+    # Check configuration via `~/.uniqc/uniqc.yml`
+    originq_ready = _has_token(get_originq_config)
+    quafu_ready = _has_token(get_quafu_config)
+    ibm_ready = _has_token(get_ibm_config)
+
     print("\nConfiguration status:")
-    print(f"  QPANDA_API_KEY: {'Set' if os.environ.get('QPANDA_API_KEY') else 'Not set'}")
-    print(f"  QUAFU_API_TOKEN: {'Set' if os.environ.get('QUAFU_API_TOKEN') else 'Not set'}")
-    print(f"  IBM_TOKEN: {'Set' if os.environ.get('IBM_TOKEN') else 'Not set'}")
+    print(f"  originq.token: {'Set' if originq_ready else 'Not set'}")
+    print(f"  quafu.token:   {'Set' if quafu_ready else 'Not set'}")
+    print(f"  ibm.token:     {'Set' if ibm_ready else 'Not set'}")
 
     # 1. Always test with dummy adapter first
     print("\n" + "=" * 60)
@@ -255,7 +244,7 @@ def main():
     print_results(result, ghz_circuit.qubit_num)
 
     # 2. Submit to OriginQ if configured
-    if os.environ.get('QPANDA_API_KEY'):
+    if originq_ready:
         print("\n" + "=" * 60)
         print("Test 2: OriginQ cloud platform")
         print("=" * 60)
@@ -263,10 +252,10 @@ def main():
         result = submit_to_originq(ghz_circuit, shots=1000, wait=True, timeout=300)
         print_results(result, ghz_circuit.qubit_num)
     else:
-        print("\nOriginQ not configured. Set QPANDA_API_KEY to test.")
+        print("\nOriginQ not configured. Run: uniqc config set originq.token YOUR_TOKEN")
 
     # 3. Submit to Quafu if configured
-    if os.environ.get('QUAFU_API_TOKEN'):
+    if quafu_ready:
         print("\n" + "=" * 60)
         print("Test 3: Quafu cloud platform")
         print("=" * 60)
@@ -274,7 +263,7 @@ def main():
         result = submit_to_quafu(ghz_circuit, chip_id='ScQ-P10', shots=1000, wait=True)
         print_results(result, ghz_circuit.qubit_num)
     else:
-        print("\nQuafu not configured. Set QUAFU_API_TOKEN to test.")
+        print("\nQuafu not configured. Run: uniqc config set quafu.token YOUR_TOKEN")
 
     print("\n" + "=" * 60)
     print("Cloud submission example complete!")

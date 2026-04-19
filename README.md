@@ -1,13 +1,13 @@
 # quantum-computing.skill
 
-基于 [QPanda-lite](https://github.com/Agony5757/QPanda-lite) 的 Claude Code 量子编程 Skill
+基于 [UnifiedQuantum](https://github.com/IAI-USTC-Quantum/UnifiedQuantum) 的 Claude Code 量子编程 Skill
 
-A Claude Code skill for quantum programming with [QPanda-lite](https://github.com/Agony5757/QPanda-lite).
+A Claude Code skill for quantum programming with [UnifiedQuantum](https://github.com/IAI-USTC-Quantum/UnifiedQuantum).
 
 
 ## Overview
 
-This skill guides AI agents to effectively use QPanda-lite, a lightweight Python-native quantum computing framework for NISQ devices. It covers:
+This skill guides AI agents to effectively use UnifiedQuantum, a lightweight Python-native quantum computing aggregation framework for NISQ devices. It covers:
 
 - Quantum circuit construction with the `Circuit` class
 - Local simulation (statevector, density matrix, noisy)
@@ -21,14 +21,14 @@ This skill guides AI agents to effectively use QPanda-lite, a lightweight Python
 ### Installation
 
 ```bash
-pip install qpandalite
+pip install unified-quantum
 ```
 
 ### Hello Quantum World
 
 ```python
-from qpandalite.circuit_builder import Circuit
-from qpandalite.simulator import OriginIR_Simulator
+from uniqc.circuit_builder import Circuit
+from uniqc.simulator import OriginIR_Simulator
 
 # Build a Bell state
 c = Circuit(2)
@@ -46,10 +46,10 @@ print(result)
 
 ```bash
 # Simulate a circuit file
-qpandalite simulate circuit.oir --shots 1024
+uniqc simulate circuit.oir --shots 1024
 
 # Submit to cloud
-qpandalite submit circuit.oir --platform originq --shots 1000 --wait
+uniqc submit circuit.oir --platform originq --shots 1000 --wait
 ```
 
 ## Project Structure
@@ -73,7 +73,7 @@ quantum-computing-skill/
 │   ├── cloud_submission.py
 │   └── qaoa_maxcut.py
 └── scripts/
-    └── setup_qpandalite.sh  # Installation verification
+    └── setup_uniqc.sh       # Installation verification
 ```
 
 ## Examples
