@@ -1,277 +1,231 @@
-# Cloud Platforms Reference
+# 云平台参考
 
-Complete reference for submitting quantum circuits to cloud platforms via QPanda-lite.
+当前 UnifiedQuantum 的云执行路径分两层：
 
-## Configuration
+1. CLI：`uniqc submit` / `uniqc result` / `uniqc task`
+2. Python API：`submit_task` / `submit_batch` / `query_task` / `wait_for_result`
 
-### Environment Variables
+## 配置文件
 
-| Variable | Platform | Description |
-|----------|----------|-------------|
-| `QPANDA_API_KEY` | OriginQ | API key for Origin Quantum Cloud |
-| `QPANDA_SUBMIT_URL` | OriginQ | Custom submit endpoint URL |
-| `QPANDA_QUERY_URL` | OriginQ | Custom query endpoint URL |
-| `QUAFU_API_TOKEN` | Quafu | API token for BAQIS Quafu |
-| `IBM_TOKEN` | IBM Quantum | IBM Quantum API token |
-| `QPANDALITE_DUMMY` | Dummy | Set to `true`/`1`/`yes` for local simulation |
+默认配置路径：
 
-### Config File
+```text
+~/.uniqc/uniqc.yml
+```
 
-Location: `~/.qpandalite/qpandalite.yml`
+典型结构：
 
 ```yaml
-originq:
-  token: your-originq-token
-  submit_url: https://qcloud.originqc.com.cn/api/submit
-  query_url: https://qcloud.originqc.com.cn/api/query
-
-quafu:
-  token: your-quafu-token
-
-ibm:
-  token: your-ibm-token
-
-default_platform: originq
+default:
+  originq:
+    token: ""
+    available_qubits: []
+    available_topology: []
+    task_group_size: 200
+  quafu:
+    token: ""
+  ibm:
+    token: ""
+    proxy:
+      http: ""
+      https: ""
 ```
 
-Initialize with `qpandalite config init`.
-
-### CLI Configuration
+初始化：
 
 ```bash
-# Initialize
-qpandalite config init
-
-# Set tokens
-qpandalite config set originq.token YOUR_TOKEN
-qpandalite config set quafu.token YOUR_TOKEN
-qpandalite config set ibm.token YOUR_TOKEN
-
-# Validate
-qpandalite config validate
-
-# View configuration
-qpandalite config list
+uniqc config init
 ```
 
-### Profile Management
-
-Multiple profiles for different environments:
+设置 token：
 
 ```bash
-qpandalite config profile create dev
-qpandalite config profile use dev
-qpandalite config profile list
+uniqc config set originq.token YOUR_ORIGINQ_TOKEN
+uniqc config set quafu.token YOUR_QUAFU_TOKEN
+uniqc config set ibm.token YOUR_IBM_TOKEN
 ```
 
-## Platform Adapters
+## 配置 profile
 
-### OriginQ (Origin Quantum Cloud)
+可通过多 profile 管理不同环境：
 
-```python
-from qpandalite.task.adapters import OriginQAdapter
-
-adapter = OriginQAdapter()
-# Circuit translation and submission handled internally
+```bash
+uniqc config profile create dev
+uniqc config profile use dev
+uniqc config profile list
 ```
 
-**Features:**
-- OriginIR native support
-- Multiple chip backends
-- Batch submission support
+也可以临时覆盖：
 
-**Available Chips:** Varies by account. Contact OriginQ for chip availability.
-
-### Quafu (BAQIS)
-
-```python
-from qpandalite.task.adapters import QuafuAdapter
-
-adapter = QuafuAdapter()
+```bash
+export UNIQC_PROFILE=dev
 ```
 
-**Features:**
-- Superconducting quantum processors
-- Chip selection via `chip_id`
+## Python 任务 API
 
-**Available Chips:**
-| Chip ID | Qubits | Description |
-|---------|--------|-------------|
-| `ScQ-P10` | 10 | 10-qubit processor |
-| `ScQ-P18` | 18 | 18-qubit processor |
-| `ScQ-P136` | 136 | 136-qubit processor |
-
-### IBM Quantum
+最常用的公共入口：
 
 ```python
-from qpandalite.task.adapters import QiskitAdapter
-
-adapter = QiskitAdapter()
+from uniqc import (
+    submit_task,
+    submit_batch,
+    query_task,
+    wait_for_result,
+    list_tasks,
+    clear_completed_tasks,
+)
 ```
 
-**Features:**
-- Qiskit-based circuit translation
-- Access to IBM quantum fleet
-- Automatic transpilation to target chip topology
-
-### Dummy (Local Testing)
+### `submit_task`
 
 ```python
-from qpandalite.task.adapters import DummyAdapter
-
-adapter = DummyAdapter()
-```
-
-**Features:**
-- No credentials required
-- Local statevector simulation
-- Identical API to real adapters
-- Useful for development and debugging
-
-## Task Submission API
-
-### submit_task
-
-```python
-from qpandalite import submit_task
-
 task_id = submit_task(
-    circuit,           # Circuit object or OriginIR string
-    backend='originq', # Platform name
-    shots=1000,        # Number of shots
-    metadata=None,     # Optional dict for task metadata
-    dummy=None,        # Override dummy mode (True/False/None)
-    **kwargs           # Platform-specific options
-)
-# Returns: str (task ID)
-```
-
-### submit_batch
-
-```python
-from qpandalite import submit_batch
-
-task_ids = submit_batch(
-    circuits,          # List of Circuit objects or OriginIR strings
-    backend='originq',
+    circuit,
+    backend="originq",
     shots=1000,
-    dummy=None,
-    **kwargs
+    metadata={"name": "demo"},
 )
-# Returns: list[str] (task IDs)
 ```
 
-### query_task
+后端相关的常见 kwargs：
+
+- OriginQ:
+  - `backend_name="origin:wuyuan:d5"`
+  - `circuit_optimize=...`
+  - `measurement_amend=...`
+- Quafu:
+  - `chip_id="ScQ-P10"`
+  - `auto_mapping=True`
+- 通用 dummy 覆盖：
+  - `dummy=True`
+
+### `submit_batch`
 
 ```python
-from qpandalite import query_task
-
-info = query_task(
-    task_id='abc-123',
-    backend='originq'
+task_ids = submit_batch(
+    [circuit_a, circuit_b],
+    backend="quafu",
+    shots=2000,
 )
-# Returns: TaskInfo
 ```
 
-### wait_for_result
+### `query_task`
 
 ```python
-from qpandalite import wait_for_result
-
-result = wait_for_result(
-    task_id='abc-123',
-    backend='originq',
-    timeout=300.0,        # Max wait time in seconds
-    poll_interval=5.0,    # Time between status checks
-    raise_on_failure=True # Raise exception on task failure
-)
-# Returns: dict | None (measurement results)
+task_info = query_task(task_id)
+print(task_info.status)
 ```
 
-## TaskInfo Data Class
+如果任务不在本地 cache 中，通常需要补 `backend=...`。
+
+### `wait_for_result`
 
 ```python
-@dataclass
-class TaskInfo:
-    task_id: str
-    backend: str
-    status: str        # 'pending', 'running', 'success', 'failed'
-    result: dict | None
-    shots: int
-    submit_time: str
-    update_time: str
-    metadata: dict
+result = wait_for_result(task_id, backend="originq", timeout=300)
 ```
 
-## Task Status Values
-
-| Status | Description |
-|--------|-------------|
-| `pending` | Task submitted, waiting in queue |
-| `running` | Task executing on quantum hardware |
-| `success` | Task completed, results available |
-| `failed` | Task failed, check error details |
-
-## Complete Submission Workflow
-
-### Programmatic
+返回值通常是一个归一化后的结果字典；dummy 路径下最常见的结构类似：
 
 ```python
-import os
-from qpandalite.circuit_builder import Circuit
-from qpandalite import submit_task, wait_for_result
-
-# Enable dummy mode for testing
-os.environ['QPANDALITE_DUMMY'] = 'true'
-
-# Build circuit
-c = Circuit(4)
-c.h(0)
-for i in range(3):
-    c.cnot(i, i + 1)
-c.measure(0, 1, 2, 3)
-
-# Submit
-task_id = submit_task(c.originir, backend='originq', shots=1000)
-print(f"Submitted task: {task_id}")
-
-# Wait for result
-result = wait_for_result(task_id, backend='originq', timeout=300)
-print(f"Result: {result}")
+{
+    "counts": {"00": 500, "11": 500},
+    "probabilities": {"00": 0.5, "11": 0.5},
+    "shots": 1000,
+    "platform": "dummy",
+    "task_id": "...",
+}
 ```
 
-### CLI
+不同平台的原始数据会被归一化，但如果用户只关心最稳妥的兼容字段，优先读：
+
+- `counts`
+- `probabilities`
+
+## dummy 模式
+
+dummy 模式用于本地模拟，不消耗真实云平台额度。
+
+启用方式有两类：
+
+### 1. 单次任务
+
+```python
+task_id = submit_task(circuit, backend="originq", dummy=True)
+```
+
+### 2. 全局环境变量
 
 ```bash
-# Submit and wait
-qpandalite submit circuit.oir --platform originq --shots 1000 --wait
-
-# Check status separately
-qpandalite task list --platform originq
-qpandalite result <task-id> --platform originq --wait
+export UNIQC_DUMMY=true
 ```
 
-## Error Handling
+然后：
 
 ```python
-from qpandalite import submit_task, wait_for_result
-
-try:
-    task_id = submit_task(c.originir, backend='originq', shots=1000)
-    result = wait_for_result(task_id, backend='originq', timeout=300)
-except TimeoutError:
-    print("Task did not complete within timeout")
-except ConnectionError:
-    print("Could not connect to cloud platform")
-except ValueError as e:
-    print(f"Invalid configuration: {e}")
+task_id = submit_task(circuit, backend="originq")
 ```
 
-## Best Practices
+注意：
 
-1. **Test locally first**: Use dummy mode or local simulator before submitting to real hardware
-2. **Validate circuits**: Check circuit depth and gate count against target chip constraints
-3. **Batch submissions**: Use `submit_batch` for multiple circuits to reduce API overhead
-4. **Set timeouts**: Always specify a timeout when waiting for results on real hardware
-5. **Save task IDs**: Store task IDs for later result retrieval
-6. **Use profiles**: Separate development and production configurations
+- dummy 模式通常仍需要本地模拟依赖
+- 它更适合开发 / 测试 / 文档示例，不等于“完全无依赖”
+
+## 本地任务缓存
+
+当前任务缓存使用 SQLite：
+
+```text
+~/.uniqc/cache/tasks.sqlite
+```
+
+相关接口：
+
+```python
+from uniqc import list_tasks, clear_completed_tasks, clear_cache
+```
+
+CLI 里对应：
+
+```bash
+uniqc task list
+uniqc task show TASK_ID
+uniqc task clear
+```
+
+## `TaskInfo`
+
+缓存和查询结果常见字段：
+
+- `task_id`
+- `backend`
+- `status`
+- `result`
+- `shots`
+- `submit_time`
+- `update_time`
+- `metadata`
+
+## 平台建议
+
+### OriginQ
+
+- 先确认 token 已配置
+- Python API 更适合传 `backend_name`
+- CLI 用 `--backend`
+
+### Quafu
+
+- 先确认 token 已配置
+- Python API 可传 `chip_id`
+- 当前 CLI 对 Quafu 的专有参数表达较少，必要时优先 Python
+
+### IBM
+
+- 先确认 token 已配置
+- 代理设置写在 `ibm.proxy.http` / `ibm.proxy.https`
+
+## 使用这些接口时不要默认
+
+- 不要默认 dummy 模式“无条件可用”
+- 不要默认 CLI 已经完整暴露了所有平台专有参数
+- 不要默认任务结果永远只有一种字段布局；更稳妥的是优先读取常用字段

@@ -1,218 +1,175 @@
-# Circuit Building Reference
+# 线路构建参考
 
-Complete API reference for the QPanda-lite `Circuit` class and related types.
+当前 UnifiedQuantum 的核心对象仍然是 `uniqc.circuit_builder.Circuit`。
 
-## Circuit Class
+最常见的工作流是：
 
-### Initialization
+1. 构建 `Circuit`
+2. 导出 `originir` 或 `qasm`
+3. 交给 `uniqc` CLI、模拟器或 `task_manager`
+
+## 快速开始
 
 ```python
-from qpandalite.circuit_builder import Circuit
+from uniqc.circuit_builder import Circuit
 
-# Empty circuit (qubits auto-detected from gate usage)
 c = Circuit()
+c.h(0)
+c.cnot(0, 1)
+c.measure(0, 1)
 
-# Fixed qubit count
-c = Circuit(4)
-
-# Named registers
-c = Circuit(qregs={"data": 4, "ancilla": 2})
+print(c.originir)
+print(c.qasm)
 ```
 
-### Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `originir` | `str` | Circuit in OriginIR format |
-| `qasm` | `str` | Circuit in OpenQASM 2.0 format |
-| `circuit` | `str` | Alias for `originir` |
-| `qubit_num` | `int` | Total number of qubits |
-| `cbit_num` | `int` | Total number of classical bits |
-| `depth` | `int` | Circuit depth (computed) |
-| `max_qubit` | `int` | Highest qubit index used |
-| `used_qubit_list` | `list[int]` | Qubits referenced in circuit |
-| `measure_list` | `list[int]` | Qubits scheduled for measurement |
-| `opcode_list` | `list[OpCode]` | Internal gate opcodes |
-| `qregs` | `dict[str, QReg]` | Named quantum registers |
-
-### Named Registers
+## 初始化方式
 
 ```python
-c = Circuit(qregs={"data": 4, "ancilla": 2})
+from uniqc.circuit_builder import Circuit
 
-# Access register
-data_reg = c.get_qreg("data")
-# data_reg.qubits -> [Qubit("data", 0, 0), Qubit("data", 1, 1), ...]
-
-# Use register in gates
-c.h(data_reg[0])    # Hadamard on data[0]
-c.x(data_reg[1:3])  # X on data[1], data[2]
+c = Circuit()          # 自动按使用到的 qubit 推断
+c = Circuit(4)         # 固定 qubit 数
+c = Circuit(qregs={"data": 4, "ancilla": 2})  # 命名寄存器
 ```
 
-## Single-Qubit Gates (No Parameters)
+## 常用属性
 
-| Method | Gate | Description |
-|--------|------|-------------|
-| `c.h(qn)` | Hadamard | Equal superposition |
-| `c.x(qn)` | Pauli-X | Bit flip |
-| `c.y(qn)` | Pauli-Y | Bit+phase flip |
-| `c.z(qn)` | Pauli-Z | Phase flip |
-| `c.s(qn)` | S gate | Phase π/2 |
-| `c.sdg(qn)` | S-dagger | Phase -π/2 |
-| `c.t(qn)` | T gate | Phase π/4 |
-| `c.tdg(qn)` | T-dagger | Phase -π/4 |
-| `c.sx(qn)` | √X | Square-root of X |
-| `c.sxdg(qn)` | √X-dagger | Adjoint of √X |
-| `c.identity(qn)` | I | Identity (no-op) |
+| 属性 | 含义 |
+|------|------|
+| `originir` | OriginIR 文本 |
+| `qasm` | OpenQASM 2.0 文本 |
+| `circuit` | 一般可视为 `originir` 别名 |
+| `qubit_num` | 当前线路的 qubit 数 |
+| `cbit_num` | 当前线路的 classical bit 数 |
+| `depth` | 线路深度 |
+| `used_qubit_list` | 实际用到的 qubit |
+| `measure_list` | 已加入测量的 qubit |
+| `opcode_list` | 内部 opcode 列表 |
 
-All accept `QubitInput`: `int`, `Qubit`, or `QRegSlice`.
+## 常用门
 
-## Parametric Single-Qubit Gates
-
-| Method | Parameters | Description |
-|--------|-----------|-------------|
-| `c.rx(qn, theta)` | `theta: float` | X-axis rotation |
-| `c.ry(qn, theta)` | `theta: float` | Y-axis rotation |
-| `c.rz(qn, theta)` | `theta: float` | Z-axis rotation |
-| `c.rphi(qn, theta, phi)` | `theta, phi: float` | Arbitrary axis rotation |
-| `c.u1(qn, lam)` | `lam: float` | U1 gate (phase) |
-| `c.u2(qn, phi, lam)` | `phi, lam: float` | U2 gate |
-| `c.u3(qn, theta, phi, lam)` | `theta, phi, lam: float` | U3 gate (general) |
-
-## Two-Qubit Gates
-
-| Method | Description |
-|--------|-------------|
-| `c.cnot(ctrl, tgt)` | CNOT (controlled-X) |
-| `c.cx(ctrl, tgt)` | Alias for CNOT |
-| `c.cz(q1, q2)` | Controlled-Z |
-| `c.swap(q1, q2)` | SWAP |
-| `c.iswap(q1, q2)` | iSWAP |
-| `c.xx(q1, q2, theta)` | XX Ising interaction |
-| `c.yy(q1, q2, theta)` | YY Ising interaction |
-| `c.zz(q1, q2, theta)` | ZZ Ising interaction |
-| `c.phase2q(q1, q2, t1, t2, tzz)` | Two-qubit phase |
-| `c.uu15(q1, q2, params)` | General 2-qubit (15 params) |
-
-## Three-Qubit Gates
-
-| Method | Description |
-|--------|-------------|
-| `c.toffoli(q1, q2, q3)` | Toffoli (CCNOT) |
-| `c.cswap(q1, q2, q3)` | Fredkin (controlled SWAP) |
-
-## Measurement
+### 单比特门
 
 ```python
-c.measure(0)           # Measure single qubit
-c.measure(0, 1, 2)     # Measure multiple qubits
+c.h(0)
+c.x(0)
+c.y(0)
+c.z(0)
+c.s(0)
+c.t(0)
+c.sx(0)
+c.sxdg(0)
+c.identity(0)
 ```
 
-- Multiple calls accumulate measurements
-- Classical bit indices assigned in order
-- Cannot be called inside `control()` or `dagger()` contexts
-
-## Context Managers
-
-### Controlled Operations
+### 旋转门
 
 ```python
-with c.control(0):       # Single control qubit
-    c.x(1)               # -> CNOT(0, 1)
-    c.z(2)               # -> CZ(0, 2)
-
-with c.control(0, 1):   # Multiple control qubits
-    c.x(2)               # -> Toffoli(0, 1, 2)
+c.rx(0, theta)
+c.ry(0, theta)
+c.rz(0, theta)
+c.rphi(0, theta, phi)
+c.u1(0, lam)
+c.u2(0, phi, lam)
+c.u3(0, theta, phi, lam)
 ```
 
-Low-level API:
+### 双比特 / 三比特门
+
 ```python
-c.set_control(0)
-c.x(1)
-c.unset_control()
+c.cnot(0, 1)
+c.cx(0, 1)
+c.cz(0, 1)
+c.swap(0, 1)
+c.iswap(0, 1)
+c.xx(0, 1, theta)
+c.yy(0, 1, theta)
+c.zz(0, 1, theta)
+c.phase2q(0, 1, t1, t2, tzz)
+c.uu15(0, 1, params)
+
+c.toffoli(0, 1, 2)
+c.cswap(0, 1, 2)
 ```
 
-### Dagger (Adjoint) Operations
+## 测量
 
 ```python
+c.measure(0)
+c.measure(0, 1, 2)
+```
+
+测量会按调用顺序分配 classical bit。
+
+## 控制与 dagger 上下文
+
+```python
+with c.control(0):
+    c.x(1)
+    c.z(2)
+
 with c.dagger():
     c.h(0)
     c.rx(1, 0.5)
 ```
 
-Low-level API:
+## 命名寄存器
+
 ```python
-c.set_dagger()
-c.h(0)
-c.unset_dagger()
+c = Circuit(qregs={"data": 4, "anc": 2})
+data = c.get_qreg("data")
+
+c.h(data[0])
+c.cnot(data[0], data[1])
 ```
 
-## Remapping
-
-Remap qubit indices for hardware topology compatibility:
+常用类型：
 
 ```python
-# Remap logical qubits to physical qubits
-mapped = c.remapping({0: 3, 1: 5, 2: 1, 3: 4})
+from uniqc.circuit_builder import Qubit, QReg, QRegSlice
 ```
 
-- Returns a new `Circuit` (original unchanged)
-- All keys and values must be non-negative integers
-- Each physical qubit can only be assigned once
-- All used qubits must appear in the mapping
+## 参数与可复用电路
 
-## Circuit Composition
+可复用子线路一般通过 `circuit_def` / `NamedCircuit` 表达：
 
 ```python
-# Copy a circuit
+from uniqc.circuit_builder import Circuit, circuit_def
+
+@circuit_def(name="bell_pair", qregs={"q": 2})
+def bell_pair(circ, q):
+    circ.h(q[0])
+    circ.cnot(q[0], q[1])
+    return circ
+
+c = Circuit(2)
+bell_pair(c, qreg_mapping={"q": [0, 1]})
+```
+
+如果用户需要参数化子线路，优先沿这条路径组织，而不是手工约定一套外部模板格式。
+
+## 复制、拼接、重映射
+
+```python
 c2 = c.copy()
+c2.add_circuit(other)
 
-# Add gates from another circuit
-c.add_circuit(other_circuit)
+mapped = c.remapping({0: 3, 1: 5})
 ```
 
-## Barrier
+`remapping()` 返回新线路，不会原地改动。
+
+## 屏障
 
 ```python
-c.barrier(0, 1, 2)  # Insert barrier on specified qubits
+c.barrier(0, 1, 2)
 ```
 
-## Qubit Types
+## 输出建议
 
-### Qubit
+最稳妥的导出方式通常是：
 
-```python
-from qpandalite.circuit_builder import Qubit
+- 需要 CLI、云提交、dummy 模式时：优先 `originir`
+- 需要和第三方工具交换时：使用 `qasm`
 
-q = Qubit(name="data", index=0, base_index=0)
-# int(q) -> 0
-```
-
-### QReg
-
-```python
-from qpandalite.circuit_builder import QReg
-
-qr = QReg(name="data", size=4, base_index=0)
-# qr.qubits -> list of Qubit objects
-# qr[0] -> Qubit("data", 0, 0)
-# qr[1:3] -> QRegSlice
-```
-
-### Parameters
-
-```python
-from qpandalite.circuit_builder import Parameter, Parameters
-
-# Named parameter
-p = Parameter("theta")
-p.bind(1.57)           # Bind a value
-p.evaluate()           # Returns 1.57
-p.is_bound             # True
-
-# Parameter array
-ps = Parameters("weights", size=8)
-ps.bind([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
-ps[0].evaluate()       # 0.1
-len(ps)                # 8
-```
+如果后续步骤涉及 `uniqc simulate`，建议先把输入统一到 OriginIR，再继续执行。

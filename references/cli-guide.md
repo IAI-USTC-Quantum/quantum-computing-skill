@@ -1,322 +1,170 @@
-# CLI Guide Reference
+# CLI 使用参考
 
-Complete reference for the QPanda-lite command-line interface.
-
-## Overview
-
-The CLI is built with Typer and accessible via:
-```bash
-qpandalite <command> [options]
-python -m qpandalite <command> [options]
-```
-
-Available commands: `circuit`, `simulate`, `submit`, `result`, `task`, `config`
-
-## circuit - Format Conversion
-
-Convert between OriginIR and OpenQASM 2.0 formats, display circuit statistics.
+UnifiedQuantum 当前的 CLI 入口是：
 
 ```bash
-qpandalite circuit <input_file> [options]
+uniqc
 ```
 
-### Arguments
-
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `input_file` | Yes | Input circuit file (OriginIR or QASM) |
-
-### Options
-
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--format` | `-f` | None | Output format: `originir` or `qasm` |
-| `--output` | `-o` | None | Output file path (default: stdout) |
-| `--info` | | False | Show circuit statistics |
-
-### Examples
+等价 Python 入口：
 
 ```bash
-# Convert OriginIR to QASM
-qpandalite circuit bell_state.oir --format qasm -o bell_state.qasm
-
-# Show circuit info
-qpandalite circuit bell_state.oir --info
-
-# Convert QASM to OriginIR
-qpandalite circuit bell_state.qasm --format originir
+python3 -m uniqc
 ```
 
-## simulate - Local Simulation
+## 命令总览
 
-Simulate quantum circuits locally using statevector or density matrix backends.
+- `uniqc circuit`
+- `uniqc simulate`
+- `uniqc submit`
+- `uniqc result`
+- `uniqc task`
+- `uniqc config`
+
+## 一条稳妥的 Shell 工作流
+
+如果输入来自 QASM，推荐先归一化：
 
 ```bash
-qpandalite simulate <input_file> [options]
+uniqc circuit input.qasm --format originir -o normalized.ir
+uniqc simulate normalized.ir
+uniqc submit normalized.ir --platform dummy --wait
 ```
 
-### Arguments
+这样比直接把多种格式混进不同命令里更稳。
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `input_file` | Yes | Circuit file (OriginIR or QASM) |
+## `uniqc circuit`
 
-### Options
-
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--backend` | `-b` | `statevector` | Backend type: `statevector` or `density` |
-| `--shots` | `-s` | 1024 | Number of measurement shots |
-| `--format` | `-f` | `table` | Output format: `table` or `json` |
-| `--output` | `-o` | None | Output file path |
-
-### Examples
+格式转换和统计信息：
 
 ```bash
-# Basic statevector simulation
-qpandalite simulate circuit.oir
-
-# With specific shot count
-qpandalite simulate circuit.oir --shots 4096
-
-# Density matrix backend with JSON output
-qpandalite simulate circuit.oir --backend density --format json
-
-# Save results to file
-qpandalite simulate circuit.oir --shots 1024 -o results.json
+uniqc circuit INPUT_FILE [--format originir|qasm] [--output PATH] [--info]
 ```
 
-## submit - Cloud Submission
-
-Submit circuit files to quantum cloud platforms.
+示例：
 
 ```bash
-qpandalite submit <input_files...> [options]
+uniqc circuit bell.ir --format qasm -o bell.qasm
+uniqc circuit bell.qasm --format originir -o bell.ir
+uniqc circuit bell.ir --info
 ```
 
-### Arguments
+## `uniqc simulate`
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `input_files` | Yes | One or more circuit files to submit |
-
-### Options
-
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--platform` | `-p` | Required | Platform: `originq`, `quafu`, `ibm`, `dummy` |
-| `--chip-id` | | None | Target chip ID for the platform |
-| `--shots` | `-s` | 1000 | Number of measurement shots |
-| `--name` | | None | Task name |
-| `--wait` | `-w` | False | Wait for result after submission |
-| `--timeout` | | 300.0 | Timeout in seconds when waiting |
-| `--format` | `-f` | `table` | Output format: `table` or `json` |
-
-### Platform Details
-
-**OriginQ (`originq`)**:
-- Requires `QPANDA_API_KEY` environment variable or config entry
-- Available chips: varies by account
-
-**Quafu (`quafu`)**:
-- Requires `QUAFU_API_TOKEN` environment variable or config entry
-- Chips: `ScQ-P10`, `ScQ-P18`, `ScQ-P136`, etc.
-- Specify chip with `--chip-id`
-
-**IBM Quantum (`ibm`)**:
-- Requires `IBM_TOKEN` environment variable or config entry
-- Uses Qiskit adapter internally
-
-**Dummy (`dummy`)**:
-- No credentials required
-- Local simulation for testing
-- Enable globally: `export QPANDALITE_DUMMY=true`
-
-### Examples
+本地模拟：
 
 ```bash
-# Submit to OriginQ
-qpandalite submit circuit.oir --platform originq --shots 1000
-
-# Submit to Quafu with specific chip
-qpandalite submit circuit.oir --platform quafu --chip-id ScQ-P10 --shots 2000
-
-# Submit and wait for result
-qpandalite submit circuit.oir --platform originq --wait --timeout 600
-
-# Submit multiple circuits
-qpandalite submit circuit1.oir circuit2.oir --platform originq --name "batch-experiment"
-
-# Test with dummy platform
-qpandalite submit circuit.oir --platform dummy --shots 100
+uniqc simulate INPUT_FILE [--backend statevector] [--shots 1024] [--format table|json]
 ```
 
-## result - Query Results
-
-Query task results from quantum cloud platforms.
+示例：
 
 ```bash
-qpandalite result <task_id> [options]
+uniqc simulate bell.ir
+uniqc simulate bell.ir --shots 4096 --format json
 ```
 
-### Arguments
+注意：
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `task_id` | Yes | Task ID returned by submit |
+- 当前最安全的输入是 OriginIR
+- 本地模拟通常需要安装 `unified-quantum[simulation]`
+- 当前 CLI 的 `simulate` 路径最适合 `statevector`
+- 密度矩阵工作流更建议走 Python API，并显式使用 `OriginIR_Simulator(backend_type="densitymatrix")`
 
-### Options
+## `uniqc submit`
 
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--platform` | `-p` | None | Platform name |
-| `--wait` | `-w` | False | Wait for result if still running |
-| `--timeout` | | 300.0 | Timeout in seconds when waiting |
-| `--format` | `-f` | `table` | Output format: `table` or `json` |
-
-### Examples
+提交云任务或 dummy 任务：
 
 ```bash
-# Get result
-qpandalite result abc-123-def --platform originq
-
-# Wait for running task
-qpandalite result abc-123-def --platform originq --wait --timeout 600
+uniqc submit INPUT_FILES... --platform originq|quafu|ibm|dummy
 ```
 
-## task - Task Management
-
-Manage submitted quantum computing tasks.
+当前可见选项：
 
 ```bash
-qpandalite task <subcommand> [options]
+--platform / -p
+--backend / -b
+--shots / -s
+--name
+--wait / -w
+--timeout
+--format / -f
 ```
 
-### Subcommands
-
-#### list - List Tasks
+示例：
 
 ```bash
-qpandalite task list [options]
+uniqc submit bell.ir --platform originq --shots 1000
+uniqc submit bell.ir --platform originq --backend origin:wuyuan:d5
+uniqc submit bell.ir --platform dummy --wait
+uniqc submit a.ir b.ir --platform quafu --shots 2000
 ```
 
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--status` | | None | Filter: `pending`, `running`, `success`, `failed` |
-| `--platform` | `-p` | None | Filter by platform |
-| `--limit` | `-l` | 20 | Maximum tasks to display |
-| `--format` | `-f` | `table` | Output format: `table` or `json` |
+关键区别：
 
-#### show - Show Task Details
+- 当前 CLI 用的是 `--backend`，不是一些旧示例里常见的 `--chip-id`
+- 对 OriginQ，`--backend` 常用于指定硬件名，例如 `origin:wuyuan:d5`
+- 对 Quafu，底层 Python API 仍可传 `chip_id`，但当前 CLI 没有单独的 `--chip-id`
+
+## `uniqc result`
+
+查询任务结果：
 
 ```bash
-qpandalite task show <task_id>
+uniqc result TASK_ID [--platform PLATFORM] [--wait] [--timeout 300] [--format table|json]
 ```
 
-#### clear - Clear Task History
+示例：
 
 ```bash
-qpandalite task clear
+uniqc result abc123 --platform originq
+uniqc result abc123 --wait --timeout 600
 ```
 
-## config - Configuration
+如果任务已经在本地 cache 里，通常可以少传一点参数；如果不在 cache 里，再补 `--platform`。
 
-Manage API keys, tokens, and configuration profiles.
+## `uniqc task`
+
+本地任务缓存管理：
 
 ```bash
-qpandalite config <subcommand> [options]
+uniqc task list
+uniqc task show TASK_ID
+uniqc task clear
 ```
 
-### Subcommands
+可用选项包括：
 
-#### init - Initialize Configuration
+- `task list --status ... --platform ... --limit ... --format ...`
+- `task clear --status ... --force`
+
+## `uniqc config`
+
+配置 `~/.uniqc/uniqc.yml`：
 
 ```bash
-qpandalite config init
+uniqc config init
+uniqc config set originq.token YOUR_TOKEN
+uniqc config get originq
+uniqc config list
+uniqc config validate
+uniqc config profile list
+uniqc config profile create dev
+uniqc config profile use dev
 ```
 
-Creates `~/.qpandalite/qpandalite.yml` with default structure.
+## 配置 profile 与环境变量
 
-#### set - Set Configuration Value
+- 默认 profile：`default`
+- 当前激活 profile 可写进配置文件
+- 临时覆盖可用：
 
 ```bash
-qpandalite config set <key> <value>
+export UNIQC_PROFILE=dev
 ```
 
-Common keys:
-```bash
-qpandalite config set originq.token YOUR_TOKEN
-qpandalite config set originq.submit_url https://...
-qpandalite config set originq.query_url https://...
-qpandalite config set quafu.token YOUR_TOKEN
-qpandalite config set ibm.token YOUR_TOKEN
-```
+## 常见误区
 
-#### get - Get Configuration Value
-
-```bash
-qpandalite config get <key>
-```
-
-#### list - List All Configuration
-
-```bash
-qpandalite config list
-```
-
-#### validate - Validate Configuration
-
-```bash
-qpandalite config validate
-```
-
-Checks that all required tokens and URLs are set for configured platforms.
-
-#### profile - Manage Profiles
-
-```bash
-qpandalite config profile list              # List profiles
-qpandalite config profile create <name>      # Create new profile
-qpandalite config profile use <name>         # Switch active profile
-```
-
-## Complete CLI Session Example
-
-```bash
-# 1. Initialize configuration
-qpandalite config init
-
-# 2. Set up API tokens
-qpandalite config set originq.token YOUR_TOKEN
-
-# 3. Create a circuit file
-cat > bell_state.oir << 'EOF'
-QINIT 2
-CREG 2
-H q[0]
-CNOT q[0],q[1]
-MEASURE q[0],c[0]
-MEASURE q[1],c[1]
-EOF
-
-# 4. Check circuit info
-qpandalite circuit bell_state.oir --info
-
-# 5. Convert to QASM
-qpandalite circuit bell_state.oir --format qasm -o bell_state.qasm
-
-# 6. Simulate locally
-qpandalite simulate bell_state.oir --shots 4096 --format json
-
-# 7. Submit to cloud
-qpandalite submit bell_state.oir --platform originq --shots 1000 --name "bell-test"
-
-# 8. Check task status
-qpandalite task list --platform originq
-
-# 9. Get result (when ready)
-qpandalite result <task-id> --platform originq
-
-# 10. Test with dummy platform
-qpandalite submit bell_state.oir --platform dummy --shots 100
-```
+- 不要再把 CLI 讲成旧版的 `chip-id` 优先接口
+- 不要假设裸环境一定能直接 `simulate`
+- 不要默认系统里有 `python`；脚本示例优先写 `python3` 或 `uv run`

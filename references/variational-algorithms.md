@@ -1,255 +1,116 @@
-# Variational Algorithms Reference
+# 变分算法参考
 
-Complete reference for variational quantum algorithms in QPanda-lite.
+当前 UnifiedQuantum 对变分算法更适合从“ansatz 构造器 + 自己的目标函数 / 优化器”来理解，而不是依赖一套过度封装的旧接口。
 
-## Available Ansatzes
-
-### HEA - Hardware-Efficient Ansatz
-
-Hardware-efficient parameterized circuit suitable for NISQ devices.
+## 当前公开 ansatz
 
 ```python
-from qpandalite.algorithmics.ansatz import hea
+from uniqc.algorithmics.ansatz import hea, qaoa_ansatz, uccsd_ansatz
+```
+
+注意：
+
+- `uccsd_ansatz` 才是当前公开名字
+- 如果用户拿的是旧示例，注意当前公开名字不是旧的 `uccsd`
+
+## HEA
+
+```python
+from uniqc.algorithmics.ansatz import hea
 
 circuit = hea(
-    n_qubits=4,       # Number of qubits
-    depth=2,           # Number of repeated layers (default: 1)
-    qubits=None,       # Qubit indices (default: list(range(n_qubits)))
-    params=None        # Rotation angles (default: random initialization)
+    n_qubits=4,
+    depth=2,
+    params=params,  # 长度应为 2 * n_qubits * depth
 )
 ```
 
-#### Parameters
+特点：
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `n_qubits` | `int` | required | Number of qubits |
-| `depth` | `int` | 1 | Number of repeated layers |
-| `qubits` | `list[int]` | `None` | Qubit indices (default: `list(range(n_qubits))`) |
-| `params` | `np.ndarray` | `None` | 1-D array of rotation angles |
+- 结构轻
+- NISQ 友好
+- 常用于最小 VQE / VQC 示例
 
-**Total parameters**: `2 * n_qubits * depth`
-
-#### Circuit Structure
-
-Each layer consists of:
-
-1. **Single-qubit rotations** on every qubit:
-   - `Rz(q_i, θ_{2i})`
-   - `Ry(q_i, θ_{2i+1})`
-
-2. **Entangling layer** (ring topology):
-   - `CNOT(q_i, q_{(i+1) % n})` for i = 0, 1, ..., n-1
-
-#### Example
+## QAOA ansatz
 
 ```python
-import numpy as np
-from qpandalite.algorithmics.ansatz import hea
+from uniqc.algorithmics.ansatz import qaoa_ansatz
 
-# Create 4-qubit HEA with 2 layers (16 parameters)
-circuit = hea(n_qubits=4, depth=2)
-
-# With specific parameters
-params = np.zeros(16)  # 2 * 4 * 2 = 16
-circuit = hea(n_qubits=4, depth=2, params=params)
-
-# Random initialization (default)
-circuit = hea(n_qubits=4, depth=3)
-# Total params: 2 * 4 * 3 = 24
-```
-
-### UCCSD - Unitary Coupled-Cluster Singles and Doubles
-
-Chemistry-native ansatz for molecular simulation.
-
-```python
-from qpandalite.algorithmics.ansatz import uccsd_ansatz
-
-circuit = uccsd_ansatz(
-    n_qubits=4,       # Number of qubits
-    n_electrons=2      # Number of electrons
-)
-```
-
-#### Parameters
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `n_qubits` | `int` | Number of qubits (spin orbitals) |
-| `n_electrons` | `int` | Number of electrons |
-
-Use for: molecular ground state search, chemistry VQE.
-
-### QAOA - Quantum Approximate Optimization Algorithm
-
-Ansatz for combinatorial optimization problems.
-
-```python
-from qpandalite.algorithmics.ansatz import qaoa_ansatz
+cost_hamiltonian = [
+    ("Z0Z1", 1.0),
+    ("Z1Z2", 1.0),
+]
 
 circuit = qaoa_ansatz(
-    cost_terms,        # Cost Hamiltonian terms
-    p=2                # Number of QAOA layers (depth)
+    cost_hamiltonian,
+    p=2,
+    betas=betas,
+    gammas=gammas,
 )
 ```
 
-#### Parameters
+要点：
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `cost_terms` | `list[tuple[str, float]]` | Pauli string and coefficient pairs |
-| `p` | `int` | Number of QAOA layers |
+- `cost_hamiltonian` 形如 `[(pauli_string, coefficient), ...]`
+- `betas`、`gammas` 长度都应等于 `p`
+- 如果不给，构造器会随机初始化
 
-#### Cost Hamiltonian Format
+## UCCSD ansatz
 
 ```python
-# MaxCut on triangle graph
-cost_terms = [
-    ("Z0Z1", 0.5),
-    ("Z1Z2", 0.5),
-    ("Z0Z2", 0.5),
-]
+from uniqc.algorithmics.ansatz import uccsd_ansatz
+
+circuit = uccsd_ansatz(
+    n_qubits=4,
+    n_electrons=2,
+    params=params,
+)
 ```
 
-## Optimization Patterns
+要点：
 
-### Gradient-Free Optimization (COBYLA/Nelder-Mead)
+- 适合量子化学风格任务
+- 默认先准备 Hartree-Fock 初态
+- 参数长度取决于单激发 / 双激发计数
+
+## 一个典型 VQE 结构
+
+UnifiedQuantum 当前更推荐这样组织 VQE：
+
+1. 选 ansatz
+2. 写一个目标函数
+3. 在目标函数里调用模拟器得到概率或态矢
+4. 用 `scipy.optimize.minimize` 或你自己的优化器迭代
+
+示意：
 
 ```python
 import numpy as np
 from scipy.optimize import minimize
-from qpandalite.algorithmics.ansatz import hea
-from qpandalite.simulator import OriginIR_Simulator
+from uniqc.algorithmics.ansatz import hea
+from uniqc.simulator import OriginIR_Simulator
+from uniqc.analyzer import calculate_expectation
 
-sim = OriginIR_Simulator(backend_type='statevector')
+sim = OriginIR_Simulator(backend_type="statevector")
 
 def objective(params):
-    circuit = hea(n_qubits=4, depth=2, params=params)
-    sv = sim.simulate_statevector(circuit.originir)
-    # Compute energy or cost from statevector
-    energy = compute_energy(sv, hamiltonian)
-    return energy
+    circuit = hea(n_qubits=2, depth=1, params=params)
+    probs = sim.simulate_pmeasure(circuit.originir)
+    return calculate_expectation(probs, "ZZ")
 
-n_params = 2 * 4 * 2  # 16 for 4-qubit depth-2 HEA
-result = minimize(
-    objective,
-    x0=np.random.uniform(0, 2*np.pi, n_params),
-    method='COBYLA',
-    options={'maxiter': 200}
-)
-print(f"Optimal energy: {result.fun}")
-print(f"Optimal params: {result.x}")
+result = minimize(objective, x0=np.zeros(4), method="COBYLA")
 ```
 
-### Coordinate Descent Optimization
+## 一个典型 QAOA 结构
 
-```python
-def coordinate_descent(objective, n_params, max_iter=50):
-    """Optimize one parameter at a time."""
-    params = np.random.uniform(0, 2*np.pi, n_params)
-    best_value = objective(params)
+1. 从图构造 cost Hamiltonian
+2. 用 `qaoa_ansatz()` 生成电路
+3. 用概率分布评估 cut value
+4. 优化 `betas` / `gammas`
 
-    for iteration in range(max_iter):
-        improved = False
-        for i in range(n_params):
-            # Try shifting parameter i
-            original = params[i]
-            for delta in [0.1, -0.1, 0.5, -0.5]:
-                params[i] = original + delta
-                new_value = objective(params)
-                if new_value < best_value:
-                    best_value = new_value
-                    improved = True
-                    break
-            else:
-                params[i] = original
+## 使用这些 ansatz 时记住
 
-        if not improved:
-            break
-
-    return params, best_value
-```
-
-### Parameter-Shift Gradient
-
-```python
-from qpandalite.pytorch import compute_all_gradients
-
-def gradient_based_optimization(circuit_template, expectation_fn, n_steps=100, lr=0.01):
-    """Optimize using parameter-shift rule for gradients."""
-    params = np.random.uniform(0, 2*np.pi, n_params)
-
-    for step in range(n_steps):
-        # Compute gradients via parameter-shift rule
-        circuit = build_circuit(params)
-        grads = compute_all_gradients(circuit, expectation_fn)
-
-        # Gradient descent update
-        for name, grad in grads.items():
-            idx = param_name_to_index(name)
-            params[idx] -= lr * grad
-
-    return params
-```
-
-## VQE Workflow Pattern
-
-```python
-from qpandalite.algorithmics.ansatz import hea
-from qpandalite.simulator import OriginIR_Simulator
-from scipy.optimize import minimize
-
-def vqe(hamiltonian, n_qubits, ansatz_depth=2, maxiter=200):
-    """Variational Quantum Eigensolver workflow."""
-    sim = OriginIR_Simulator(backend_type='statevector')
-    n_params = 2 * n_qubits * ansatz_depth
-
-    def objective(params):
-        circuit = hea(n_qubits, depth=ansatz_depth, params=params)
-        sv = sim.simulate_statevector(circuit.originir)
-        energy = 0.0
-        for pauli_str, coeff in hamiltonian:
-            exp_val = compute_pauli_expectation(sv, pauli_str)
-            energy += coeff * exp_val
-        return energy
-
-    result = minimize(
-        objective,
-        x0=np.random.uniform(0, 2*np.pi, n_params),
-        method='COBYLA',
-        options={'maxiter': maxiter}
-    )
-    return result.fun, result.x
-```
-
-## QAOA Workflow Pattern
-
-```python
-def qaoa_maxcut(edges, p=2, maxiter=100):
-    """QAOA for MaxCut problem."""
-    # Build cost Hamiltonian
-    cost_terms = [(f"Z{i}Z{j}", 0.5) for i, j in edges]
-    for i, j in edges:
-        cost_terms.append((f"I", -0.5))  # Constant offset
-
-    # Create QAOA circuit
-    circuit = qaoa_ansatz(cost_terms, p=p)
-
-    # Optimize
-    sim = OriginIR_Simulator()
-    # ... optimization loop ...
-```
-
-## Choosing an Ansatz
-
-| Ansatz | Best For | Parameters | Hardware Friendly |
-|--------|----------|------------|-------------------|
-| HEA | General VQE, QML | `2*n_qubits*depth` | Yes |
-| UCCSD | Molecular simulation | Varies with system | No (deep circuits) |
-| QAOA | Combinatorial optimization | `2*p` | Moderate |
-
-### HEA vs UCCSD for Chemistry
-
-- **HEA**: Shallow circuits, hardware-efficient, more parameters needed, may converge to local minima
-- **UCCSD**: Physics-informed, fewer parameters for chemistry, deep circuits, better accuracy for small molecules
+- 把 ansatz 当作“线路生成器”来解释
+- 把优化器和目标函数当作用户可替换部分
+- 不要把示例当成“唯一正确范式”
+- 如果示例依赖本地模拟，明确标出 `simulation` extra

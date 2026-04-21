@@ -1,238 +1,106 @@
-# PyTorch Integration Reference
+# PyTorch 集成参考
 
-Complete reference for using QPanda-lite with PyTorch for quantum machine learning.
+UnifiedQuantum 当前的 PyTorch 集成是辅助工具风格，而不是“一整套端到端训练框架”。
 
-## Overview
+基础安装：
 
-QPanda-lite provides PyTorch integration for hybrid quantum-classical models:
+```bash
+pip install "unified-quantum[pytorch]"
+```
 
-- `QuantumLayer`: PyTorch `nn.Module` wrapping a quantum circuit
-- `parameter_shift_gradient`: Compute gradients via parameter-shift rule
-- `compute_all_gradients`: Compute all parameter gradients at once
-- `batch_execute`: Parallel circuit evaluation
+如果需要 TorchQuantum：
 
-## QuantumLayer
+```bash
+pip install "unified-quantum[torchquantum]"
+```
 
-Wraps a quantum circuit as a differentiable PyTorch layer.
+## 当前公开接口
 
 ```python
-from qpandalite.pytorch import QuantumLayer
-
-qlayer = QuantumLayer(
-    circuit,              # Circuit template (with Parameter objects)
-    expectation_fn,       # Callable: Circuit -> float
-    n_outputs=1,          # Number of output values
-    init_params=None,     # Initial parameter values (torch.Tensor)
-    shift=np.pi / 2       # Parameter-shift step size
+from uniqc.pytorch import (
+    QuantumLayer,
+    batch_execute,
+    batch_execute_with_params,
+    parameter_shift_gradient,
+    compute_all_gradients,
 )
 ```
 
-### Parameters
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `circuit` | `Circuit` | required | Circuit template with named Parameters |
-| `expectation_fn` | `Callable[[Circuit], float]` | required | Function computing expectation value |
-| `n_outputs` | `int` | 1 | Number of output features |
-| `init_params` | `torch.Tensor` | `None` | Initial parameter values |
-| `shift` | `float` | `π/2` | Parameter-shift step size |
-
-### Usage
+可选情况下还可能有：
 
 ```python
-import torch
-import torch.nn as nn
-from qpandalite.circuit_builder import Circuit, Parameter
-from qpandalite.pytorch import QuantumLayer
-from qpandalite.simulator import OriginIR_Simulator
-
-# Create circuit template with Parameters
-circuit = Circuit(4)
-theta = Parameter("theta")
-circuit.ry(0, theta)
-# ... more gates ...
-
-# Define expectation function
-sim = OriginIR_Simulator()
-
-def expectation_fn(circuit):
-    probs = sim.simulate_pmeasure(circuit.originir)
-    return probs[0]  # P(|00...0>)
-
-# Create quantum layer
-qlayer = QuantumLayer(circuit, expectation_fn, n_outputs=1)
-
-# Use in PyTorch model
-output = qlayer()  # Forward pass
-output.backward()  # Automatic gradient computation
+from uniqc.pytorch import TorchQuantumLayer
 ```
 
-## Gradient Computation
+## `QuantumLayer`
 
-### parameter_shift_gradient
+`QuantumLayer` 是一个基于 parameter-shift 的 `nn.Module` 包装器。
 
-Compute the gradient of an expectation value with respect to a single parameter using the parameter-shift rule:
+它需要两个核心输入：
 
-```
-∂f/∂θ = [f(θ + s) - f(θ - s)] / (2s)
-```
+1. 一个带参数映射的电路模板
+2. 一个从绑定后线路计算期望值的函数
 
-where `s` is the shift (default: π/2).
+这里要特别保守一点说明：
+
+- `QuantumLayer` 不是“给任意 `Circuit` 一包就能直接训练”
+- 调用方需要准备好一个适配它的参数化线路模板
+- 如果用户只是想先验证思路，通常先用 `parameter_shift_gradient` 或 `batch_execute_with_params` 更稳
+
+因此更稳妥的理解是：把 `QuantumLayer` 当成“已有参数化线路模板后的包装器”，不要把它当成零配置的端到端训练入口。
+
+## Parameter-shift 辅助函数
+
+### 单参数梯度
 
 ```python
-from qpandalite.pytorch import parameter_shift_gradient
+from uniqc.pytorch import parameter_shift_gradient
 
-grad = parameter_shift_gradient(
-    circuit,              # Circuit with bound parameter
-    param_name,           # Name of the parameter to differentiate
-    expectation_fn,       # Expectation value function
-    shift=np.pi / 2       # Shift step size
-)
-# Returns: float (gradient value)
+grad = parameter_shift_gradient(circuit, "theta", expectation_fn)
 ```
 
-### compute_all_gradients
-
-Compute gradients for all parameters simultaneously:
+### 全部参数梯度
 
 ```python
-from qpandalite.pytorch import compute_all_gradients
+from uniqc.pytorch import compute_all_gradients
 
-grads = compute_all_gradients(
-    circuit,              # Circuit with parameters
-    expectation_fn,       # Expectation value function
-    shift=np.pi / 2       # Shift step size
-)
-# Returns: dict[str, float] mapping parameter names to gradient values
+grads = compute_all_gradients(circuit, expectation_fn)
 ```
 
-## Batch Execution
+## 批处理辅助函数
 
-### batch_execute
-
-Evaluate multiple circuits in parallel:
+### 批量执行多个线路
 
 ```python
-from qpandalite.pytorch import batch_execute
+from uniqc.pytorch import batch_execute
 
-results = batch_execute(
-    circuits,             # list[Circuit] to evaluate
-    executor,             # Callable: Circuit -> np.ndarray
-    n_workers=4           # Number of parallel workers
-)
-# Returns: list[np.ndarray]
+results = batch_execute(circuits, executor, n_workers=4)
 ```
 
-### batch_execute_with_params
-
-Evaluate a circuit template with different parameter values:
+### 对一个模板绑定多组参数
 
 ```python
-from qpandalite.pytorch import batch_execute_with_params
+from uniqc.pytorch import batch_execute_with_params
 
 results = batch_execute_with_params(
-    circuit_template,                    # Circuit with Parameters
-    param_values=[                       # List of parameter dicts
-        {"theta": 0.1, "phi": 0.2},
-        {"theta": 0.3, "phi": 0.4},
-        {"theta": 0.5, "phi": 0.6},
-    ],
-    executor=sim.simulate_pmeasure,      # Execution function
-    n_workers=4
+    circuit_template,
+    [{"theta": 0.1}, {"theta": 0.2}],
+    executor,
 )
-# Returns: list[np.ndarray]
 ```
 
-## Hybrid QNN Architecture
+## `TorchQuantumLayer`
 
-### Pattern: Classical Pre-processing + Quantum Layer
+如果用户安装了 `torchquantum`，还可能使用 `TorchQuantumLayer`，它走的是 TorchQuantum 的原生自动求导路径，而不是 parameter-shift。
 
-```python
-import torch
-import torch.nn as nn
-from qpandalite.pytorch import QuantumLayer
+适合场景：
 
-class HybridModel(nn.Module):
-    def __init__(self, n_qubits, qlayer):
-        super().__init__()
-        self.pre = nn.Sequential(
-            nn.Linear(784, 128),
-            nn.ReLU(),
-            nn.Linear(128, n_qubits),
-            nn.Tanh()  # Scale to [-1, 1] for angle encoding
-        )
-        self.qlayer = qlayer
-        self.post = nn.Sequential(
-            nn.Linear(1, 2),  # Binary classification
-            nn.Softmax(dim=-1)
-        )
+- 已经在用 TorchQuantum
+- 想要更“端到端”的可微分体验
 
-    def forward(self, x):
-        x = self.pre(x)      # Classical: 784 -> n_qubits
-        # Use outputs as rotation angles in quantum circuit
-        x = self.qlayer(x)   # Quantum: expectation value
-        x = self.post(x)     # Classical: 1 -> 2 (classes)
-        return x
-```
+## 使用这些接口时记住
 
-### Pattern: Multiple Quantum Layers
-
-```python
-class MultiQuantumModel(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.qlayer1 = QuantumLayer(circuit1, exp_fn1, n_outputs=2)
-        self.qlayer2 = QuantumLayer(circuit2, exp_fn2, n_outputs=2)
-        self.classical = nn.Linear(4, 2)
-
-    def forward(self, x):
-        q1 = self.qlayer1(x)
-        q2 = self.qlayer2(x)
-        combined = torch.cat([q1, q2], dim=-1)
-        return self.classical(combined)
-```
-
-## Training Loop
-
-```python
-import torch
-from torch.utils.data import DataLoader, TensorDataset
-
-def train_hybrid_model(model, X_train, y_train, epochs=50, lr=0.01):
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    criterion = nn.CrossEntropyLoss()
-
-    dataset = TensorDataset(
-        torch.FloatTensor(X_train),
-        torch.LongTensor(y_train)
-    )
-    loader = DataLoader(dataset, batch_size=32, shuffle=True)
-
-    for epoch in range(epochs):
-        total_loss = 0
-        correct = 0
-        total = 0
-
-        for X_batch, y_batch in loader:
-            optimizer.zero_grad()
-            output = model(X_batch)
-            loss = criterion(output, y_batch)
-            loss.backward()
-            optimizer.step()
-
-            total_loss += loss.item()
-            pred = output.argmax(dim=1)
-            correct += (pred == y_batch).sum().item()
-            total += len(y_batch)
-
-        acc = correct / total
-        print(f"Epoch {epoch+1}/{epochs} | Loss: {total_loss:.4f} | Acc: {acc:.4f}")
-```
-
-## Performance Tips
-
-1. **Batch execution**: Use `batch_execute_with_params` for evaluating circuits with different parameters in parallel
-2. **Reduce circuit depth**: Shallower circuits compute faster in simulation
-3. **Cache simulators**: Create simulator once and reuse across calls
-4. **Minimize parameters**: Fewer parameters means fewer gradient evaluations
-5. **Use GPU for classical parts**: Move classical layers to GPU while quantum simulation runs on CPU
+- 把这些工具理解为“辅助工具”
+- 用户仍要自己定义 expectation / loss / optimizer
+- 不要默认 UnifiedQuantum 自带完整数据集管道
+- 如果示例需要 `torchvision`、`scikit-learn` 等第三方库，要单独确认这些依赖
