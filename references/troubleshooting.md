@@ -107,6 +107,12 @@ bash scripts/setup_uniqc.sh
 
 这一层先看**对应版本附近的 release notes、changelog、tag 摘要**就够了，目的是快速判断是不是版本差异导致的，不必一上来就翻完整源码。
 
+UnifiedQuantum 当前可直接从这里看版本摘要：
+
+- Release Notes: `https://iai-ustc-quantum.github.io/UnifiedQuantum/source/releases/index.html`
+
+如果用户拿的是文档站里的说明但本地行为对不上，先把本地版本号和这个页面里的相邻版本条目对一遍，再决定要不要继续查 issue 或源码。
+
 如果已经确认用户直接在 `UnifiedQuantum` 源码 checkout 里工作，且需要判断“当前代码大致落在哪个 tag 附近”，才额外使用：
 
 ```bash

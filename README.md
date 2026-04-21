@@ -2,7 +2,29 @@
 
 面向 [UnifiedQuantum](https://github.com/IAI-USTC-Quantum/UnifiedQuantum) 的本地 skill 仓库。
 
-这个仓库只负责 skill 本体，不负责充当上游源码镜像或完整 API 手册。
+安装后，支持 skills 的 Agent 可以更稳地处理 UnifiedQuantum 相关任务，例如线路构建、OriginIR / QASM 转换、本地模拟、云平台提交、变分算法示例、PyTorch 集成和通用排障。
+
+## 这个 skill 能帮你什么
+
+适合让 Agent 帮你处理这类事情：
+
+- 写或修改 `Circuit` 线路代码
+- 把线路导出成 OriginIR 或 OpenQASM
+- 用 `uniqc` CLI 做转换、模拟、提交和查结果
+- 检查本地模拟、dummy 模式或云平台配置问题
+- 搭一个最小的 VQE / QAOA / UCCSD 示例
+- 看 `QuantumLayer`、parameter-shift 和批处理接口怎么接进 PyTorch
+
+## 你可以直接让 Agent 做什么
+
+安装后，可以直接对 Agent 说这类请求：
+
+- “帮我写一个 Bell state 的 UnifiedQuantum 示例，并导出 OriginIR。”
+- “帮我把这段 QASM 转成更适合 `uniqc simulate` 的流程。”
+- “帮我查一下为什么 `uniqc` 命令存在，但 `import uniqc` 失败。”
+- “帮我写一个最小 QAOA MaxCut 例子。”
+- “帮我看一下 dummy 模式为什么跑不通。”
+- “帮我把这个 PyTorch 训练循环接上 `QuantumLayer`。”
 
 ## 安装此 skill
 
@@ -11,27 +33,20 @@
 一种通用安装方式：
 
 ```bash
-mkdir -p ~/.agents/skills
-ln -s /path/to/quantum-computing-skill ~/.agents/skills/quantum-computing-skill
+mkdir -p ~/.Agents/skills
+ln -s /path/to/quantum-computing-skill ~/.Agents/skills/quantum-computing-skill
 ```
 
 如果你已经有自己的共享 skills 目录，就安装到那个目录里。
 
-这个 README 不展开 `unified-quantum` 本身的安装、`uniqc` CLI 的调用方式或各类 extras。那些决定应该由调用此 skill 的 agent 在交互过程中按环境自动处理，并在需要改动用户环境前与用户确认。
+安装完成后，Agent 就可以从 `SKILL.md` 和 `references/` 里读取更具体的操作规则、主题说明和排障步骤。
 
-## 仓库职责
+## 仓库内容
 
-- `README.md`：给人看的入口，只介绍 skill 的安装方式和仓库职责
-- `SKILL.md`：给 agent 看的主入口，负责触发条件、操作规则和导航
-- `references/`：按主题存放细节；各功能主题自己的排错优先写在对应 reference，通用兜底排错放在 `references/troubleshooting.md`
-- `examples/`：可复用示例
-- `scripts/`：检查和辅助脚本
-
-## 这个仓库不负责什么
-
-- 不维护 `UnifiedQuantum` 上游源码
-- 不提供完整 API 镜像文档
-- 不承诺所有可选功能都在任何环境里默认可用
+- `SKILL.md`：主入口，包含触发条件、操作规则和导航
+- `references/`：按主题整理的使用说明与排障参考
+- `examples/`：可复用的示例代码
+- `scripts/`：环境检查和辅助脚本
 
 ## 许可证
 
