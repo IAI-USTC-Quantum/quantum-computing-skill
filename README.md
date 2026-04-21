@@ -71,7 +71,8 @@ quantum-computing-skill/
 │   ├── cloud-platforms.md
 │   ├── variational-algorithms.md
 │   ├── pytorch-integration.md
-│   └── h2-molecular-simulation.md
+│   ├── h2-molecular-simulation.md
+│   └── version-notes.md
 ├── examples/
 │   ├── basic_circuit.py
 │   ├── cli_demo.sh
@@ -106,6 +107,7 @@ quantum-computing-skill/
 - [references/variational-algorithms.md](references/variational-algorithms.md): `hea`、`qaoa_ansatz`、`uccsd_ansatz`
 - [references/pytorch-integration.md](references/pytorch-integration.md): `QuantumLayer`、parameter-shift、batch helpers
 - [references/h2-molecular-simulation.md](references/h2-molecular-simulation.md): H2 风格任务的建模建议
+- [references/version-notes.md](references/version-notes.md): 只记录会影响使用与排障的重大版本断点
 
 ## License
 

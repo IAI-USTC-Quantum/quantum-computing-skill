@@ -31,6 +31,7 @@ That avoids mismatches between different input paths.
 - Main Python package: `uniqc`
 - Config file: `~/.uniqc/uniqc.yml`
 - Local task cache: `~/.uniqc/cache/tasks.sqlite`
+- If docs or examples do not match the user's install, first identify the interpreter, installed version, and module path, then check [references/version-notes.md](references/version-notes.md)
 
 ## Dependency Boundaries
 
@@ -103,11 +104,13 @@ from uniqc.pytorch import (
 - For ansatz and variational workflows: [references/variational-algorithms.md](references/variational-algorithms.md)
 - For PyTorch helpers: [references/pytorch-integration.md](references/pytorch-integration.md)
 - For H2-style VQE tasks: [references/h2-molecular-simulation.md](references/h2-molecular-simulation.md)
+- For version skew, stale docs, and release-impactful changes: [references/version-notes.md](references/version-notes.md)
 
 ## Response Heuristics
 
 - If the user wants a quick start, start with `Circuit -> originir -> uniqc`.
 - If the user is stuck on cloud execution, verify config and backend-specific kwargs before discussing algorithms.
 - If the user asks about a failing local simulation, check `simulation` dependencies first.
+- If the user reports a missing command, import, extra, or config path, first identify install source/version, then check [references/version-notes.md](references/version-notes.md) early.
 - If the user asks for a modern variational example, start from `hea`, `qaoa_ansatz`, or `uccsd_ansatz`, not legacy helper names.
 - If the user wants a shell workflow, prefer `uniqc` CLI examples over custom wrappers.
