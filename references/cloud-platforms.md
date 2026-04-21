@@ -1,4 +1,4 @@
-# Cloud Platforms Reference
+# 云平台参考
 
 当前 UnifiedQuantum 的云执行路径分两层：
 
@@ -45,7 +45,7 @@ uniqc config set quafu.token YOUR_QUAFU_TOKEN
 uniqc config set ibm.token YOUR_IBM_TOKEN
 ```
 
-## Profile
+## 配置 profile
 
 可通过多 profile 管理不同环境：
 
@@ -61,7 +61,7 @@ uniqc config profile list
 export UNIQC_PROFILE=dev
 ```
 
-## Python Task API
+## Python 任务 API
 
 最常用的公共入口：
 
@@ -141,7 +141,7 @@ result = wait_for_result(task_id, backend="originq", timeout=300)
 - `counts`
 - `probabilities`
 
-## Dummy Mode
+## dummy 模式
 
 dummy 模式用于本地模拟，不消耗真实云平台额度。
 

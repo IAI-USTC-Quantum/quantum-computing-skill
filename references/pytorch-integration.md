@@ -1,6 +1,6 @@
-# PyTorch Integration Reference
+# PyTorch 集成参考
 
-UnifiedQuantum 当前的 PyTorch 集成是 helper 风格，而不是“一整套端到端训练框架”。
+UnifiedQuantum 当前的 PyTorch 集成是辅助工具风格，而不是“一整套端到端训练框架”。
 
 基础安装：
 
@@ -47,9 +47,9 @@ from uniqc.pytorch import TorchQuantumLayer
 - 调用方需要准备好一个适配它的参数化线路模板
 - 如果用户只是想先验证思路，通常先用 `parameter_shift_gradient` 或 `batch_execute_with_params` 更稳
 
-因此在 skill 回答里，优先把 `QuantumLayer` 讲成“已有参数化线路模板后的包装器”，不要把它描述成零配置的端到端训练入口。
+因此在技能回答里，优先把 `QuantumLayer` 讲成“已有参数化线路模板后的包装器”，不要把它描述成零配置的端到端训练入口。
 
-## Parameter-shift Helpers
+## Parameter-shift 辅助函数
 
 ### 单参数梯度
 
@@ -67,7 +67,7 @@ from uniqc.pytorch import compute_all_gradients
 grads = compute_all_gradients(circuit, expectation_fn)
 ```
 
-## Batch Helpers
+## 批处理辅助函数
 
 ### 批量执行多个线路
 
@@ -100,7 +100,7 @@ results = batch_execute_with_params(
 
 ## 文档与示例里应该怎么说
 
-- 把这些工具描述为“helper”
+- 把这些工具描述为“辅助工具”
 - 强调用户仍要自己定义 expectation / loss / optimizer
 - 不要暗示 UnifiedQuantum 自带完整数据集管道
 - 如果示例需要 `torchvision`、`scikit-learn` 等第三方库，额外写清楚，不要混在 `pytorch` extra 里

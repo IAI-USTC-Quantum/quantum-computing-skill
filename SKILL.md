@@ -1,12 +1,18 @@
 ---
 name: quantum-computing-skill
-description: Guide quantum programming with UnifiedQuantum. Use when the user asks about UnifiedQuantum, uniqc, OriginIR, OpenQASM, circuit building, local simulation, cloud submission, dummy mode, VQE, QAOA, UCCSD, quantum ML, or PyTorch integration with UnifiedQuantum. Focus on the current public workflow: build circuits, export IR/QASM, run with uniqc CLI or task_manager, and add optional extras only when needed.
+description: Use when the user asks about UnifiedQuantum, uniqc, OriginIR, OpenQASM, circuit building, local simulation, cloud submission, dummy mode, VQE, QAOA, UCCSD, quantum ML, or PyTorch integration with UnifiedQuantum. Focus on the current public workflow: build circuits, export IR/QASM, run with uniqc CLI or task_manager, and add extras only when needed.
 version: 1.1.0
 ---
 
 # UnifiedQuantum Skill
 
 Use this skill when the user is working with the current UnifiedQuantum public API, CLI, or examples.
+
+## Role Split
+
+- `README.md` is human-facing and intentionally lightweight.
+- `SKILL.md` is agent-facing and should carry the operating rules.
+- `references/*.md` hold feature-specific details; use [references/troubleshooting.md](references/troubleshooting.md) only after feature-specific checks are not enough.
 
 ## Default Approach
 
@@ -22,7 +28,23 @@ When the user gives a QASM circuit, the safest operational path is often:
 1. Convert it to OriginIR with `uniqc circuit`
 2. Simulate or submit the normalized OriginIR
 
-That avoids mismatches between different input paths.
+That reduces mismatches between different input paths.
+
+## Environment And Installation Handling
+
+- Do not expect the user to pre-decide how to install `unified-quantum` or which CLI entrypoint to use.
+- First inspect what already exists in the user's environment: interpreter, installed package, module path, CLI availability, and relevant extras.
+- By default, choose a reasonable installation path automatically based on the environment and try that first.
+- If environment changes are needed but the path is risky, ambiguous, or fails, then confirm the next step with the user.
+- Detect whether the user is currently in `venv`, Conda, Pixi, or system Python before deciding how to install.
+- If `uv` is available, prefer trying an isolated `uv`-based path first.
+- For CLI-oriented workflows, prefer `uv tool install`; it provides strong isolation and makes commands easier to use outside the current repository.
+- For Python API work, prefer installing into the interpreter or environment the user is actually using. If there is no suitable environment yet, prefer a `uv`-managed virtual environment.
+- If the user is already working in the Pixi ecosystem, `pixi global` is an acceptable option. It is also isolated and exposes commands globally, but for this skill it is usually a heavier choice than `uv`.
+- If the current environment is an activated Conda environment, do not mutate it by default. Ask the user whether they want to install into that environment first. If they agree, prefer `pip` inside that environment and avoid mixing changes into the root environment.
+- If the only writable target is system Python, ask the user before installing there.
+- Plain `venv` is also an acceptable fallback. It is not limited to repository-local use, but cross-directory CLI usage often depends on activation or explicit paths, so it is usually less convenient for `uniqc` than `uv tool install` or `pixi global`.
+- If `uv` is unavailable or unsuitable, fall back to `pip`.
 
 ## Things To Keep Straight
 
@@ -31,7 +53,7 @@ That avoids mismatches between different input paths.
 - Main Python package: `uniqc`
 - Config file: `~/.uniqc/uniqc.yml`
 - Local task cache: `~/.uniqc/cache/tasks.sqlite`
-- If docs or examples do not match the user's install, first identify the interpreter, installed version, and module path, then check [references/version-notes.md](references/version-notes.md)
+- If a feature-specific reference still does not explain the problem, fall back to [references/troubleshooting.md](references/troubleshooting.md) for general diagnosis steps.
 
 ## Dependency Boundaries
 
@@ -60,7 +82,7 @@ The current CLI groups are:
 
 Prefer `uniqc` over ad-hoc helper scripts when the user is doing format conversion, local execution, or cloud task management from the shell.
 
-Important current nuance:
+Important current nuances:
 
 - `uniqc submit` uses `--platform` plus optional `--backend`
 - For OriginQ, the CLI option is `--backend`, not the older `--chip-id`
@@ -104,13 +126,14 @@ from uniqc.pytorch import (
 - For ansatz and variational workflows: [references/variational-algorithms.md](references/variational-algorithms.md)
 - For PyTorch helpers: [references/pytorch-integration.md](references/pytorch-integration.md)
 - For H2-style VQE tasks: [references/h2-molecular-simulation.md](references/h2-molecular-simulation.md)
-- For version skew, stale docs, and release-impactful changes: [references/version-notes.md](references/version-notes.md)
+- For general fallback troubleshooting after feature-specific checks: [references/troubleshooting.md](references/troubleshooting.md)
 
 ## Response Heuristics
 
 - If the user wants a quick start, start with `Circuit -> originir -> uniqc`.
-- If the user is stuck on cloud execution, verify config and backend-specific kwargs before discussing algorithms.
-- If the user asks about a failing local simulation, check `simulation` dependencies first.
-- If the user reports a missing command, import, extra, or config path, first identify install source/version, then check [references/version-notes.md](references/version-notes.md) early.
+- If the user is stuck on cloud execution, verify config and backend-specific kwargs first, then fall back to [references/troubleshooting.md](references/troubleshooting.md) if the issue is still unclear.
+- If the user asks about a failing local simulation, check `simulation` dependencies first, then fall back to [references/troubleshooting.md](references/troubleshooting.md) if needed.
+- If the user reports a missing command, import, extra, or config path, first identify install source/version and dependency state, then use [references/troubleshooting.md](references/troubleshooting.md) for the generic diagnosis flow.
+- If installation is required, first try a reasonable environment-based default; only ask the user when that path is unclear, risky, or fails.
 - If the user asks for a modern variational example, start from `hea`, `qaoa_ansatz`, or `uccsd_ansatz`, not legacy helper names.
 - If the user wants a shell workflow, prefer `uniqc` CLI examples over custom wrappers.

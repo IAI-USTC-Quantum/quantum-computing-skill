@@ -1,4 +1,4 @@
-# Circuit Building Reference
+# 线路构建参考
 
 当前 UnifiedQuantum 的核心对象仍然是 `uniqc.circuit_builder.Circuit`。
 
@@ -159,7 +159,7 @@ mapped = c.remapping({0: 3, 1: 5})
 
 `remapping()` 返回新线路，不会原地改动。
 
-## Barrier
+## 屏障
 
 ```python
 c.barrier(0, 1, 2)
@@ -167,7 +167,7 @@ c.barrier(0, 1, 2)
 
 ## 输出建议
 
-当前 skill 仓库里，最推荐的导出方式仍然是：
+当前技能仓库里，最推荐的导出方式仍然是：
 
 - 需要 CLI、云提交、dummy 模式时：优先 `originir`
 - 需要和第三方工具交换时：使用 `qasm`

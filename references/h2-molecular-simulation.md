@@ -1,6 +1,6 @@
-# H2 Molecular Simulation Reference
+# H2 分子模拟参考
 
-这个主题最容易过时，因此这里不再把 skill 写成“自带一套完整、固定的量子化学求解栈”，而是给出当前更稳妥的表达方式。
+这个主题最容易过时，因此这里不再把技能写成“自带一套完整、固定的量子化学求解栈”，而是给出当前更稳妥的表达方式。
 
 ## 推荐的定位
 
@@ -12,7 +12,7 @@
 
 当前 UnifiedQuantum 更适合稳定覆盖前两层。
 
-## Skill 里推荐的 H2 讲法
+## 技能里推荐的 H2 讲法
 
 优先把 H2 任务表述成：
 
@@ -49,7 +49,7 @@ from uniqc.algorithmics.ansatz import uccsd_ansatz
 
 ## 结果估计
 
-当前 skill 更推荐两种估计路线：
+当前技能更推荐两种估计路线：
 
 1. 从 `simulate_pmeasure()` 得到概率分布，再用 `calculate_expectation()` 算 Z 型项
 2. 从 `simulate_statevector()` 得到态矢，在示例里手工实现所需的观测量计算
@@ -59,5 +59,5 @@ from uniqc.algorithmics.ansatz import uccsd_ansatz
 ## 应该明确说出的限制
 
 - H2 示例通常依赖本地模拟能力，因此往往需要 `unified-quantum[simulation]`
-- skill 仓库里的 H2 示例更偏“工作流模板”，不是完整量化化学软件替代品
+- 技能仓库里的 H2 示例更偏“工作流模板”，不是完整量化化学软件替代品
 - 如果用户真的需要从分子几何一路生成哈密顿量，通常还要引入额外化学工具链

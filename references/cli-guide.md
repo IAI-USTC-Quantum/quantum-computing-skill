@@ -1,4 +1,4 @@
-# CLI Guide Reference
+# CLI 使用参考
 
 UnifiedQuantum 当前的 CLI 入口是：
 
@@ -21,7 +21,7 @@ python3 -m uniqc
 - `uniqc task`
 - `uniqc config`
 
-## 一条稳妥的 shell 工作流
+## 一条稳妥的 Shell 工作流
 
 如果输入来自 QASM，推荐先归一化：
 
@@ -153,7 +153,7 @@ uniqc config profile create dev
 uniqc config profile use dev
 ```
 
-## Profile 与环境变量
+## 配置 profile 与环境变量
 
 - 默认 profile：`default`
 - 当前激活 profile 可写进配置文件

@@ -1,4 +1,4 @@
-# Variational Algorithms Reference
+# 变分算法参考
 
 当前 UnifiedQuantum 对变分算法更适合从“ansatz 构造器 + 自己的目标函数 / 优化器”来理解，而不是依赖一套过度封装的旧接口。
 
@@ -31,7 +31,7 @@ circuit = hea(
 - NISQ 友好
 - 常用于最小 VQE / VQC 示例
 
-## QAOA Ansatz
+## QAOA ansatz
 
 ```python
 from uniqc.algorithmics.ansatz import qaoa_ansatz
@@ -55,7 +55,7 @@ circuit = qaoa_ansatz(
 - `betas`、`gammas` 长度都应等于 `p`
 - 如果不给，构造器会随机初始化
 
-## UCCSD Ansatz
+## UCCSD ansatz
 
 ```python
 from uniqc.algorithmics.ansatz import uccsd_ansatz
