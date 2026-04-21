@@ -1,10 +1,42 @@
 ---
 name: quantum-computing-skill
 description: Guide quantum programming with QPanda-lite. Use when the user asks about "quantum circuit", "QPanda", "VQE", "QAOA", "variational quantum", "NISQ", "quantum machine learning", "submit to quantum cloud", "H2 simulation", "HEA ansatz", "UCCSD", "originir", "qasm", "quantum simulator", or discusses building quantum programs, variational algorithms, quantum neural networks, or molecular simulation. Covers circuit construction, CLI commands, local simulation, cloud task submission, and algorithm implementation.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # QPanda-lite Quantum Programming Skill
+
+> **版本要求**: 本SKILL.md基于qpandalite源码编译版本(v0.3.0+)编写。pip安装的qpandalite 0.2.5/0.3.0存在bug，无法提供完整API。
+
+## 安装方式（推荐源码编译）
+
+pip安装版本存在以下问题：
+- **qpandalite 0.2.5**: 缺少`algorithmics`、`pytorch`模块，CLI命令不可用
+- **qpandalite 0.3.0 (pip)**: wheel包包含Python 3.7编译的.so文件，与所有Python版本不兼容
+
+**源码编译安装步骤**：
+```bash
+# 克隆源码（需要git submodules）
+git clone --recurse-submodules https://github.com/Agony5757/QPanda-lite.git
+cd QPanda-lite
+
+# 编译（需要CMake >= 3.26，如系统cmake版本过低请用pip install cmake --upgrade）
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=$(which python3)
+cmake --build build
+
+# 安装
+pip install .
+# 或开发模式
+pip install -e . --no-build-isolation
+```
+
+**验证安装**：
+```bash
+python3 -c "import qpandalite; print(qpandalite.__version__)"
+qpandalite --help  # 应显示CLI帮助信息
+```
+
+---
 
 Provide guidance for quantum programming using QPanda-lite, a lightweight Python-native quantum computing framework for NISQ devices.
 
@@ -28,10 +60,12 @@ Create circuits with the `Circuit` class:
 ```python
 from qpandalite.circuit_builder import Circuit
 
-# Basic initialization
+# Basic initialization (源码版本)
 c = Circuit()          # Empty circuit
-c = Circuit(4)         # 4-qubit circuit
+c = Circuit(4)         # 4-qubit circuit (源码编译版本支持)
 c = Circuit(qregs={"data": 4, "ancilla": 2})  # Named registers
+
+# 注意：pip安装的0.2.5版本Circuit()不接受任何参数
 ```
 
 ### Single-Qubit Gates
