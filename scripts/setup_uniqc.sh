@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installation verification script for UnifiedQuantum examples and skill usage.
+# Installation verification script for UnifiedQuantum examples and common workflows.
 
 set -u
 
@@ -30,7 +30,7 @@ run_py() {
 }
 
 echo "============================================================"
-echo "UnifiedQuantum Skill Environment Check"
+echo "UnifiedQuantum Environment Check"
 echo "============================================================"
 
 echo
@@ -186,7 +186,7 @@ echo -e "Failed: ${RED}${FAILED}${NC}"
 
 if [ "$FAILED" -eq 0 ]; then
   echo
-  echo -e "${GREEN}Environment looks good for the current skill repo.${NC}"
+  echo -e "${GREEN}Environment looks good for the current UnifiedQuantum workflow.${NC}"
 else
   echo
   echo -e "${YELLOW}Some checks failed. Suggested installs:${NC}"

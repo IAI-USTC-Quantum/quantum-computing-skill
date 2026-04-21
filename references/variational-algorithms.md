@@ -11,7 +11,7 @@ from uniqc.algorithmics.ansatz import hea, qaoa_ansatz, uccsd_ansatz
 注意：
 
 - `uccsd_ansatz` 才是当前公开名字
-- 不要再写成旧的 `uccsd`
+- 如果用户拿的是旧示例，注意当前公开名字不是旧的 `uccsd`
 
 ## HEA
 
@@ -108,9 +108,9 @@ result = minimize(objective, x0=np.zeros(4), method="COBYLA")
 3. 用概率分布评估 cut value
 4. 优化 `betas` / `gammas`
 
-## 编写说明时的建议
+## 使用这些 ansatz 时记住
 
 - 把 ansatz 当作“线路生成器”来解释
 - 把优化器和目标函数当作用户可替换部分
-- 不要把示例说成“官方唯一正确范式”
+- 不要把示例当成“唯一正确范式”
 - 如果示例依赖本地模拟，明确标出 `simulation` extra

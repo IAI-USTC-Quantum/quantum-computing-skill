@@ -102,7 +102,7 @@ uniqc submit a.ir b.ir --platform quafu --shots 2000
 
 关键区别：
 
-- CLI 里当前是 `--backend`，不是旧文档里常写的 `--chip-id`
+- 当前 CLI 用的是 `--backend`，不是一些旧示例里常见的 `--chip-id`
 - 对 OriginQ，`--backend` 常用于指定硬件名，例如 `origin:wuyuan:d5`
 - 对 Quafu，底层 Python API 仍可传 `chip_id`，但当前 CLI 没有单独的 `--chip-id`
 

@@ -133,7 +133,7 @@ from uniqc.pytorch import (
 - If the user wants a quick start, start with `Circuit -> originir -> uniqc`.
 - If the user is stuck on cloud execution, verify config and backend-specific kwargs first, then fall back to [references/troubleshooting.md](references/troubleshooting.md) if the issue is still unclear.
 - If the user asks about a failing local simulation, check `simulation` dependencies first, then fall back to [references/troubleshooting.md](references/troubleshooting.md) if needed.
-- If the user reports a missing command, import, extra, or config path, first identify install source/version and dependency state, then use [references/troubleshooting.md](references/troubleshooting.md) for the generic diagnosis flow.
+- If the user reports a missing command, import, extra, config path, or a doc/behavior mismatch, first capture the install snapshot, then check whether version drift is the likely cause, then look for matching issues, and only then fall back to [references/troubleshooting.md](references/troubleshooting.md) for the full generic diagnosis flow.
 - If installation is required, first try a reasonable environment-based default; only ask the user when that path is unclear, risky, or fails.
 - If the user asks for a modern variational example, start from `hea`, `qaoa_ansatz`, or `uccsd_ansatz`, not legacy helper names.
 - If the user wants a shell workflow, prefer `uniqc` CLI examples over custom wrappers.

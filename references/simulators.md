@@ -45,7 +45,7 @@ from uniqc.simulator import OriginIR_NoisySimulator
 
 ## 后端类型
 
-最稳妥的写法：
+最稳妥的后端类型选择：
 
 - `statevector`
 - `densitymatrix`

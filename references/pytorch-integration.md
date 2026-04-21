@@ -47,7 +47,7 @@ from uniqc.pytorch import TorchQuantumLayer
 - 调用方需要准备好一个适配它的参数化线路模板
 - 如果用户只是想先验证思路，通常先用 `parameter_shift_gradient` 或 `batch_execute_with_params` 更稳
 
-因此在 skill 回答里，优先把 `QuantumLayer` 讲成“已有参数化线路模板后的包装器”，不要把它描述成零配置的端到端训练入口。
+因此更稳妥的理解是：把 `QuantumLayer` 当成“已有参数化线路模板后的包装器”，不要把它当成零配置的端到端训练入口。
 
 ## Parameter-shift 辅助函数
 
@@ -98,9 +98,9 @@ results = batch_execute_with_params(
 - 已经在用 TorchQuantum
 - 想要更“端到端”的可微分体验
 
-## 文档与示例里应该怎么说
+## 使用这些接口时记住
 
-- 把这些工具描述为“辅助工具”
-- 强调用户仍要自己定义 expectation / loss / optimizer
-- 不要暗示 UnifiedQuantum 自带完整数据集管道
-- 如果示例需要 `torchvision`、`scikit-learn` 等第三方库，额外写清楚，不要混在 `pytorch` extra 里
+- 把这些工具理解为“辅助工具”
+- 用户仍要自己定义 expectation / loss / optimizer
+- 不要默认 UnifiedQuantum 自带完整数据集管道
+- 如果示例需要 `torchvision`、`scikit-learn` 等第三方库，要单独确认这些依赖

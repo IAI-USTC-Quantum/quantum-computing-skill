@@ -11,13 +11,12 @@
 |---|---|---|---|
 | `AGENTS.md` / `CLAUDE.md` | skill 维护者、本地 agent | 维护约束、本地约定、仓库边界、提交流程、回复格式 | skill 用法、安装策略、工作流、排障细节、其他面向用户的说明 |
 | `SKILL.md` / `references/` | 调用此 skill 的 agent（面向用户） | 触发条件、操作规则、导航、工作流、输入输出、限制条件、排障顺序 | skill 维护说明、个人本地配置、与 skill 开发者相关的流程 |
-| `README.md` | 人类读者 | skill 安装方式、仓库职责、非目标范围 | 详细操作手册、长篇排障、上游内部实现细节 |
+| `README.md` | 准备安装此 skill 的人类 | skill 安装方式、仓库职责、非目标范围 | 详细操作手册、长篇排障、上游内部实现细节 |
 
 ## 维护规则
 
 - **先看仓库，再下结论**：先读 `README.md`、`SKILL.md`、`.gitignore`，再看 `references/`、`examples/`、`scripts/`。
 - **这是 skill 仓库，不是上游源码仓库**：只维护 skill 的触发条件、说明结构、示例和辅助脚本，不修改 `UnifiedQuantum` 上游代码。
-- **skill 正文始终面向使用它的 agent**：安装策略、排错流程、工作流选择、命令优先级等写进 `SKILL.md` 或 `references/`；`AGENTS.md` 不复写这些内容。
 - **保持渐进式披露**：`description` 只写触发条件与核心能力；`SKILL.md` 负责导航；细节下沉到 `references/*.md`。
 - **优先复用现有材料**：新增说明、示例或脚本前，先检查 `references/`、`examples/`、`scripts/` 能否复用或小改。
 - **内容重在“如何使用”**：优先写调用入口、工作流、输入输出、限制条件和排障顺序；不要搬运上游内部实现、构建测试或发布细节。
