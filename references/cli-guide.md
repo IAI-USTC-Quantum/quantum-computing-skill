@@ -1,322 +1,170 @@
 # CLI Guide Reference
 
-Complete reference for the UnifiedQuantum command-line interface.
+UnifiedQuantum 当前的 CLI 入口是：
 
-## Overview
-
-The CLI is built with Typer and accessible via:
 ```bash
-uniqc <command> [options]
-python -m uniqc <command> [options]
+uniqc
 ```
 
-Available commands: `circuit`, `simulate`, `submit`, `result`, `task`, `config`
-
-## circuit - Format Conversion
-
-Convert between OriginIR and OpenQASM 2.0 formats, display circuit statistics.
+等价 Python 入口：
 
 ```bash
-uniqc circuit <input_file> [options]
+python3 -m uniqc
 ```
 
-### Arguments
+## 命令总览
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `input_file` | Yes | Input circuit file (OriginIR or QASM) |
+- `uniqc circuit`
+- `uniqc simulate`
+- `uniqc submit`
+- `uniqc result`
+- `uniqc task`
+- `uniqc config`
 
-### Options
+## 一条稳妥的 shell 工作流
 
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--format` | `-f` | None | Output format: `originir` or `qasm` |
-| `--output` | `-o` | None | Output file path (default: stdout) |
-| `--info` | | False | Show circuit statistics |
-
-### Examples
+如果输入来自 QASM，推荐先归一化：
 
 ```bash
-# Convert OriginIR to QASM
-uniqc circuit bell_state.oir --format qasm -o bell_state.qasm
-
-# Show circuit info
-uniqc circuit bell_state.oir --info
-
-# Convert QASM to OriginIR
-uniqc circuit bell_state.qasm --format originir
+uniqc circuit input.qasm --format originir -o normalized.ir
+uniqc simulate normalized.ir
+uniqc submit normalized.ir --platform dummy --wait
 ```
 
-## simulate - Local Simulation
+这样比直接把多种格式混进不同命令里更稳。
 
-Simulate quantum circuits locally using statevector or density matrix backends.
+## `uniqc circuit`
+
+格式转换和统计信息：
 
 ```bash
-uniqc simulate <input_file> [options]
+uniqc circuit INPUT_FILE [--format originir|qasm] [--output PATH] [--info]
 ```
 
-### Arguments
-
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `input_file` | Yes | Circuit file (OriginIR or QASM) |
-
-### Options
-
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--backend` | `-b` | `statevector` | Backend type: `statevector` or `density` |
-| `--shots` | `-s` | 1024 | Number of measurement shots |
-| `--format` | `-f` | `table` | Output format: `table` or `json` |
-| `--output` | `-o` | None | Output file path |
-
-### Examples
+示例：
 
 ```bash
-# Basic statevector simulation
-uniqc simulate circuit.oir
-
-# With specific shot count
-uniqc simulate circuit.oir --shots 4096
-
-# Density matrix backend with JSON output
-uniqc simulate circuit.oir --backend density --format json
-
-# Save results to file
-uniqc simulate circuit.oir --shots 1024 -o results.json
+uniqc circuit bell.ir --format qasm -o bell.qasm
+uniqc circuit bell.qasm --format originir -o bell.ir
+uniqc circuit bell.ir --info
 ```
 
-## submit - Cloud Submission
+## `uniqc simulate`
 
-Submit circuit files to quantum cloud platforms.
+本地模拟：
 
 ```bash
-uniqc submit <input_files...> [options]
+uniqc simulate INPUT_FILE [--backend statevector] [--shots 1024] [--format table|json]
 ```
 
-### Arguments
-
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `input_files` | Yes | One or more circuit files to submit |
-
-### Options
-
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--platform` | `-p` | Required | Platform: `originq`, `quafu`, `ibm`, `dummy` |
-| `--chip-id` | | None | Target chip ID for the platform |
-| `--shots` | `-s` | 1000 | Number of measurement shots |
-| `--name` | | None | Task name |
-| `--wait` | `-w` | False | Wait for result after submission |
-| `--timeout` | | 300.0 | Timeout in seconds when waiting |
-| `--format` | `-f` | `table` | Output format: `table` or `json` |
-
-### Platform Details
-
-**OriginQ (`originq`)**:
-- Requires token in config (`uniqc config set originq.token YOUR_TOKEN`)
-- Available chips: varies by account
-
-**Quafu (`quafu`)**:
-- Requires token in config (`uniqc config set quafu.token YOUR_TOKEN`)
-- Chips: `ScQ-P10`, `ScQ-P18`, `ScQ-P136`, etc.
-- Specify chip with `--chip-id`
-
-**IBM Quantum (`ibm`)**:
-- Requires token in config (`uniqc config set ibm.token YOUR_TOKEN`)
-- Uses Qiskit adapter internally
-
-**Dummy (`dummy`)**:
-- No credentials required
-- Local simulation for testing
-- Enable globally: `export UNIQC_DUMMY=true`
-
-### Examples
+示例：
 
 ```bash
-# Submit to OriginQ
-uniqc submit circuit.oir --platform originq --shots 1000
-
-# Submit to Quafu with specific chip
-uniqc submit circuit.oir --platform quafu --chip-id ScQ-P10 --shots 2000
-
-# Submit and wait for result
-uniqc submit circuit.oir --platform originq --wait --timeout 600
-
-# Submit multiple circuits
-uniqc submit circuit1.oir circuit2.oir --platform originq --name "batch-experiment"
-
-# Test with dummy platform
-uniqc submit circuit.oir --platform dummy --shots 100
+uniqc simulate bell.ir
+uniqc simulate bell.ir --shots 4096 --format json
 ```
 
-## result - Query Results
+注意：
 
-Query task results from quantum cloud platforms.
+- 当前最安全的输入是 OriginIR
+- 本地模拟通常需要安装 `unified-quantum[simulation]`
+- 当前 CLI 的 `simulate` 路径最适合 `statevector`
+- 密度矩阵工作流更建议走 Python API，并显式使用 `OriginIR_Simulator(backend_type="densitymatrix")`
+
+## `uniqc submit`
+
+提交云任务或 dummy 任务：
 
 ```bash
-uniqc result <task_id> [options]
+uniqc submit INPUT_FILES... --platform originq|quafu|ibm|dummy
 ```
 
-### Arguments
-
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `task_id` | Yes | Task ID returned by submit |
-
-### Options
-
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--platform` | `-p` | None | Platform name |
-| `--wait` | `-w` | False | Wait for result if still running |
-| `--timeout` | | 300.0 | Timeout in seconds when waiting |
-| `--format` | `-f` | `table` | Output format: `table` or `json` |
-
-### Examples
+当前可见选项：
 
 ```bash
-# Get result
-uniqc result abc-123-def --platform originq
-
-# Wait for running task
-uniqc result abc-123-def --platform originq --wait --timeout 600
+--platform / -p
+--backend / -b
+--shots / -s
+--name
+--wait / -w
+--timeout
+--format / -f
 ```
 
-## task - Task Management
-
-Manage submitted quantum computing tasks.
+示例：
 
 ```bash
-uniqc task <subcommand> [options]
+uniqc submit bell.ir --platform originq --shots 1000
+uniqc submit bell.ir --platform originq --backend origin:wuyuan:d5
+uniqc submit bell.ir --platform dummy --wait
+uniqc submit a.ir b.ir --platform quafu --shots 2000
 ```
 
-### Subcommands
+关键区别：
 
-#### list - List Tasks
+- CLI 里当前是 `--backend`，不是旧文档里常写的 `--chip-id`
+- 对 OriginQ，`--backend` 常用于指定硬件名，例如 `origin:wuyuan:d5`
+- 对 Quafu，底层 Python API 仍可传 `chip_id`，但当前 CLI 没有单独的 `--chip-id`
+
+## `uniqc result`
+
+查询任务结果：
 
 ```bash
-uniqc task list [options]
+uniqc result TASK_ID [--platform PLATFORM] [--wait] [--timeout 300] [--format table|json]
 ```
 
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--status` | | None | Filter: `pending`, `running`, `success`, `failed` |
-| `--platform` | `-p` | None | Filter by platform |
-| `--limit` | `-l` | 20 | Maximum tasks to display |
-| `--format` | `-f` | `table` | Output format: `table` or `json` |
-
-#### show - Show Task Details
+示例：
 
 ```bash
-uniqc task show <task_id>
+uniqc result abc123 --platform originq
+uniqc result abc123 --wait --timeout 600
 ```
 
-#### clear - Clear Task History
+如果任务已经在本地 cache 里，通常可以少传一点参数；如果不在 cache 里，再补 `--platform`。
+
+## `uniqc task`
+
+本地任务缓存管理：
 
 ```bash
+uniqc task list
+uniqc task show TASK_ID
 uniqc task clear
 ```
 
-## config - Configuration
+可用选项包括：
 
-Manage API keys, tokens, and configuration profiles.
+- `task list --status ... --platform ... --limit ... --format ...`
+- `task clear --status ... --force`
 
-```bash
-uniqc config <subcommand> [options]
-```
+## `uniqc config`
 
-### Subcommands
-
-#### init - Initialize Configuration
+配置 `~/.uniqc/uniqc.yml`：
 
 ```bash
 uniqc config init
-```
-
-Creates `~/.uniqc/uniqc.yml` with default structure.
-
-#### set - Set Configuration Value
-
-```bash
-uniqc config set <key> <value>
-```
-
-Common keys:
-```bash
 uniqc config set originq.token YOUR_TOKEN
-uniqc config set quafu.token YOUR_TOKEN
-uniqc config set ibm.token YOUR_TOKEN
-```
-
-#### get - Get Configuration Value
-
-```bash
-uniqc config get <key>
-```
-
-#### list - List All Configuration
-
-```bash
+uniqc config get originq
 uniqc config list
-```
-
-#### validate - Validate Configuration
-
-```bash
 uniqc config validate
+uniqc config profile list
+uniqc config profile create dev
+uniqc config profile use dev
 ```
 
-Checks that all required tokens are set for configured platforms.
+## Profile 与环境变量
 
-#### profile - Manage Profiles
+- 默认 profile：`default`
+- 当前激活 profile 可写进配置文件
+- 临时覆盖可用：
 
 ```bash
-uniqc config profile list              # List profiles
-uniqc config profile create <name>      # Create new profile
-uniqc config profile use <name>         # Switch active profile
+export UNIQC_PROFILE=dev
 ```
 
-Alternatively, set `UNIQC_PROFILE=<name>` to override the active profile for a single invocation.
+## 常见误区
 
-## Complete CLI Session Example
-
-```bash
-# 1. Initialize configuration
-uniqc config init
-
-# 2. Set up API tokens
-uniqc config set originq.token YOUR_TOKEN
-
-# 3. Create a circuit file
-cat > bell_state.oir << 'EOF'
-QINIT 2
-CREG 2
-H q[0]
-CNOT q[0],q[1]
-MEASURE q[0],c[0]
-MEASURE q[1],c[1]
-EOF
-
-# 4. Check circuit info
-uniqc circuit bell_state.oir --info
-
-# 5. Convert to QASM
-uniqc circuit bell_state.oir --format qasm -o bell_state.qasm
-
-# 6. Simulate locally
-uniqc simulate bell_state.oir --shots 4096 --format json
-
-# 7. Submit to cloud
-uniqc submit bell_state.oir --platform originq --shots 1000 --name "bell-test"
-
-# 8. Check task status
-uniqc task list --platform originq
-
-# 9. Get result (when ready)
-uniqc result <task-id> --platform originq
-
-# 10. Test with dummy platform
-uniqc submit bell_state.oir --platform dummy --shots 100
-```
+- 不要再把 CLI 讲成旧版的 `chip-id` 优先接口
+- 不要假设裸环境一定能直接 `simulate`
+- 不要默认系统里有 `python`；脚本示例优先写 `python3` 或 `uv run`

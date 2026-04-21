@@ -1,109 +1,50 @@
-#!/bin/bash
-# CLI demonstration script for UnifiedQuantum
-#
-# This script demonstrates the main CLI commands:
-# - circuit: format conversion and circuit info
-# - simulate: local simulation
-# - submit: cloud submission (commented out)
-# - config: configuration management
+#!/usr/bin/env bash
+# Demo of the current uniqc CLI workflow.
 
-set -e
+set -euo pipefail
 
-echo "============================================================"
-echo "UnifiedQuantum CLI Demonstration"
-echo "============================================================"
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
 
-# Create a temporary directory for demo files
-DEMO_DIR=$(mktemp -d)
-cd "$DEMO_DIR"
+run_uniqc() {
+  if command -v uniqc >/dev/null 2>&1; then
+    uniqc "$@"
+  else
+    python3 -m uniqc "$@"
+  fi
+}
 
-# ------------------------------------------------------------
-# 1. Create a circuit file (Bell state in OriginIR format)
-# ------------------------------------------------------------
-echo ""
-echo "1. Creating Bell state circuit file..."
-cat > bell_state.oir << 'EOF'
-QINIT 2
-CREG 2
-H q[0]
-CNOT q[0],q[1]
-MEASURE q[0],c[0]
-MEASURE q[1],c[1]
-EOF
-echo "   Created: bell_state.oir"
+cat >"$TMP_DIR/build_bell.py" <<'PY'
+from uniqc.circuit_builder import Circuit
 
-# ------------------------------------------------------------
-# 2. Circuit info and format conversion
-# ------------------------------------------------------------
-echo ""
-echo "2. Circuit info:"
-echo "------------------------------------------------------------"
-uniqc circuit bell_state.oir --info
+c = Circuit(2)
+c.h(0)
+c.cnot(0, 1)
+c.measure(0, 1)
 
-echo ""
-echo "3. Convert to QASM format:"
-echo "------------------------------------------------------------"
-uniqc circuit bell_state.oir --format qasm -o bell_state.qasm
-cat bell_state.qasm
+with open("bell.ir", "w", encoding="utf-8") as f:
+    f.write(c.originir)
+PY
 
-echo ""
-echo "4. Convert QASM back to OriginIR:"
-echo "------------------------------------------------------------"
-uniqc circuit bell_state.qasm --format originir
+echo "[1/4] Build a Bell circuit as OriginIR"
+(cd "$TMP_DIR" && python3 build_bell.py)
 
-# ------------------------------------------------------------
-# 3. Local simulation
-# ------------------------------------------------------------
-echo ""
-echo "5. Simulate with statevector backend:"
-echo "------------------------------------------------------------"
-uniqc simulate bell_state.oir --backend statevector --shots 1024 --format table
+echo
+echo "[2/4] Show circuit info"
+run_uniqc circuit "$TMP_DIR/bell.ir" --info
 
-echo ""
-echo "6. Simulate with JSON output:"
-echo "------------------------------------------------------------"
-uniqc simulate bell_state.oir --shots 4096 --format json | head -20
+echo
+echo "[3/4] Convert to OpenQASM 2.0"
+run_uniqc circuit "$TMP_DIR/bell.ir" --format qasm -o "$TMP_DIR/bell.qasm"
+sed -n '1,40p' "$TMP_DIR/bell.qasm"
 
-# ------------------------------------------------------------
-# 4. Configuration (show current config)
-# ------------------------------------------------------------
-echo ""
-echo "7. Current configuration:"
-echo "------------------------------------------------------------"
-uniqc config list 2>/dev/null || echo "   (No configuration file found - run 'uniqc config init' to create)"
+echo
+echo "[4/4] Try local simulation and dummy submission"
+echo "These steps usually require unified-quantum[simulation]."
 
-# ------------------------------------------------------------
-# 5. Cloud submission (commented out - requires API tokens)
-# ------------------------------------------------------------
-echo ""
-echo "8. Cloud submission examples (commented out):"
-echo "------------------------------------------------------------"
-cat << 'EXAMPLES'
-# Submit to OriginQ (requires uniqc config set originq.token YOUR_TOKEN)
-# uniqc submit bell_state.oir --platform originq --shots 1000 --name "bell-test"
-
-# Submit to Quafu (requires uniqc config set quafu.token YOUR_TOKEN)
-# uniqc submit bell_state.oir --platform quafu --chip-id ScQ-P10 --shots 1000
-
-# Submit and wait for result
-# uniqc submit bell_state.oir --platform originq --shots 1000 --wait --timeout 300
-
-# Test with dummy platform (no tokens required)
-uniqc submit bell_state.oir --platform dummy --shots 100
-EXAMPLES
-
-# Run dummy platform test
-echo ""
-echo "   Testing with dummy platform:"
-uniqc submit bell_state.oir --platform dummy --shots 100
-
-# ------------------------------------------------------------
-# Cleanup
-# ------------------------------------------------------------
-cd - > /dev/null
-rm -rf "$DEMO_DIR"
-
-echo ""
-echo "============================================================"
-echo "CLI demonstration complete!"
-echo "============================================================"
+if run_uniqc simulate "$TMP_DIR/bell.ir" --shots 1024 --format json; then
+  echo
+  run_uniqc submit "$TMP_DIR/bell.ir" --platform dummy --wait --format json
+else
+  echo "Simulation failed. Install unified-quantum[simulation] and retry."
+fi

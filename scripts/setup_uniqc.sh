@@ -1,209 +1,197 @@
-#!/bin/bash
-# Installation verification script for UnifiedQuantum skill
-#
-# This script checks if UnifiedQuantum is properly installed and
-# verifies that key components are working.
-#
-# Usage:
-#   ./setup_uniqc.sh
-#
-# Exit codes:
-#   0 - All checks passed
-#   1 - Some checks failed
+#!/usr/bin/env bash
+# Installation verification script for UnifiedQuantum examples and skill usage.
 
-set -e
+set -u
 
-echo "============================================================"
-echo "UnifiedQuantum Installation Verification"
-echo "============================================================"
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-# Check counter
 PASSED=0
 FAILED=0
 
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
 check_pass() {
-    echo -e "${GREEN}✓${NC} $1"
-    PASSED=$((PASSED + 1))
+  echo -e "${GREEN}✓${NC} $1"
+  PASSED=$((PASSED + 1))
 }
 
 check_fail() {
-    echo -e "${RED}✗${NC} $1"
-    FAILED=$((FAILED + 1))
+  echo -e "${RED}✗${NC} $1"
+  FAILED=$((FAILED + 1))
 }
 
 check_warn() {
-    echo -e "${YELLOW}!${NC} $1"
+  echo -e "${YELLOW}!${NC} $1"
 }
 
-# ------------------------------------------------------------
-# 1. Check Python version
-# ------------------------------------------------------------
-echo ""
-echo "1. Python environment"
+run_py() {
+  python3 "$@"
+}
+
+echo "============================================================"
+echo "UnifiedQuantum Skill Environment Check"
+echo "============================================================"
+
+echo
+echo "1. Python"
 echo "------------------------------------------------------------"
-
-PYTHON_VERSION=$(python3 --version 2>&1 || echo "not found")
-echo "   Python: $PYTHON_VERSION"
-
-if python3 -c "import sys; exit(0 if sys.version_info >= (3, 10) else 1)" 2>/dev/null; then
-    check_pass "Python >= 3.10 (compatible)"
+if command -v python3 >/dev/null 2>&1; then
+  echo "   Python: $(python3 --version)"
+  if python3 -c "import sys; raise SystemExit(0 if (3, 10) <= sys.version_info[:2] < (3, 14) else 1)"; then
+    check_pass "Python version is within UnifiedQuantum's supported range"
+  else
+    check_fail "UnifiedQuantum expects Python >= 3.10 and < 3.14"
+  fi
 else
-    check_fail "Python >= 3.10 required (UnifiedQuantum needs 3.10+)"
+  check_fail "python3 not found"
 fi
 
-# ------------------------------------------------------------
-# 2. Check uniqc installation
-# ------------------------------------------------------------
-echo ""
-echo "2. UnifiedQuantum installation"
+echo
+echo "2. Core Package"
 echo "------------------------------------------------------------"
-
-if python3 -c "import uniqc" 2>/dev/null; then
-    VERSION=$(python3 -c "import uniqc; print(getattr(uniqc, '__version__', 'unknown'))")
-    check_pass "uniqc imported successfully (version: $VERSION)"
+if run_py - <<'PY'
+import uniqc
+print(getattr(uniqc, "__version__", "unknown"))
+PY
+then
+  check_pass "uniqc imports successfully"
 else
-    check_fail "uniqc not found - install with: pip install unified-quantum"
+  check_fail "uniqc import failed. Install with: pip install unified-quantum"
 fi
 
-# ------------------------------------------------------------
-# 3. Check core dependencies
-# ------------------------------------------------------------
-echo ""
-echo "3. Core dependencies"
+echo
+echo "3. Core Runtime Dependencies"
 echo "------------------------------------------------------------"
-
-for pkg in numpy scipy; do
-    if python3 -c "import $pkg" 2>/dev/null; then
-        VER=$(python3 -c "import $pkg; print($pkg.__version__)")
-        check_pass "$pkg installed (version: $VER)"
-    else
-        check_fail "$pkg not installed"
-    fi
+for pkg in numpy scipy requests yaml sympy; do
+  if run_py - <<PY
+import ${pkg}
+print(getattr(${pkg}, "__version__", "ok"))
+PY
+  then
+    check_pass "${pkg} is importable"
+  else
+    check_fail "${pkg} is missing"
+  fi
 done
 
-# ------------------------------------------------------------
-# 4. Check CLI installation
-# ------------------------------------------------------------
-echo ""
-echo "4. CLI installation"
+echo
+echo "4. CLI"
 echo "------------------------------------------------------------"
-
-if command -v uniqc &>/dev/null; then
-    check_pass "uniqc CLI available"
-    uniqc --help &>/dev/null && check_pass "CLI help works" || check_fail "CLI help failed"
-elif python3 -m uniqc --help &>/dev/null; then
-    check_pass "uniqc available via python -m uniqc"
+if command -v uniqc >/dev/null 2>&1; then
+  if uniqc --help >/dev/null 2>&1; then
+    check_pass "uniqc CLI command works"
+  else
+    check_fail "uniqc command exists but --help failed"
+  fi
+elif run_py -m uniqc --help >/dev/null 2>&1; then
+  check_pass "python3 -m uniqc works"
 else
-    check_fail "CLI not available"
+  check_fail "No working CLI entrypoint found"
 fi
 
-# ------------------------------------------------------------
-# 5. Check optional dependencies
-# ------------------------------------------------------------
-echo ""
-echo "5. Optional dependencies"
+echo
+echo "5. Circuit Builder Smoke Test"
 echo "------------------------------------------------------------"
+if run_py - <<'PY'
+from uniqc.circuit_builder import Circuit
 
-if python3 -c "import torch" 2>/dev/null; then
-    VER=$(python3 -c "import torch; print(torch.__version__)")
-    check_pass "PyTorch installed (version: $VER) - enables QML features"
+c = Circuit(2)
+c.h(0)
+c.cnot(0, 1)
+c.measure(0, 1)
+
+assert "QINIT" in c.originir
+assert "OPENQASM" in c.qasm
+print(c.originir)
+PY
+then
+  check_pass "Circuit export to OriginIR and QASM works"
 else
-    check_warn "PyTorch not installed - QML examples require PyTorch"
+  check_fail "Circuit builder smoke test failed"
 fi
 
-if python3 -c "import matplotlib" 2>/dev/null; then
-    VER=$(python3 -c "import matplotlib; print(matplotlib.__version__)")
-    check_pass "matplotlib installed (version: $VER) - enables plotting"
-else
-    check_warn "matplotlib not installed - plotting not available"
-fi
-
-# ------------------------------------------------------------
-# 6. Test circuit builder
-# ------------------------------------------------------------
-echo ""
-echo "6. Circuit builder test"
+echo
+echo "6. Optional Features"
 echo "------------------------------------------------------------"
-
-TEST_CIRCUIT=$(python3 << 'EOF'
-try:
-    from uniqc.circuit_builder import Circuit
-    c = Circuit(2)
-    c.h(0)
-    c.cnot(0, 1)
-    print("PASS")
-except Exception as e:
-    print(f"FAIL: {e}")
-EOF
-)
-
-if [[ "$TEST_CIRCUIT" == "PASS" ]]; then
-    check_pass "Circuit creation works"
+if run_py - <<'PY'
+import qutip
+print(qutip.__version__)
+PY
+then
+  check_pass "qutip is available (simulation extra looks installed)"
 else
-    check_fail "Circuit creation failed: $TEST_CIRCUIT"
+  check_warn "qutip is missing; local simulation and dummy mode examples may fail"
 fi
 
-# ------------------------------------------------------------
-# 7. Test simulator
-# ------------------------------------------------------------
-echo ""
-echo "7. Simulator test"
+if run_py - <<'PY'
+import torch
+print(torch.__version__)
+PY
+then
+  check_pass "torch is available"
+else
+  check_warn "torch is missing; PyTorch helper examples will be skipped"
+fi
+
+if run_py - <<'PY'
+import sklearn
+print(sklearn.__version__)
+PY
+then
+  check_pass "scikit-learn is available"
+else
+  check_warn "scikit-learn is missing; digit-classification example will be skipped"
+fi
+
+echo
+echo "7. Local Simulation Smoke Test"
 echo "------------------------------------------------------------"
+if run_py - <<'PY'
+from uniqc.task.optional_deps import check_simulation
 
-TEST_SIM=$(python3 << 'EOF'
-try:
-    from uniqc.circuit_builder import Circuit
-    from uniqc.simulator import OriginIR_Simulator
+if not check_simulation():
+    raise SystemExit(2)
 
-    c = Circuit(2)
-    c.h(0)
-    c.cnot(0, 1)
-    c.measure(0, 1)
+from uniqc.circuit_builder import Circuit
+from uniqc.simulator import OriginIR_Simulator
 
-    sim = OriginIR_Simulator()
-    result = sim.simulate_shots(c.originir, shots=100)
+c = Circuit(2)
+c.h(0)
+c.cnot(0, 1)
+c.measure(0, 1)
 
-    if len(result) > 0:
-        print("PASS")
-    else:
-        print("FAIL: No results")
-except Exception as e:
-    print(f"FAIL: {e}")
-EOF
-)
-
-if [[ "$TEST_SIM" == "PASS" ]]; then
-    check_pass "Simulator works"
+sim = OriginIR_Simulator(backend_type="statevector")
+probs = sim.simulate_pmeasure(c.originir)
+assert len(probs) > 0
+print("nonzero entries:", sum(1 for value in probs if float(value) > 1e-12))
+PY
+then
+  check_pass "Local simulation works"
 else
-    check_fail "Simulator test failed: $TEST_SIM"
+  status=$?
+  if [ "$status" -eq 2 ]; then
+    check_warn "Simulation extra not installed; local simulation smoke test skipped"
+  else
+    check_fail "Local simulation smoke test failed"
+  fi
 fi
 
-# ------------------------------------------------------------
-# Summary
-# ------------------------------------------------------------
-echo ""
+echo
 echo "============================================================"
 echo "Summary"
 echo "============================================================"
-echo -e "Passed: ${GREEN}$PASSED${NC}"
-echo -e "Failed: ${RED}$FAILED${NC}"
+echo -e "Passed: ${GREEN}${PASSED}${NC}"
+echo -e "Failed: ${RED}${FAILED}${NC}"
 
-if [ $FAILED -eq 0 ]; then
-    echo ""
-    echo -e "${GREEN}All checks passed! UnifiedQuantum is ready to use.${NC}"
-    exit 0
+if [ "$FAILED" -eq 0 ]; then
+  echo
+  echo -e "${GREEN}Environment looks good for the current skill repo.${NC}"
 else
-    echo ""
-    echo -e "${YELLOW}Some checks failed. Please install missing dependencies.${NC}"
-    echo ""
-    echo "Installation commands:"
-    echo "  pip install unified-quantum           # Core package"
-    echo "  pip install unified-quantum[pytorch]  # With PyTorch support"
-    exit 1
+  echo
+  echo -e "${YELLOW}Some checks failed. Suggested installs:${NC}"
+  echo "  pip install unified-quantum"
+  echo "  pip install \"unified-quantum[simulation]\""
+  echo "  pip install \"unified-quantum[pytorch]\""
+  exit 1
 fi

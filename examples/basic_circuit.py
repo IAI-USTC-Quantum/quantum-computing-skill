@@ -1,61 +1,62 @@
-#!/usr/bin/env python
-"""Basic circuit demonstration - Bell state creation and simulation.
+#!/usr/bin/env python3
+"""Basic UnifiedQuantum circuit example.
 
-This example demonstrates:
-- Creating a quantum circuit using the Circuit class
-- Applying Hadamard and CNOT gates
-- Generating OriginIR and QASM output
-- Simulating the circuit locally
+Builds a Bell circuit, prints both export formats, and tries a local
+probability simulation when simulation dependencies are available.
 """
 
+from __future__ import annotations
+
+from pprint import pprint
+
 from uniqc.circuit_builder import Circuit
-from uniqc.simulator import OriginIR_Simulator
 
 
-def main():
-    print("=" * 60)
-    print("UnifiedQuantum Basic Circuit Example: Bell State")
-    print("=" * 60)
+def build_bell_circuit() -> Circuit:
+    circuit = Circuit(2)
+    circuit.h(0)
+    circuit.cnot(0, 1)
+    circuit.measure(0, 1)
+    return circuit
 
-    # Create a 2-qubit circuit
-    c = Circuit(2)
 
-    # Build Bell state: |Φ+⟩ = (|00⟩ + |11⟩) / √2
-    c.h(0)           # Hadamard on qubit 0
-    c.cnot(0, 1)     # CNOT with control=0, target=1
-    c.measure(0, 1)  # Measure both qubits
+def try_local_simulation(circuit: Circuit) -> None:
+    try:
+        from uniqc.task.optional_deps import check_simulation
+    except ImportError:
+        check_simulation = lambda: False
 
-    # Output in OriginIR format
-    print("\nOriginIR format:")
-    print("-" * 40)
-    print(c.originir)
+    if not check_simulation():
+        print("Local simulation skipped: install unified-quantum[simulation] first.")
+        return
 
-    # Output in QASM format
-    print("\nQASM format:")
-    print("-" * 40)
-    print(c.qasm)
+    from uniqc.simulator import OriginIR_Simulator
 
-    # Circuit properties
-    print(f"\nCircuit properties:")
-    print(f"  Qubits: {c.qubit_num}")
-    print(f"  Classical bits: {c.cbit_num}")
-    print(f"  Depth: {c.depth}")
+    simulator = OriginIR_Simulator(backend_type="statevector")
+    probabilities = simulator.simulate_pmeasure(circuit.originir)
 
-    # Local simulation
-    print("\nSimulating with 1000 shots...")
-    sim = OriginIR_Simulator(backend_type='statevector')
-    result = sim.simulate_shots(c.originir, shots=1000)
+    print("\nState probabilities:")
+    pprint(
+        {
+            format(index, f"0{simulator.qubit_num}b"): float(probability)
+            for index, probability in enumerate(probabilities)
+            if float(probability) > 1e-10
+        }
+    )
 
-    print("\nMeasurement results:")
-    print("-" * 40)
-    for state, count in sorted(result.items()):
-        binary = format(state, f'0{c.qubit_num}b')
-        prob = count / 1000
-        bar = '█' * int(prob * 40)
-        print(f"  |{binary}⟩: {count:4d} ({prob:.2%}) {bar}")
 
-    # Expected: ~50% |00⟩ and ~50% |11⟩ for Bell state
-    print("\n✓ Expected ~50% |00⟩ and ~50% |11⟩ for Bell state")
+def main() -> None:
+    circuit = build_bell_circuit()
+
+    print("OriginIR")
+    print("-" * 60)
+    print(circuit.originir)
+
+    print("\nOpenQASM 2.0")
+    print("-" * 60)
+    print(circuit.qasm)
+
+    try_local_simulation(circuit)
 
 
 if __name__ == "__main__":
