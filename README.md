@@ -1,4 +1,4 @@
-# quantum-computing.skill
+# quantum-computing
 
 [![Quantum Computing | AI](https://img.shields.io/badge/Quantum_Computing-AI-58a6ff?style=flat-square)](https://github.com/IAI-USTC-Quantum)
 
@@ -32,11 +32,10 @@
 
 先把仓库放到本地，再把它链接或复制到你的 skill 目录。
 
-一种通用安装方式：
-
 ```bash
+git clone https://github.com/IAI-USTC-Quantum/quantum-computing.skill.git
 mkdir -p ~/.Agents/skills
-ln -s /path/to/quantum-computing.skill ~/.Agents/skills/quantum-computing.skill
+ln -s /path/to/quantum-computing.skill ~/.Agents/skills/quantum-computing
 ```
 
 如果你已经有自己的共享 skills 目录，就安装到那个目录里。
