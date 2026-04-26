@@ -1,12 +1,20 @@
 ---
 name: quantum-computing
 description: "Use when the user asks about UnifiedQuantum, uniqc, OriginIR, OpenQASM, circuit building, local simulation, cloud submission, dummy mode, VQE, QAOA, UCCSD, quantum ML, or PyTorch integration with UnifiedQuantum. Focus on the current public workflow: build circuits, export IR/QASM, run with uniqc CLI or task_manager, and add extras only when needed."
-version: 1.0.0
+version: 1.0.1
 ---
 
-# UnifiedQuantum Skill
+# Quantum-Computing Skill
 
-当用户在使用当前 UnifiedQuantum 的公开 API、CLI 或示例时，使用这个 skill。
+本 skill 面向 [UnifiedQuantum](https://github.com/IAI-USTC-Quantum/UnifiedQuantum)，使用时遵循以下指引。
+
+**UnifiedQuantum 简介：**
+
+- 非商业性量子计算聚合框架，AI 时代原生设计
+- 提供量子线路构建、模拟与云端执行的统一接口
+- 聚合 OriginQ、Quafu、IBM Quantum 等多平台后端
+- CLI-first：一条 `uniqc` 命令完成线路构建、模拟、提交与结果分析
+- 轻量纯 Python，安装即用：`pip install unified-quantum`
 
 ## 默认处理思路
 
