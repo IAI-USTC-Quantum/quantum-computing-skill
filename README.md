@@ -1,4 +1,4 @@
-# quantum-computing-skill
+# quantum-computing.skill
 
 面向 [UnifiedQuantum](https://github.com/IAI-USTC-Quantum/UnifiedQuantum) 的本地 skill 仓库。
 
@@ -34,7 +34,7 @@
 
 ```bash
 mkdir -p ~/.Agents/skills
-ln -s /path/to/quantum-computing-skill ~/.Agents/skills/quantum-computing-skill
+ln -s /path/to/quantum-computing.skill ~/.Agents/skills/quantum-computing.skill
 ```
 
 如果你已经有自己的共享 skills 目录，就安装到那个目录里。
