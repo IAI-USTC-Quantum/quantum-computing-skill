@@ -1,5 +1,7 @@
 # quantum-computing.skill
 
+[![Quantum Computing | AI](https://img.shields.io/badge/Quantum_Computing-AI-58a6ff?style=flat-square)](https://github.com/IAI-USTC-Quantum)
+
 面向 [UnifiedQuantum](https://github.com/IAI-USTC-Quantum/UnifiedQuantum) 的本地 skill 仓库。
 
 安装后，支持 skills 的 Agent 可以更稳地处理 UnifiedQuantum 相关任务，例如线路构建、OriginIR / QASM 转换、本地模拟、云平台提交、变分算法示例、PyTorch 集成和通用排障。
