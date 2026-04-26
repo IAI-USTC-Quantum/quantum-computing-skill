@@ -1,7 +1,7 @@
 ---
 name: quantum-computing.skill
 description: "Use when the user asks about UnifiedQuantum, uniqc, OriginIR, OpenQASM, circuit building, local simulation, cloud submission, dummy mode, VQE, QAOA, UCCSD, quantum ML, or PyTorch integration with UnifiedQuantum. Focus on the current public workflow: build circuits, export IR/QASM, run with uniqc CLI or task_manager, and add extras only when needed."
-version: 1.1.0
+version: 1.0.0
 ---
 
 # UnifiedQuantum Skill
