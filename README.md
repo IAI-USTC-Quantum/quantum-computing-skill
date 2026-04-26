@@ -1,6 +1,7 @@
 # quantum-computing
 
 [![Quantum Computing | AI](https://img.shields.io/badge/Quantum_Computing-AI-58a6ff?style=flat-square)](https://github.com/IAI-USTC-Quantum)
+[![SkillHub](https://img.shields.io/badge/SkillHub-published-58a6ff?style=flat-square)](https://www.skillhub.cn/skills/quantum-computing)
 
 面向 [UnifiedQuantum](https://github.com/IAI-USTC-Quantum/UnifiedQuantum) 的本地 skill 仓库。
 
@@ -48,6 +49,10 @@ ln -s /path/to/quantum-computing.skill ~/.Agents/skills/quantum-computing
 - `references/`：按主题整理的使用说明与排障参考
 - `examples/`：可复用的示例代码
 - `scripts/`：环境检查和辅助脚本
+
+## 通过 SkillHub 发布
+
+本 skill 已发布至 [SkillHub](https://www.skillhub.cn/skills/quantum-computing)，一个面向 AI Agent 的 Skill 市场，支持从云端直接安装。
 
 ## 许可证
 
