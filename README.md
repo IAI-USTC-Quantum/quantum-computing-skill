@@ -1,6 +1,7 @@
 # quantum-computing.skill
 
 [![Quantum Computing | AI](https://img.shields.io/badge/Quantum_Computing-AI-58a6ff?style=flat-square)](https://github.com/IAI-USTC-Quantum)
+[![ClawHub](https://img.shields.io/badge/ClawHub-published-9b59b6?style=flat-square)](https://clawhub.ai/agony5757/quantum-computing)
 [![SkillHub](https://img.shields.io/badge/SkillHub-published-58a6ff?style=flat-square)](https://www.skillhub.cn/skills/quantum-computing)
 
 面向 [UnifiedQuantum](https://github.com/IAI-USTC-Quantum/UnifiedQuantum) 的本地 skill 仓库。
@@ -49,6 +50,14 @@ ln -s /path/to/quantum-computing.skill ~/.Agents/skills/quantum-computing
 - `references/`：按主题整理的使用说明与排障参考
 - `examples/`：可复用的示例代码
 - `scripts/`：环境检查和辅助脚本
+
+## 通过 ClawHub 安装（推荐）
+
+```bash
+# 访问 https://clawhub.ai/agony5757/quantum-computing 获取安装命令
+```
+
+ClawHub 支持直接从云端一键安装或克隆本 skill。
 
 ## 通过 SkillHub 发布
 
