@@ -1,5 +1,15 @@
 # 变分算法参考
 
+## 目录
+
+- 当前公开 ansatz
+- HEA
+- QAOA ansatz
+- UCCSD ansatz
+- 一个典型 VQE 结构
+- 一个典型 QAOA 结构
+- 使用这些 ansatz 时记住
+
 当前 UnifiedQuantum 对变分算法更适合从“ansatz 构造器 + 自己的目标函数 / 优化器”来理解，而不是依赖一套过度封装的旧接口。
 
 ## 当前公开 ansatz
@@ -10,8 +20,9 @@ from uniqc.algorithmics.ansatz import hea, qaoa_ansatz, uccsd_ansatz
 
 注意：
 
-- `uccsd_ansatz` 才是当前公开名字
-- 如果用户拿的是旧示例，注意当前公开名字不是旧的 `uccsd`
+- 把这些函数当作线路生成器；优化器、目标函数和测量策略由任务决定。
+- 参数维度要和 ansatz 层数、qubit 数、Hamiltonian 结构匹配。
+- 生成线路后先本地模拟，再考虑 dummy 或真机任务。
 
 ## HEA
 
@@ -75,7 +86,7 @@ circuit = uccsd_ansatz(
 
 ## 一个典型 VQE 结构
 
-UnifiedQuantum 当前更推荐这样组织 VQE：
+推荐这样组织 VQE：
 
 1. 选 ansatz
 2. 写一个目标函数

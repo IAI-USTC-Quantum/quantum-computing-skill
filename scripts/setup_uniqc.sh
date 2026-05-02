@@ -90,6 +90,14 @@ else
   check_fail "No working CLI entrypoint found"
 fi
 
+if command -v uniqc >/dev/null 2>&1; then
+  if uniqc backend --help >/dev/null 2>&1; then
+    check_pass "uniqc backend command is available"
+  else
+    check_warn "uniqc backend command is unavailable; backend discovery workflows may not work"
+  fi
+fi
+
 echo
 echo "5. Circuit Builder Smoke Test"
 echo "------------------------------------------------------------"
@@ -142,6 +150,21 @@ then
   check_pass "scikit-learn is available"
 else
   check_warn "scikit-learn is missing; digit-classification example will be skipped"
+fi
+
+if run_py - <<'PY'
+try:
+    import qiskit
+    print("qiskit", qiskit.__version__)
+    import qiskit_ibm_runtime
+    print("qiskit_ibm_runtime", qiskit_ibm_runtime.__version__)
+except Exception as exc:
+    raise SystemExit(str(exc))
+PY
+then
+  check_pass "IBM qiskit runtime packages are importable"
+else
+  check_warn "IBM qiskit runtime packages are not importable; IBM adapter may fail unless qiskit extra is installed"
 fi
 
 echo

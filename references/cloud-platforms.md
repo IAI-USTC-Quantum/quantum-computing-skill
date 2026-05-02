@@ -1,11 +1,30 @@
-# 云平台参考
+# 云平台与真机实验参考
 
-当前 UnifiedQuantum 的云执行路径分两层：
+## 目录
 
-1. CLI：`uniqc submit` / `uniqc result` / `uniqc task`
-2. Python API：`submit_task` / `submit_batch` / `query_task` / `wait_for_result`
+- 实验工作流
+- 配置
+- backend 发现与 cache
+- Python task API
+- RegionSelector 与芯片数据
+- 平台建议
+- 实验记录
 
-## 配置文件
+## 实验工作流
+
+把云端实验拆成固定步骤：
+
+1. 构建或加载线路。
+2. 本地模拟，确认概率分布符合预期。
+3. dummy backend 跑通 submit/query/result。
+4. 用 `uniqc backend list/show` 选择平台和 backend。
+5. 需要真机时读取 chip characterization，选择 qubit region。
+6. 小 shots 提交真实任务。
+7. 查询结果并保存实验元数据。
+
+这个顺序比直接提交真机更稳，也更容易定位失败发生在认证、线路、backend、任务队列还是结果解析。
+
+## 配置
 
 默认配置路径：
 
@@ -13,219 +32,150 @@
 ~/.uniqc/uniqc.yml
 ```
 
-典型结构：
-
-```yaml
-default:
-  originq:
-    token: ""
-    available_qubits: []
-    available_topology: []
-    task_group_size: 200
-  quafu:
-    token: ""
-  ibm:
-    token: ""
-    proxy:
-      http: ""
-      https: ""
-```
-
-初始化：
+CLI 配置：
 
 ```bash
 uniqc config init
-```
-
-设置 token：
-
-```bash
 uniqc config set originq.token YOUR_ORIGINQ_TOKEN
 uniqc config set quafu.token YOUR_QUAFU_TOKEN
 uniqc config set ibm.token YOUR_IBM_TOKEN
+uniqc config validate
 ```
 
-## 配置 profile
-
-可通过多 profile 管理不同环境：
+Python adapters 会读取配置；自动化脚本也可以显式设置环境变量，便于 CI 或临时凭证：
 
 ```bash
-uniqc config profile create dev
-uniqc config profile use dev
-uniqc config profile list
+export ORIGINQ_API_KEY=...
+export QUAFU_API_TOKEN=...
+export IBM_TOKEN=...
 ```
 
-也可以临时覆盖：
+不要把 token 写进示例代码、日志或 issue。
+
+## backend 发现与 cache
+
+首选 CLI：
 
 ```bash
-export UNIQC_PROFILE=dev
+uniqc backend list --platform originq
+uniqc backend list --platform quafu
+uniqc backend list --platform ibm
+uniqc backend list --format json
+uniqc backend show originq:WK_C180
+uniqc backend chip-display originq:WK_C180 --update
 ```
 
-## Python 任务 API
+Cache 位置：
 
-最常用的公共入口：
+- backend 列表 cache：`~/.uniqc/cache/backends.json`
+- 芯片标定 cache：`~/.uniqc/backend-cache/*.json`
+- 任务 cache：`~/.uniqc/cache/tasks.sqlite`
+
+用法建议：
+
+- 开始实验时用 `--update` 强制刷新一次。
+- 后续在同一轮开发里复用 cache。
+- 如果 backend 不可用、排队太长或 topology 不适合，换 backend，不要硬提交。
+
+## Python task API
+
+公共入口：
 
 ```python
-from uniqc import (
-    submit_task,
-    submit_batch,
-    query_task,
-    wait_for_result,
-    list_tasks,
-    clear_completed_tasks,
-)
+from uniqc import submit_task, submit_batch, query_task, wait_for_result
 ```
 
-### `submit_task`
+dummy 排练：
+
+```python
+task_id = submit_task(circuit, backend="dummy", shots=1000)
+result = wait_for_result(task_id, timeout=60)
+```
+
+OriginQ 真机：
 
 ```python
 task_id = submit_task(
     circuit,
     backend="originq",
-    shots=1000,
-    metadata={"name": "demo"},
+    backend_name="WK_C180",
+    shots=100,
 )
-```
-
-后端相关的常见 kwargs：
-
-- OriginQ:
-  - `backend_name="origin:wuyuan:d5"`
-  - `circuit_optimize=...`
-  - `measurement_amend=...`
-- Quafu:
-  - `chip_id="ScQ-P10"`
-  - `auto_mapping=True`
-- 通用 dummy 覆盖：
-  - `dummy=True`
-
-### `submit_batch`
-
-```python
-task_ids = submit_batch(
-    [circuit_a, circuit_b],
-    backend="quafu",
-    shots=2000,
-)
-```
-
-### `query_task`
-
-```python
-task_info = query_task(task_id)
-print(task_info.status)
-```
-
-如果任务不在本地 cache 中，通常需要补 `backend=...`。
-
-### `wait_for_result`
-
-```python
+info = query_task(task_id, backend="originq")
 result = wait_for_result(task_id, backend="originq", timeout=300)
 ```
 
-返回值通常是一个归一化后的结果字典；dummy 路径下最常见的结构类似：
+Quafu simulator 或真机：
 
 ```python
-{
-    "counts": {"00": 500, "11": 500},
-    "probabilities": {"00": 0.5, "11": 0.5},
-    "shots": 1000,
-    "platform": "dummy",
-    "task_id": "...",
-}
+task_id = submit_task(
+    circuit,
+    backend="quafu",
+    chip_id="ScQ-Sim10",
+    shots=100,
+)
+result = wait_for_result(task_id, backend="quafu", timeout=300)
 ```
 
-不同平台的原始数据会被归一化，但如果用户只关心最稳妥的兼容字段，优先读：
-
-- `counts`
-- `probabilities`
-
-## dummy 模式
-
-dummy 模式用于本地模拟，不消耗真实云平台额度。
-
-启用方式有两类：
-
-### 1. 单次任务
+批量任务：
 
 ```python
-task_id = submit_task(circuit, backend="originq", dummy=True)
+task_ids = submit_batch(circuits, backend="dummy", shots=1000)
+results = [wait_for_result(task_id, timeout=60) for task_id in task_ids]
 ```
 
-### 2. 全局环境变量
+批量真机任务要更保守：先用 1 到 2 个小任务确认 backend、认证和线路都正常，再提交更大的批次。
 
-```bash
-export UNIQC_DUMMY=true
-```
+## RegionSelector 与芯片数据
 
-然后：
+RegionSelector 用于把逻辑线路放到质量更好的物理 qubit 区域上。典型使用场景：
 
-```python
-task_id = submit_task(circuit, backend="originq")
-```
+- 线路需要连续耦合区域。
+- 目标 backend 的 qubit 质量差异明显。
+- 希望避开不可用 qubit 或高错误率边。
+- 需要在多个 candidate region 中做可重复选择。
 
-注意：
+推荐流程：
 
-- dummy 模式通常仍需要本地模拟依赖
-- 它更适合开发 / 测试 / 文档示例，不等于“完全无依赖”
+1. 刷新 backend/chip cache。
+2. 读取目标 backend 的 topology 和 characterization。
+3. 根据线路宽度、连通性和质量指标选择 region。
+4. 对 circuit 做 remapping。
+5. 把 remapping 信息写进实验记录。
 
-## 本地任务缓存
-
-当前任务缓存使用 SQLite：
-
-```text
-~/.uniqc/cache/tasks.sqlite
-```
-
-相关接口：
-
-```python
-from uniqc import list_tasks, clear_completed_tasks, clear_cache
-```
-
-CLI 里对应：
-
-```bash
-uniqc task list
-uniqc task show TASK_ID
-uniqc task clear
-```
-
-## `TaskInfo`
-
-缓存和查询结果常见字段：
-
-- `task_id`
-- `backend`
-- `status`
-- `result`
-- `shots`
-- `submit_time`
-- `update_time`
-- `metadata`
+不要把芯片表格截图当成唯一真值；在自动化流程里优先使用结构化 cache/API 数据。
 
 ## 平台建议
 
 ### OriginQ
 
-- 先确认 token 已配置
-- Python API 更适合传 `backend_name`
-- CLI 用 `--backend`
+- 常用真机 backend 名可通过 `uniqc backend list --platform originq` 获取。
+- 提交时使用 `backend_name=...`。
+- 云端 simulator 适合验证平台任务路径，但不一定适合作为快速 smoke test。
 
 ### Quafu
 
-- 先确认 token 已配置
-- Python API 可传 `chip_id`
-- 当前 CLI 对 Quafu 的专有参数表达较少，必要时优先 Python
+- `ScQ-Sim10` 适合做云端 simulator 级别检查。
+- 真机提交时用当前 backend list 里的 chip id。
+- 如果线路不满足拓扑，优先启用 mapping 或先 remap。
 
 ### IBM
 
-- 先确认 token 已配置
-- 代理设置写在 `ibm.proxy.http` / `ibm.proxy.https`
+- 先确认本地 qiskit runtime 依赖和账号实例可用。
+- backend 可用性、region、排队状态会变化，提交前必须重新查 backend。
 
-## 使用这些接口时不要默认
+## 实验记录
 
-- 不要默认 dummy 模式“无条件可用”
-- 不要默认 CLI 已经完整暴露了所有平台专有参数
-- 不要默认任务结果永远只有一种字段布局；更稳妥的是优先读取常用字段
+每次真实提交都记录：
+
+- UnifiedQuantum 版本和 Python 环境
+- circuit 生成脚本或 OriginIR/QASM 文件
+- platform/backend/chip id
+- selected qubits / remapping
+- shots
+- task id
+- submit/query/result 时间
+- counts/probabilities
+- 是否开启优化、measurement amend、auto mapping 等平台选项
+
+如果要写论文式或报告式结果，保留原始 counts，不只保留归一化概率。

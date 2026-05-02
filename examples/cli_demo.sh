@@ -44,6 +44,7 @@ echo "These steps usually require unified-quantum[simulation]."
 
 if run_uniqc simulate "$TMP_DIR/bell.ir" --shots 1024 --format json; then
   echo
+  echo "Dummy submission exercises the same submit/result flow before using a real backend."
   run_uniqc submit "$TMP_DIR/bell.ir" --platform dummy --wait --format json
 else
   echo "Simulation failed. Install unified-quantum[simulation] and retry."

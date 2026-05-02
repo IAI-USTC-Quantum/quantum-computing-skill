@@ -1,121 +1,126 @@
-# 模拟器参考
+# 模拟器与 dummy 参考
 
-UnifiedQuantum 提供本地模拟能力，但当前应该把它理解为“常用能力 + 明确依赖边界”，而不是默认裸环境必备。
+## 目录
 
-## 依赖边界
+- 选择哪种执行方式
+- 本地模拟器
+- shots 与 counts
+- dummy backend
+- 拓扑与 qubit remapping
+- 从模拟走向真机
 
-本地模拟、dummy 模式、部分算法示例通常需要：
+## 选择哪种执行方式
+
+- **本地模拟器**：用于算法开发、概率分布、statevector/density matrix、优化循环。
+- **dummy backend**：用于 task-manager、CLI submit/result、任务缓存和云端流程排练。
+- **云平台 simulator**：用于检查平台 adapter、排队/任务查询接口和云端执行路径。
+- **真机 backend**：用于最终硬件实验，提交前要检查 topology、qubit 质量、shots 和任务成本。
+
+## 本地模拟器
+
+安装：
 
 ```bash
 pip install "unified-quantum[simulation]"
 ```
 
-如果用户看到这类报错，优先怀疑缺可选依赖：
-
-- `No module named 'qutip'`
-- `MissingDependencyError(... simulation ...)`
-- `uniqc is not installed with UniqcCpp`
-
-## 主要类
-
-### `OriginIR_Simulator`
+Python 用法：
 
 ```python
+from uniqc.circuit_builder import Circuit
 from uniqc.simulator import OriginIR_Simulator
 
+circuit = Circuit(2)
+circuit.h(0)
+circuit.cnot(0, 1)
+circuit.measure(0, 1)
+
 sim = OriginIR_Simulator(backend_type="statevector")
-```
-
-常见方法：
-
-```python
 probs = sim.simulate_pmeasure(circuit.originir)
-statevector = sim.simulate_statevector(circuit.originir)
-rho = sim.simulate_density_matrix(circuit.originir)
+state = sim.simulate_statevector(circuit.originir)
 counts = sim.simulate_shots(circuit.originir, shots=1000)
 ```
 
-### `OriginIR_NoisySimulator`
+密度矩阵：
 
 ```python
-from uniqc.simulator import OriginIR_NoisySimulator
-```
-
-适合在有噪声模型时做本地实验。
-
-## 后端类型
-
-最稳妥的后端类型选择：
-
-- `statevector`
-- `densitymatrix`
-
-示例：
-
-```python
-sim = OriginIR_Simulator(backend_type="statevector")
 sim = OriginIR_Simulator(backend_type="densitymatrix")
+rho = sim.simulate_density_matrix(circuit.originir)
 ```
 
-当前 CLI 的 `simulate` 子命令更适合走 `statevector` 路径；如果用户明确要密度矩阵模拟，优先给 Python API 方案。
+CLI 用法：
 
-## 输入格式建议
+```bash
+uniqc simulate bell.ir --backend statevector --shots 1024 --format json
+uniqc simulate bell.ir --backend density --shots 1024 --format json
+```
 
-`OriginIR_Simulator` 最适合直接吃 OriginIR：
+## shots 与 counts
+
+算法调试时优先看精确概率或 statevector；准备上云前再看有限 shots 的 counts。
 
 ```python
-result = sim.simulate_pmeasure(circuit.originir)
+probabilities = sim.simulate_pmeasure(circuit.originir)
+counts = sim.simulate_shots(circuit.originir, shots=4096)
 ```
 
-如果用户手里只有 QASM，先统一格式更稳：
+解释结果时说明它们代表不同对象：
 
-1. `Circuit.qasm -> uniqc circuit --format originir`
-2. 再用模拟器或 `uniqc simulate`
+- probability/statevector：理想模拟分布
+- counts：有限采样结果
+- hardware counts：带有设备噪声、排队状态和平台后处理的真实实验结果
 
-## 拓扑与可用 qubit 约束
+## dummy backend
 
-模拟器支持传入约束：
+dummy backend 不是物理模拟器；它用于验证 task API、缓存和结果查询流程。
 
 ```python
-sim = OriginIR_Simulator(
-    backend_type="statevector",
-    available_qubits=[0, 1, 2, 3],
-    available_topology=[[0, 1], [1, 2], [2, 3]],
-)
+from uniqc import submit_task, submit_batch, wait_for_result
+
+task_id = submit_task(circuit, backend="dummy", shots=1000)
+result = wait_for_result(task_id, timeout=60)
+
+task_ids = submit_batch([circuit, circuit], backend="dummy", shots=1000)
+results = [wait_for_result(task_id, timeout=60) for task_id in task_ids]
 ```
 
-这适合：
+CLI：
 
-- 提前检查线路是否符合目标芯片拓扑
-- 在 dummy 场景里模拟“可用 qubit / coupling map”限制
+```bash
+uniqc submit bell.ir --platform dummy --shots 1000 --wait --format json
+```
 
-## `least_qubit_remapping`
+使用建议：
 
-基础模拟器支持 `least_qubit_remapping` 参数。默认会做更紧凑的 qubit 映射；如果用户非常在意保留原始编号，可显式关闭。
+- 写 cloud workflow 示例时，先给 dummy，再给 OriginQ/Quafu/IBM。
+- dummy 通过后，再替换 platform/backend 和认证配置。
+- 不要把 dummy counts 当成硬件噪声模型结论。
+
+## 拓扑与 qubit remapping
+
+从本地模拟走向真实芯片时，要考虑可用 qubit 和耦合关系。优先使用 backend/chip characterization 或 RegionSelector，而不是手写固定 qubit 编号。
+
+常见流程：
+
+1. `uniqc backend list --platform originq`
+2. `uniqc backend show originq:WK_C180`
+3. `uniqc backend chip-display originq:WK_C180 --update`
+4. 在 Python 中基于 topology/characterization 选择 region
+5. 对线路做 qubit remapping，再提交
+
+如果只是把逻辑线路重映射到一组可用 qubit，可查 `least_qubit_remapping`：
 
 ```python
-sim = OriginIR_Simulator(
-    backend_type="statevector",
-    least_qubit_remapping=False,
-)
+from uniqc.remapper import least_qubit_remapping
 ```
 
-## 与 dummy 模式的关系
+## 从模拟走向真机
 
-dummy 适配器底层会走本地模拟，因此：
+推荐检查清单：
 
-- dummy 不是“绕过模拟依赖”
-- dummy 更像“沿用统一的 task API，但把执行后端换成本地模拟器”
-
-## 什么时候不该强推模拟器
-
-以下情况不要默认推荐先本地模拟：
-
-- 用户只想做格式转换
-- 用户只想提交到云平台
-- 用户环境明显缺少模拟依赖，而且问题与模拟无关
-
-这时优先走：
-
-- `Circuit -> originir -> uniqc submit`
-- 或纯文档解释，不强制运行本地模拟
+1. 本地模拟给出合理概率分布。
+2. dummy submit/result 跑通。
+3. backend list/show 确认目标设备可用。
+4. 根据 topology 和 qubit 质量选择 region。
+5. 小 shots 真机试跑。
+6. 保存 task id、backend、shots、线路源码和结果。

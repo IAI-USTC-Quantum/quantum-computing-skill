@@ -9,7 +9,11 @@ not executed automatically.
 from __future__ import annotations
 
 import argparse
+import os
+from pathlib import Path
 from pprint import pprint
+
+import yaml
 
 from uniqc import Circuit, query_task, submit_task, wait_for_result
 
@@ -29,6 +33,11 @@ def print_result(result: dict | None) -> None:
 
     print("Normalized result payload:")
     pprint(result)
+
+    if all(isinstance(value, int) for value in result.values()):
+        print("\nCounts:")
+        pprint(result)
+        return
 
     if "counts" in result:
         print("\nCounts:")
@@ -53,9 +62,8 @@ def run_dummy_demo(shots: int) -> None:
     circuit = build_bell_circuit()
     task_id = submit_task(
         circuit,
-        backend="originq",
+        backend="dummy",
         shots=shots,
-        dummy=True,
         metadata={"example": "cloud_submission.py"},
     )
 
@@ -74,15 +82,16 @@ def real_originq_example(shots: int) -> str:
 
     Requires:
       1. pip install "unified-quantum[originq]"
-      2. uniqc config set originq.token YOUR_TOKEN
+      2. configure ~/.uniqc/uniqc.yml or export ORIGINQ_API_KEY=...
     """
 
+    load_adapter_env_from_uniqc_config()
     circuit = build_bell_circuit()
     return submit_task(
         circuit,
         backend="originq",
         shots=shots,
-        backend_name="origin:wuyuan:d5",
+        backend_name="WK_C180",
         metadata={"example": "real-originq"},
     )
 
@@ -92,15 +101,16 @@ def real_quafu_example(shots: int) -> str:
 
     Requires:
       1. pip install "unified-quantum[quafu]"
-      2. uniqc config set quafu.token YOUR_TOKEN
+      2. configure ~/.uniqc/uniqc.yml or export QUAFU_API_TOKEN=...
     """
 
+    load_adapter_env_from_uniqc_config()
     circuit = build_bell_circuit()
     return submit_task(
         circuit,
         backend="quafu",
         shots=shots,
-        chip_id="ScQ-P10",
+        chip_id="ScQ-Sim10",
         metadata={"example": "real-quafu"},
     )
 
@@ -110,9 +120,10 @@ def real_ibm_example(shots: int) -> str:
 
     Requires:
       1. pip install "unified-quantum[qiskit]"
-      2. uniqc config set ibm.token YOUR_TOKEN
+      2. configure ~/.uniqc/uniqc.yml or export IBM_TOKEN=...
     """
 
+    load_adapter_env_from_uniqc_config()
     circuit = build_bell_circuit()
     return submit_task(
         circuit,
@@ -120,6 +131,28 @@ def real_ibm_example(shots: int) -> str:
         shots=shots,
         metadata={"example": "real-ibm"},
     )
+
+
+def load_adapter_env_from_uniqc_config() -> None:
+    """Map ~/.uniqc/uniqc.yml tokens into env vars for script portability."""
+
+    config_path = Path.home() / ".uniqc" / "uniqc.yml"
+    if not config_path.exists():
+        return
+
+    data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    profile_name = data.get("active_profile", "default")
+    profile = data.get(profile_name, {})
+
+    mappings = {
+        ("originq", "token"): "ORIGINQ_API_KEY",
+        ("quafu", "token"): "QUAFU_API_TOKEN",
+        ("ibm", "token"): "IBM_TOKEN",
+    }
+    for (platform, key), env_name in mappings.items():
+        token = profile.get(platform, {}).get(key)
+        if token and not os.getenv(env_name):
+            os.environ[env_name] = token
 
 
 def main() -> None:

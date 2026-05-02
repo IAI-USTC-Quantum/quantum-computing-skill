@@ -1,5 +1,14 @@
 # PyTorch 集成参考
 
+## 目录
+
+- 当前公开接口
+- `QuantumLayer`
+- Parameter-shift 辅助函数
+- 批处理辅助函数
+- `TorchQuantumLayer`
+- 使用这些接口时记住
+
 UnifiedQuantum 当前的 PyTorch 集成是辅助工具风格，而不是“一整套端到端训练框架”。
 
 基础安装：

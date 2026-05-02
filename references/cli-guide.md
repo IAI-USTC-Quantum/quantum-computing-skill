@@ -1,170 +1,154 @@
 # CLI 使用参考
 
-UnifiedQuantum 当前的 CLI 入口是：
+## 目录
+
+- 基本工作流
+- 线路转换与检查
+- 本地模拟
+- dummy 与云端提交
+- 任务查询
+- 配置与 backend 发现
+- 适合 CLI 的场景
+
+## 基本工作流
+
+CLI 入口是：
 
 ```bash
 uniqc
 ```
 
-等价 Python 入口：
+等价模块入口：
 
 ```bash
 python3 -m uniqc
 ```
 
-## 命令总览
-
-- `uniqc circuit`
-- `uniqc simulate`
-- `uniqc submit`
-- `uniqc result`
-- `uniqc task`
-- `uniqc config`
-
-## 一条稳妥的 Shell 工作流
-
-如果输入来自 QASM，推荐先归一化：
+推荐 shell 工作流：
 
 ```bash
 uniqc circuit input.qasm --format originir -o normalized.ir
-uniqc simulate normalized.ir
-uniqc submit normalized.ir --platform dummy --wait
+uniqc simulate normalized.ir --backend statevector --shots 1024
+uniqc submit normalized.ir --platform dummy --shots 1000 --wait
 ```
 
-这样比直接把多种格式混进不同命令里更稳。
+把 QASM、OriginIR 和 Python 线路先归一化成一个文件，可以减少不同入口之间的差异。
 
-## `uniqc circuit`
-
-格式转换和统计信息：
+## 线路转换与检查
 
 ```bash
-uniqc circuit INPUT_FILE [--format originir|qasm] [--output PATH] [--info]
-```
-
-示例：
-
-```bash
+uniqc circuit bell.ir --info
 uniqc circuit bell.ir --format qasm -o bell.qasm
 uniqc circuit bell.qasm --format originir -o bell.ir
-uniqc circuit bell.ir --info
 ```
 
-## `uniqc simulate`
+当用户只是想知道线路规模、门数、深度或格式是否能解析，先用 `uniqc circuit --info`。
 
-本地模拟：
+## 本地模拟
+
+常用后端：
 
 ```bash
-uniqc simulate INPUT_FILE [--backend statevector] [--shots 1024] [--format table|json]
+uniqc simulate bell.ir --backend statevector --shots 1024 --format json
+uniqc simulate bell.ir --backend density --shots 1024 --format json
 ```
 
-示例：
+用法建议：
+
+- 先用 `statevector` 做快速功能验证。
+- 需要噪声、混态或密度矩阵语义时用 `density`。
+- 需要给后续脚本处理时加 `--format json`。
+- 如果模拟命令提示缺依赖，安装 `unified-quantum[simulation]` 或 `unified-quantum[all]`。
+
+## dummy 与云端提交
+
+dummy 是本地任务管理和结果查询流程的首选排练后端：
 
 ```bash
-uniqc simulate bell.ir
-uniqc simulate bell.ir --shots 4096 --format json
+uniqc submit bell.ir --platform dummy --shots 1000 --wait --format json
 ```
 
-注意：
-
-- 当前最安全的输入是 OriginIR
-- 本地模拟通常需要安装 `unified-quantum[simulation]`
-- 当前 CLI 的 `simulate` 路径最适合 `statevector`
-- 密度矩阵工作流更建议走 Python API，并显式使用 `OriginIR_Simulator(backend_type="densitymatrix")`
-
-## `uniqc submit`
-
-提交云任务或 dummy 任务：
+真实平台提交前，先列出 backend：
 
 ```bash
-uniqc submit INPUT_FILES... --platform originq|quafu|ibm|dummy
+uniqc backend list --platform originq
+uniqc backend list --platform quafu
+uniqc backend list --platform ibm
 ```
 
-当前可见选项：
+OriginQ 示例：
 
 ```bash
---platform / -p
---backend / -b
---shots / -s
---name
---wait / -w
---timeout
---format / -f
+uniqc submit bell.ir --platform originq --backend WK_C180 --shots 100 --wait
 ```
 
-示例：
+Quafu 示例：
 
 ```bash
-uniqc submit bell.ir --platform originq --shots 1000
-uniqc submit bell.ir --platform originq --backend origin:wuyuan:d5
-uniqc submit bell.ir --platform dummy --wait
-uniqc submit a.ir b.ir --platform quafu --shots 2000
+uniqc submit bell.ir --platform quafu --backend ScQ-Sim10 --shots 100 --wait
 ```
 
-关键区别：
-
-- 当前 CLI 用的是 `--backend`，不是一些旧示例里常见的 `--chip-id`
-- 对 OriginQ，`--backend` 常用于指定硬件名，例如 `origin:wuyuan:d5`
-- 对 Quafu，底层 Python API 仍可传 `chip_id`，但当前 CLI 没有单独的 `--chip-id`
-
-## `uniqc result`
-
-查询任务结果：
+如果不想立即提交真实任务，先做 dry run：
 
 ```bash
-uniqc result TASK_ID [--platform PLATFORM] [--wait] [--timeout 300] [--format table|json]
+uniqc submit bell.ir --platform dummy --shots 100 --dry-run
+uniqc submit bell.ir --platform originq --backend WK_C180 --shots 100 --dry-run
 ```
 
-示例：
+## 任务查询
 
 ```bash
-uniqc result abc123 --platform originq
-uniqc result abc123 --wait --timeout 600
-```
-
-如果任务已经在本地 cache 里，通常可以少传一点参数；如果不在 cache 里，再补 `--platform`。
-
-## `uniqc task`
-
-本地任务缓存管理：
-
-```bash
+uniqc result TASK_ID --format json
+uniqc task status TASK_ID
 uniqc task list
-uniqc task show TASK_ID
-uniqc task clear
 ```
 
-可用选项包括：
+结果通常会进入本地任务 cache。给用户写实验记录时，保留：
 
-- `task list --status ... --platform ... --limit ... --format ...`
-- `task clear --status ... --force`
+- circuit 文件或生成脚本
+- platform/backend
+- shots
+- task id
+- submission time
+- result counts/probabilities
 
-## `uniqc config`
+## 配置与 backend 发现
 
-配置 `~/.uniqc/uniqc.yml`：
+配置文件默认是 `~/.uniqc/uniqc.yml`。
 
 ```bash
 uniqc config init
-uniqc config set originq.token YOUR_TOKEN
-uniqc config get originq
-uniqc config list
+uniqc config set originq.token YOUR_ORIGINQ_TOKEN
+uniqc config set quafu.token YOUR_QUAFU_TOKEN
+uniqc config set ibm.token YOUR_IBM_TOKEN
 uniqc config validate
-uniqc config profile list
-uniqc config profile create dev
-uniqc config profile use dev
 ```
 
-## 配置 profile 与环境变量
-
-- 默认 profile：`default`
-- 当前激活 profile 可写进配置文件
-- 临时覆盖可用：
+Backend 发现：
 
 ```bash
-export UNIQC_PROFILE=dev
+uniqc backend list --format table
+uniqc backend list --format json
+uniqc backend show originq:WK_C180
+uniqc backend chip-display originq:WK_C180 --update
 ```
 
-## 常见误区
+用 `--update` 刷新旧 cache；不用时优先复用本地 cache，避免反复打云端 API。
 
-- 不要再把 CLI 讲成旧版的 `chip-id` 优先接口
-- 不要假设裸环境一定能直接 `simulate`
-- 不要默认系统里有 `python`；脚本示例优先写 `python3` 或 `uv run`
+## 适合 CLI 的场景
+
+优先用 CLI：
+
+- 格式转换
+- 快速模拟
+- 配置检查
+- backend 列表和芯片标定查看
+- 单个任务提交与结果拉取
+
+优先用 Python API：
+
+- 参数化线路
+- 批量任务
+- VQE/QAOA 优化循环
+- 自动选择 qubit region
+- 需要把结果接入 pandas、SciPy、PyTorch 或自定义分析代码

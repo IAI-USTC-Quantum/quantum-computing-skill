@@ -6,7 +6,7 @@
 
 面向 [UnifiedQuantum](https://github.com/IAI-USTC-Quantum/UnifiedQuantum) 的本地 skill 仓库。
 
-安装后，支持 skills 的 Agent 可以更稳地处理 UnifiedQuantum 相关任务，例如线路构建、OriginIR / QASM 转换、本地模拟、云平台提交、变分算法示例、PyTorch 集成和通用排障。
+安装后，支持 skills 的 Agent 可以更稳地处理 UnifiedQuantum 相关任务，例如线路构建、OriginIR / QASM 转换、本地模拟、dummy 后端、云平台与真机实验、backend cache、RegionSelector、变分算法示例、PyTorch 集成和通用排障。
 
 ## 这个 skill 能帮你什么
 
@@ -15,8 +15,9 @@
 - 写或修改 `Circuit` 线路代码
 - 把线路导出成 OriginIR 或 OpenQASM
 - 用 `uniqc` CLI 做转换、模拟、提交和查结果
-- 检查本地模拟、dummy 模式或云平台配置问题
-- 搭一个最小的 VQE / QAOA / UCCSD 示例
+- 搭建本地模拟、dummy 任务排练、云平台 simulator 和真机实验工作流
+- 查看 backend cache、选择真机 backend、使用 chip-display / RegionSelector 规划 qubit 区域
+- 搭一个 VQE / QAOA / UCCSD 风格的算法开发示例
 - 看 `QuantumLayer`、parameter-shift 和批处理接口怎么接进 PyTorch
 
 ## 你可以直接让 Agent 做什么
@@ -25,9 +26,9 @@
 
 - “帮我写一个 Bell state 的 UnifiedQuantum 示例，并导出 OriginIR。”
 - “帮我把这段 QASM 转成更适合 `uniqc simulate` 的流程。”
-- “帮我查一下为什么 `uniqc` 命令存在，但 `import uniqc` 失败。”
 - “帮我写一个最小 QAOA MaxCut 例子。”
-- “帮我看一下 dummy 模式为什么跑不通。”
+- “帮我把这个线路先用 dummy 跑通，再提交到 OriginQ 真机。”
+- “帮我根据 backend cache 选择一组适合 Bell/GHZ 线路的 qubit。”
 - “帮我把这个 PyTorch 训练循环接上 `QuantumLayer`。”
 
 ## 安装此 skill
