@@ -29,7 +29,7 @@
 默认配置路径：
 
 ```text
-~/.uniqc/uniqc.yml
+~/.uniqc/config.yaml
 ```
 
 CLI 配置：
@@ -62,7 +62,8 @@ uniqc backend list --platform quafu
 uniqc backend list --platform ibm
 uniqc backend list --format json
 uniqc backend show originq:WK_C180
-uniqc backend chip-display originq:WK_C180 --update
+uniqc backend update --platform originq
+uniqc backend chip-display originq/WK_C180 --update
 ```
 
 Cache 位置：
@@ -82,7 +83,7 @@ Cache 位置：
 公共入口：
 
 ```python
-from uniqc import submit_task, submit_batch, query_task, wait_for_result
+from uniqc import dry_run_task, submit_task, submit_batch, query_task, wait_for_result
 ```
 
 dummy 排练：
@@ -91,6 +92,15 @@ dummy 排练：
 task_id = submit_task(circuit, backend="dummy", shots=1000)
 result = wait_for_result(task_id, timeout=60)
 ```
+
+拓扑和芯片标定路径：
+
+```python
+line_task = submit_task(circuit, backend="dummy:virtual-line-3", shots=1000)
+noisy_task = submit_task(circuit, backend="dummy:originq:WK_C180", shots=1000)
+```
+
+`dummy:originq:WK_C180` 这类写法会按真实 backend compile/transpile，再本地含噪执行；它是提交规则，不是 `backend list` 里的枚举项。
 
 OriginQ 真机：
 
@@ -103,6 +113,14 @@ task_id = submit_task(
 )
 info = query_task(task_id, backend="originq")
 result = wait_for_result(task_id, backend="originq", timeout=300)
+```
+
+真实提交前先 dry-run：
+
+```python
+check = dry_run_task(circuit, backend="originq", shots=100, backend_name="WK_C180")
+if not check.success:
+    raise RuntimeError(check.error or check.details)
 ```
 
 Quafu simulator 或真机：

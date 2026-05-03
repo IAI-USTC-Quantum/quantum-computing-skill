@@ -6,7 +6,9 @@
 
 面向 [UnifiedQuantum](https://github.com/IAI-USTC-Quantum/UnifiedQuantum) 的本地 skill 仓库。
 
-安装后，支持 skills 的 Agent 可以更稳地处理 UnifiedQuantum 相关任务，例如线路构建、OriginIR / QASM 转换、本地模拟、dummy 后端、云平台与真机实验、backend cache、RegionSelector、变分算法示例、PyTorch 集成和通用排障。
+当前版本已 follow-up UnifiedQuantum v0.0.8，重点同步了官方文档“最佳实践”章节中的推荐路径、显式 dummy backend id、dry-run、Calibration/QEM/XEB 和新模块入口约定。
+
+安装后，支持 skills 的 Agent 可以更稳地处理 UnifiedQuantum 相关任务，例如线路构建、OriginIR / QASM 转换、本地模拟、v0.0.8 显式 dummy backend id、dry-run、云平台与真机实验、backend cache、RegionSelector、compile/transpile、Calibration/QEM/XEB、变分算法示例、PyTorch 集成和通用排障。
 
 ## 这个 skill 能帮你什么
 
@@ -15,8 +17,9 @@
 - 写或修改 `Circuit` 线路代码
 - 把线路导出成 OriginIR 或 OpenQASM
 - 用 `uniqc` CLI 做转换、模拟、提交和查结果
-- 搭建本地模拟、dummy 任务排练、云平台 simulator 和真机实验工作流
+- 搭建本地模拟、`dummy` / `dummy:virtual-*` / `dummy:<platform>:<backend>` 任务排练、云平台 simulator 和真机实验工作流
 - 查看 backend cache、选择真机 backend、使用 chip-display / RegionSelector 规划 qubit 区域
+- 使用 v0.0.8 “最佳实践”路径覆盖配置、dry-run、API/CLI 提交、Calibration/QEM 和 XEB workflow
 - 搭一个 VQE / QAOA / UCCSD 风格的算法开发示例
 - 看 `QuantumLayer`、parameter-shift 和批处理接口怎么接进 PyTorch
 

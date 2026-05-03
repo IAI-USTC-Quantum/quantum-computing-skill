@@ -30,21 +30,21 @@ which uniqc || true
 uniqc --help | head -40
 ```
 
-如果 `python3 -m uniqc` 和 `uniqc` 行为不同，优先处理 PATH/venv 问题。
+如果 `python -m uniqc.cli` 和 `uniqc` 行为不同，优先处理 PATH/venv 问题。不要使用 `python -m uniqc` 作为 v0.0.8 的排错入口。
 
 ## 安装与 extra
 
 完整量子算法和云端开发环境：
 
 ```bash
-pip install "unified-quantum[all]"
+uv pip install "unified-quantum[all]"
 ```
 
 按功能拆分时：
 
 - 本地模拟 / dummy：`unified-quantum[simulation]`
 - OriginQ：`unified-quantum[originq]`
-- Quafu：`unified-quantum[quafu]`
+- Quafu：`unified-quantum[quafu]`，该平台已 deprecated，且不包含在 `[all]` 中
 - IBM：`unified-quantum[qiskit]`
 - PyTorch：`unified-quantum[pytorch]`
 
@@ -56,16 +56,16 @@ pip install "unified-quantum[all]"
 
 - shell 里的 `uniqc` 来自另一个 Python 环境。
 - Jupyter kernel 和终端不是同一个 venv。
-- 用户改了 `~/.uniqc/uniqc.yml`，但进程环境里还有旧 token。
+- 用户改了 `~/.uniqc/config.yaml`，但进程环境里还有旧 token。
 - 本地 backend/cache 过期。
 
 处理：
 
 ```bash
-python3 -m uniqc --help
+python -m uniqc.cli --help
 uniqc config validate
 uniqc backend list --format json
-uniqc backend chip-display originq:WK_C180 --update
+uniqc backend chip-display originq/WK_C180 --update
 ```
 
 必要时清楚地告诉用户当前命令实际用的是哪个解释器，不要含糊说“环境有问题”。

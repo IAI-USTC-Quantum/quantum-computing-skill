@@ -10,7 +10,7 @@
 - 复制、拼接、重映射、屏障
 - 输出建议
 
-当前 UnifiedQuantum 的核心对象仍然是 `uniqc.circuit_builder.Circuit`。
+当前 UnifiedQuantum 的核心对象仍然是 `Circuit`。v0.0.8 新代码优先从 `uniqc` 顶层导入常用对象；只有需要底层类型时才进入 `uniqc.circuit_builder`。
 
 最常见的工作流是：
 
@@ -21,7 +21,7 @@
 ## 快速开始
 
 ```python
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 
 c = Circuit()
 c.h(0)
@@ -35,7 +35,7 @@ print(c.qasm)
 ## 初始化方式
 
 ```python
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 
 c = Circuit()          # 自动按使用到的 qubit 推断
 c = Circuit(4)         # 固定 qubit 数
@@ -136,7 +136,7 @@ c.cnot(data[0], data[1])
 常用类型：
 
 ```python
-from uniqc.circuit_builder import Qubit, QReg, QRegSlice
+from uniqc import Qubit, QReg, QRegSlice
 ```
 
 ## 参数与可复用电路
@@ -144,7 +144,7 @@ from uniqc.circuit_builder import Qubit, QReg, QRegSlice
 可复用子线路一般通过 `circuit_def` / `NamedCircuit` 表达：
 
 ```python
-from uniqc.circuit_builder import Circuit, circuit_def
+from uniqc import Circuit, circuit_def
 
 @circuit_def(name="bell_pair", qregs={"q": 2})
 def bell_pair(circ, q):

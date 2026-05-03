@@ -28,7 +28,7 @@
 ### HEA
 
 ```python
-from uniqc.algorithmics.ansatz import hea
+from uniqc import hea
 ```
 
 适合：
@@ -39,7 +39,7 @@ from uniqc.algorithmics.ansatz import hea
 ### UCCSD
 
 ```python
-from uniqc.algorithmics.ansatz import uccsd_ansatz
+from uniqc import uccsd_ansatz
 ```
 
 适合：

@@ -21,8 +21,7 @@ from typing import Iterable
 import numpy as np
 from scipy.optimize import minimize
 
-from uniqc.algorithmics.ansatz import hea
-from uniqc.analyzer import calculate_expectation
+from uniqc import calculate_expectation, hea
 
 
 REDUCED_H2_TERMS: list[tuple[float, str]] = [
@@ -43,7 +42,7 @@ def probability_dict(probabilities: Iterable[float], n_qubits: int) -> dict[str,
 
 def build_energy_function(depth: int):
     try:
-        from uniqc.task.optional_deps import check_simulation
+        from uniqc.backend_adapter.task.optional_deps import check_simulation
     except ImportError:
         check_simulation = lambda: False
 

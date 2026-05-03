@@ -1,6 +1,6 @@
 ---
 name: quantum-computing
-description: "Use when the user asks about UnifiedQuantum, uniqc, OriginIR, OpenQASM, quantum circuit construction, local simulation, dummy backend, cloud submission, backend discovery/cache, RegionSelector, VQE, QAOA, UCCSD, quantum ML, or PyTorch integration. Provide practical UnifiedQuantum workflows for algorithm development, simulation, and real-device experiments."
+description: "Use when the user asks about UnifiedQuantum, uniqc, OriginIR, OpenQASM, quantum circuit construction, local simulation, dummy backend ids, dry-run, cloud submission, backend discovery/cache, RegionSelector, compile/transpile, calibration, QEM, XEB, VQE, QAOA, UCCSD, quantum ML, or PyTorch integration. Provide practical UnifiedQuantum workflows for algorithm development, simulation, and real-device experiments."
 ---
 
 # Quantum-Computing Skill
@@ -9,12 +9,13 @@ Use this skill to help agents build useful quantum-computing work with UnifiedQu
 
 ## Core Mental Model
 
-UnifiedQuantum has four common surfaces:
+UnifiedQuantum v0.0.8 has five common surfaces:
 
-1. **Circuit authoring**: build circuits with `uniqc.circuit_builder.Circuit`, then export OriginIR or OpenQASM.
+1. **Circuit authoring**: build circuits with top-level `uniqc.Circuit`, then export OriginIR or OpenQASM.
 2. **Local simulation**: validate circuits with `uniqc simulate` or `OriginIR_Simulator` before spending cloud quota.
 3. **Algorithm development**: compose ansatz helpers, simulators, analyzers, SciPy/PyTorch, and optimization loops.
-4. **Cloud experiments**: discover a backend, map/select qubits, submit through CLI or `uniqc.task_manager`, then query and record results.
+4. **Compile and dummy workflows**: use explicit dummy backend ids to check task, topology, and chip-backed noisy paths locally.
+5. **Cloud and calibration experiments**: discover a backend, dry-run, map/select qubits, submit through CLI/API, then query and record results.
 
 For new projects, assume a current UnifiedQuantum release. Do not discuss old release history unless the user is explicitly debugging an old environment.
 
@@ -22,6 +23,7 @@ For new projects, assume a current UnifiedQuantum release. Do not discuss old re
 
 Choose the path from the user's goal:
 
+- **Ask for current recommended usage or release-check paths**: read [references/best-practices.md](references/best-practices.md) first.
 - **Learn or prototype a circuit**: read [references/circuit-building.md](references/circuit-building.md), then use [references/simulators.md](references/simulators.md).
 - **Run shell workflows or convert formats**: read [references/cli-guide.md](references/cli-guide.md).
 - **Develop VQE/QAOA/UCCSD-style algorithms**: read [references/variational-algorithms.md](references/variational-algorithms.md); use [references/h2-molecular-simulation.md](references/h2-molecular-simulation.md) for H2-style VQE.
@@ -33,21 +35,27 @@ Choose the path from the user's goal:
 
 Use these defaults unless the user gives a reason not to:
 
-- Install full functionality with `pip install "unified-quantum[all]"` in an isolated project environment.
+- For CLI-only use, prefer `uv tool install unified-quantum`; for Python API use `uv pip install unified-quantum` inside the user's project environment.
+- Import common objects from `uniqc` directly: `Circuit`, `compile`, `submit_task`, `wait_for_result`, `dry_run_task`, `BackendInfo`, `Platform`, `QubitTopology`, ansatz helpers, and expectation helpers.
 - Build circuits in Python, export `originir`, then run CLI or simulator workflows on that normalized file.
-- Use dummy backend as the first task-manager rehearsal: `submit_task(circuit, backend="dummy", shots=...)`.
-- Use `uniqc backend list/show/chip-display` before real-device submission.
+- Use explicit dummy backend ids:
+  - `dummy`: unconstrained, noiseless local virtual machine.
+  - `dummy:virtual-line-N` / `dummy:virtual-grid-RxC`: constrained virtual topology, noiseless.
+  - `dummy:<platform>:<backend>`: real backend topology and calibration, compile/transpile, then local noisy execution.
+- Run `dry_run_task(...)` or `uniqc submit --dry-run` before real-device submission.
+- Use `uniqc backend update`, `list`, `show`, and `chip-display` before real-device submission.
 - Use `RegionSelector` or backend characterization data when hardware quality and topology matter.
 - Keep shot counts low for initial real-device checks; increase only after the workflow and backend choice are verified.
+- Treat Quafu as deprecated and install `[quafu]` only when explicitly needed; `[all]` does not include it in v0.0.8.
 
 ## Core Snippets
 
 Circuit:
 
 ```python
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 
-circuit = Circuit(2)
+circuit = Circuit()
 circuit.h(0)
 circuit.cnot(0, 1)
 circuit.measure(0, 1)
@@ -66,8 +74,9 @@ probs = sim.simulate_pmeasure(circuit.originir)
 Dummy/cloud task API:
 
 ```python
-from uniqc import submit_task, wait_for_result
+from uniqc import dry_run_task, submit_task, wait_for_result
 
+dry_run = dry_run_task(circuit, backend="dummy", shots=1000)
 task_id = submit_task(circuit, backend="dummy", shots=1000)
 result = wait_for_result(task_id, timeout=60)
 ```
@@ -75,7 +84,7 @@ result = wait_for_result(task_id, timeout=60)
 Variational building blocks:
 
 ```python
-from uniqc.algorithmics.ansatz import hea, qaoa_ansatz, uccsd_ansatz
+from uniqc import calculate_expectation, hea, qaoa_ansatz, uccsd_ansatz
 ```
 
 ## Environment Guidance
@@ -83,22 +92,24 @@ from uniqc.algorithmics.ansatz import hea, qaoa_ansatz, uccsd_ansatz
 Do not silently modify a user's Python environment. If setup is needed, first identify whether they are using `venv`, Conda, Pixi, uv, or system Python. For a fresh project, recommend:
 
 ```bash
-python3 -m venv .venv
+uv venv
 source .venv/bin/activate
-pip install "unified-quantum[all]"
+uv pip install unified-quantum
 ```
 
-If the user only needs the CLI, an isolated tool install is also reasonable. If the user is debugging an existing project, inspect the active interpreter, `uniqc` path, package version, and import path before changing dependencies.
+If the user only needs the CLI, use `uv tool install unified-quantum`. If the user is debugging an existing project, inspect the active interpreter, `uniqc` path, package version, and import path before changing dependencies. The package root no longer supports `python -m uniqc`; the module fallback is `python -m uniqc.cli`.
 
 ## Names To Remember
 
 - PyPI package: `unified-quantum`
 - Python import package: `uniqc`
 - CLI command: `uniqc`
-- Config file: `~/.uniqc/uniqc.yml`
+- CLI module fallback: `python -m uniqc.cli`
+- Config file: `~/.uniqc/config.yaml`
 - Local task cache: `~/.uniqc/cache/tasks.sqlite`
 - Backend cache: `~/.uniqc/cache/backends.json`
 - Chip characterization cache: `~/.uniqc/backend-cache/*.json`
+- Calibration cache: `~/.uniqc/calibration_cache/`
 
 ## Response Style
 

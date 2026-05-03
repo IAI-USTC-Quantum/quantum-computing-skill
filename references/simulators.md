@@ -27,7 +27,7 @@ pip install "unified-quantum[simulation]"
 Python 用法：
 
 ```python
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 from uniqc.simulator import OriginIR_Simulator
 
 circuit = Circuit(2)
@@ -72,13 +72,16 @@ counts = sim.simulate_shots(circuit.originir, shots=4096)
 
 ## dummy backend
 
-dummy backend 不是物理模拟器；它用于验证 task API、缓存和结果查询流程。
+dummy backend 用于验证 task API、缓存、结果查询、拓扑约束和本地含噪执行流程。
 
 ```python
 from uniqc import submit_task, submit_batch, wait_for_result
 
 task_id = submit_task(circuit, backend="dummy", shots=1000)
 result = wait_for_result(task_id, timeout=60)
+
+line_task = submit_task(circuit, backend="dummy:virtual-line-3", shots=1000)
+noisy_task = submit_task(circuit, backend="dummy:originq:WK_C180", shots=1000)
 
 task_ids = submit_batch([circuit, circuit], backend="dummy", shots=1000)
 results = [wait_for_result(task_id, timeout=60) for task_id in task_ids]
@@ -88,13 +91,16 @@ CLI：
 
 ```bash
 uniqc submit bell.ir --platform dummy --shots 1000 --wait --format json
+uniqc submit bell.ir --platform dummy --backend virtual-line-3 --shots 1000 --wait
+uniqc submit bell.ir --platform dummy --backend originq:WK_C180 --shots 1000 --wait
 ```
 
 使用建议：
 
 - 写 cloud workflow 示例时，先给 dummy，再给 OriginQ/Quafu/IBM。
-- dummy 通过后，再替换 platform/backend 和认证配置。
-- 不要把 dummy counts 当成硬件噪声模型结论。
+- `dummy` 通过后，如果关心拓扑，先换 `dummy:virtual-*`；如果关心真实芯片标定噪声，再换 `dummy:<platform>:<backend>`。
+- chip-backed dummy 是规则型写法，不会出现在 `uniqc backend list` 中。
+- 不要把无约束 `dummy` counts 当成硬件噪声模型结论。
 
 ## 拓扑与 qubit remapping
 
@@ -104,7 +110,7 @@ uniqc submit bell.ir --platform dummy --shots 1000 --wait --format json
 
 1. `uniqc backend list --platform originq`
 2. `uniqc backend show originq:WK_C180`
-3. `uniqc backend chip-display originq:WK_C180 --update`
+3. `uniqc backend chip-display originq/WK_C180 --update`
 4. 在 Python 中基于 topology/characterization 选择 region
 5. 对线路做 qubit remapping，再提交
 

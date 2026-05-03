@@ -8,7 +8,7 @@ import argparse
 import numpy as np
 from scipy.optimize import minimize
 
-from uniqc.algorithmics.ansatz import qaoa_ansatz
+from uniqc import qaoa_ansatz
 
 
 PRESET_GRAPHS = {
@@ -20,7 +20,7 @@ PRESET_GRAPHS = {
 
 def require_simulation() -> None:
     try:
-        from uniqc.task.optional_deps import check_simulation
+        from uniqc.backend_adapter.task.optional_deps import check_simulation
     except ImportError:
         check_simulation = lambda: False
 

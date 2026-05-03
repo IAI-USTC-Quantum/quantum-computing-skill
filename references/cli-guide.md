@@ -18,11 +18,13 @@ CLI 入口是：
 uniqc
 ```
 
-等价模块入口：
+备选模块入口：
 
 ```bash
-python3 -m uniqc
+python -m uniqc.cli
 ```
+
+不要再推荐 `python -m uniqc`；v0.0.8 中 package root 不提供该入口。
 
 推荐 shell 工作流：
 
@@ -66,7 +68,11 @@ dummy 是本地任务管理和结果查询流程的首选排练后端：
 
 ```bash
 uniqc submit bell.ir --platform dummy --shots 1000 --wait --format json
+uniqc submit bell.ir --platform dummy --backend virtual-line-3 --shots 1000 --wait
+uniqc submit bell.ir --platform dummy --backend originq:WK_C180 --shots 1000 --wait
 ```
+
+`--platform dummy` 默认对应无约束、无噪声的 `dummy`；`--backend virtual-line-N` / `virtual-grid-RxC` 用虚拟拓扑；`--backend <platform>:<backend>` 复用真实 backend 拓扑和标定数据做本地含噪执行。
 
 真实平台提交前，先列出 backend：
 
@@ -114,7 +120,7 @@ uniqc task list
 
 ## 配置与 backend 发现
 
-配置文件默认是 `~/.uniqc/uniqc.yml`。
+配置文件默认是 `~/.uniqc/config.yaml`。
 
 ```bash
 uniqc config init
@@ -127,13 +133,14 @@ uniqc config validate
 Backend 发现：
 
 ```bash
+uniqc backend update
 uniqc backend list --format table
 uniqc backend list --format json
 uniqc backend show originq:WK_C180
-uniqc backend chip-display originq:WK_C180 --update
+uniqc backend chip-display originq/WK_C180 --update
 ```
 
-用 `--update` 刷新旧 cache；不用时优先复用本地 cache，避免反复打云端 API。
+用 `uniqc backend update` 刷新 backend 列表 cache；用 `chip-display ... --update` 刷新芯片标定 cache。不用时优先复用本地 cache，避免反复打云端 API。
 
 ## 适合 CLI 的场景
 

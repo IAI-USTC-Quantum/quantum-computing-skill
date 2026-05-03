@@ -84,8 +84,8 @@ if command -v uniqc >/dev/null 2>&1; then
   else
     check_fail "uniqc command exists but --help failed"
   fi
-elif run_py -m uniqc --help >/dev/null 2>&1; then
-  check_pass "python3 -m uniqc works"
+elif run_py -m uniqc.cli --help >/dev/null 2>&1; then
+  check_pass "python3 -m uniqc.cli works"
 else
   check_fail "No working CLI entrypoint found"
 fi
@@ -102,7 +102,7 @@ echo
 echo "5. Circuit Builder Smoke Test"
 echo "------------------------------------------------------------"
 if run_py - <<'PY'
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 
 c = Circuit(2)
 c.h(0)
@@ -171,12 +171,12 @@ echo
 echo "7. Local Simulation Smoke Test"
 echo "------------------------------------------------------------"
 if run_py - <<'PY'
-from uniqc.task.optional_deps import check_simulation
+from uniqc.backend_adapter.task.optional_deps import check_simulation
 
 if not check_simulation():
     raise SystemExit(2)
 
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 from uniqc.simulator import OriginIR_Simulator
 
 c = Circuit(2)
@@ -213,8 +213,8 @@ if [ "$FAILED" -eq 0 ]; then
 else
   echo
   echo -e "${YELLOW}Some checks failed. Suggested installs:${NC}"
-  echo "  pip install unified-quantum"
-  echo "  pip install \"unified-quantum[simulation]\""
-  echo "  pip install \"unified-quantum[pytorch]\""
+  echo "  uv pip install unified-quantum"
+  echo "  uv pip install \"unified-quantum[simulation]\""
+  echo "  uv pip install \"unified-quantum[pytorch]\""
   exit 1
 fi

@@ -15,7 +15,7 @@
 ## 当前公开 ansatz
 
 ```python
-from uniqc.algorithmics.ansatz import hea, qaoa_ansatz, uccsd_ansatz
+from uniqc import hea, qaoa_ansatz, uccsd_ansatz
 ```
 
 注意：
@@ -27,7 +27,7 @@ from uniqc.algorithmics.ansatz import hea, qaoa_ansatz, uccsd_ansatz
 ## HEA
 
 ```python
-from uniqc.algorithmics.ansatz import hea
+from uniqc import hea
 
 circuit = hea(
     n_qubits=4,
@@ -45,7 +45,7 @@ circuit = hea(
 ## QAOA ansatz
 
 ```python
-from uniqc.algorithmics.ansatz import qaoa_ansatz
+from uniqc import qaoa_ansatz
 
 cost_hamiltonian = [
     ("Z0Z1", 1.0),
@@ -69,7 +69,7 @@ circuit = qaoa_ansatz(
 ## UCCSD ansatz
 
 ```python
-from uniqc.algorithmics.ansatz import uccsd_ansatz
+from uniqc import uccsd_ansatz
 
 circuit = uccsd_ansatz(
     n_qubits=4,
@@ -98,9 +98,8 @@ circuit = uccsd_ansatz(
 ```python
 import numpy as np
 from scipy.optimize import minimize
-from uniqc.algorithmics.ansatz import hea
+from uniqc import calculate_expectation, hea
 from uniqc.simulator import OriginIR_Simulator
-from uniqc.analyzer import calculate_expectation
 
 sim = OriginIR_Simulator(backend_type="statevector")
 

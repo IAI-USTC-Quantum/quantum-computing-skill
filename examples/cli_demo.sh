@@ -10,12 +10,12 @@ run_uniqc() {
   if command -v uniqc >/dev/null 2>&1; then
     uniqc "$@"
   else
-    python3 -m uniqc "$@"
+    python3 -m uniqc.cli "$@"
   fi
 }
 
 cat >"$TMP_DIR/build_bell.py" <<'PY'
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 
 c = Circuit(2)
 c.h(0)

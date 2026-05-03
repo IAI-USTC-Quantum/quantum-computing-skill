@@ -50,7 +50,7 @@ def print_result(result: dict | None) -> None:
 
 def run_dummy_demo(shots: int) -> None:
     try:
-        from uniqc.task.optional_deps import check_simulation
+        from uniqc.backend_adapter.task.optional_deps import check_simulation
     except ImportError:
         check_simulation = lambda: False
 
@@ -82,7 +82,7 @@ def real_originq_example(shots: int) -> str:
 
     Requires:
       1. pip install "unified-quantum[originq]"
-      2. configure ~/.uniqc/uniqc.yml or export ORIGINQ_API_KEY=...
+      2. configure ~/.uniqc/config.yaml or export ORIGINQ_API_KEY=...
     """
 
     load_adapter_env_from_uniqc_config()
@@ -101,7 +101,7 @@ def real_quafu_example(shots: int) -> str:
 
     Requires:
       1. pip install "unified-quantum[quafu]"
-      2. configure ~/.uniqc/uniqc.yml or export QUAFU_API_TOKEN=...
+      2. configure ~/.uniqc/config.yaml or export QUAFU_API_TOKEN=...
     """
 
     load_adapter_env_from_uniqc_config()
@@ -120,7 +120,7 @@ def real_ibm_example(shots: int) -> str:
 
     Requires:
       1. pip install "unified-quantum[qiskit]"
-      2. configure ~/.uniqc/uniqc.yml or export IBM_TOKEN=...
+      2. configure ~/.uniqc/config.yaml or export IBM_TOKEN=...
     """
 
     load_adapter_env_from_uniqc_config()
@@ -134,9 +134,9 @@ def real_ibm_example(shots: int) -> str:
 
 
 def load_adapter_env_from_uniqc_config() -> None:
-    """Map ~/.uniqc/uniqc.yml tokens into env vars for script portability."""
+    """Map ~/.uniqc/config.yaml tokens into env vars for script portability."""
 
-    config_path = Path.home() / ".uniqc" / "uniqc.yml"
+    config_path = Path.home() / ".uniqc" / "config.yaml"
     if not config_path.exists():
         return
 

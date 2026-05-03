@@ -26,14 +26,13 @@ from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from uniqc.analyzer import calculate_expectation
-from uniqc.circuit_builder import Circuit
-from uniqc.pytorch import batch_execute
+from uniqc import Circuit, calculate_expectation
+from uniqc.torch_adapter import batch_execute
 
 
 def require_simulation() -> None:
     try:
-        from uniqc.task.optional_deps import check_simulation
+        from uniqc.backend_adapter.task.optional_deps import check_simulation
     except ImportError:
         check_simulation = lambda: False
 

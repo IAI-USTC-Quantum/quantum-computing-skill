@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pprint import pprint
 
-from uniqc.circuit_builder import Circuit
+from uniqc import Circuit
 
 
 def build_bell_circuit() -> Circuit:
@@ -22,7 +22,7 @@ def build_bell_circuit() -> Circuit:
 
 def try_local_simulation(circuit: Circuit) -> None:
     try:
-        from uniqc.task.optional_deps import check_simulation
+        from uniqc.backend_adapter.task.optional_deps import check_simulation
     except ImportError:
         check_simulation = lambda: False
 
