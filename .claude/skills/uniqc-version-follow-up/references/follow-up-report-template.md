@@ -15,6 +15,7 @@ Use this for the final handoff or PR body.
 - Best-practices guide:
 - Best-practices notebooks:
 - CLI help commands:
+- AI hint/config commands:
 - Source files inspected for ambiguous behavior:
 
 ## Skill Updates
@@ -33,8 +34,10 @@ Examples:
 
 - New or changed top-level imports.
 - CLI command or module fallback changes.
+- AI hint / progressive-disclosure changes.
 - Backend id semantics.
 - Config/cache path changes.
+- IBM proxy configuration changes.
 - Real-device, dry-run, Calibration/QEM/XEB changes.
 - Deprecated integrations.
 

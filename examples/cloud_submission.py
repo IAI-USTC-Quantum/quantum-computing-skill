@@ -120,7 +120,8 @@ def real_ibm_example(shots: int) -> str:
 
     Requires:
       1. pip install "unified-quantum[qiskit]"
-      2. configure ~/.uniqc/config.yaml or export IBM_TOKEN=...
+      2. configure ~/.uniqc/config.yaml with ibm.token and, if needed,
+         ibm.proxy.https / ibm.proxy.http.
     """
 
     load_adapter_env_from_uniqc_config()

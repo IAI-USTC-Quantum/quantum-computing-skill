@@ -23,8 +23,10 @@ Use this as a gate before opening a PR.
 - [ ] `python -m uniqc.cli --help` checked or source-confirmed.
 - [ ] Every visible subcommand help checked.
 - [ ] Nested backend command help checked.
+- [ ] `--ai-hints` / `--ai-hint`, `UNIQC_AI_HINTS=1`, and `uniqc config always-ai-hint` checked when present.
 - [ ] `references/cli-guide.md` matches help output.
 - [ ] Examples and scripts use supported CLI commands only.
+- [ ] No nonexistent CLI commands such as `uniqc workflow` are introduced unless help confirms them.
 
 ## API and Module Alignment
 
@@ -33,6 +35,7 @@ Use this as a gate before opening a PR.
 - [ ] Dummy backend id semantics match upstream docs.
 - [ ] Config, task cache, backend cache, chip cache, and calibration cache paths match upstream docs/code.
 - [ ] Cloud/real-device guidance includes dry-run and low-shot verification.
+- [ ] IBM proxy configuration is documented if upstream exposes it through `uniqc config`.
 - [ ] Frontend/Gateway behavior is mentioned if release notes or docs changed it.
 
 ## Validation

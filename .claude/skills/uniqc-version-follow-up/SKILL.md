@@ -71,9 +71,18 @@ uv run uniqc backend show --help
 uv run uniqc backend update --help
 uv run uniqc backend chip-display --help
 uv run uniqc calibrate --help
-uv run uniqc workflow --help
 uv run uniqc gateway --help
+uv run uniqc config always-ai-hint --help
 ```
+
+There is no `uniqc workflow` command unless the latest help explicitly shows one. Treat docs pages named `workflow` as prose guides, not CLI subcommands.
+
+Also inspect the AI guidance path:
+
+- `--ai-hints` and `--ai-hint` command-local flags.
+- `UNIQC_AI_HINTS=1`.
+- `uniqc config always-ai-hint on/off/status`.
+- What the CLI suggests when an agent is uncertain, a command is missing, or an option is rejected. If parser errors cannot print hints directly, document the fallback: run the nearest valid command with `--ai-hint` and inspect parent `--help`.
 
 If local dependencies prevent running CLI help, inspect `pyproject.toml` and `uniqc/cli/`, record the blocker, and still update docs from source. Do not invent commands.
 
@@ -102,9 +111,12 @@ Common targets:
   - CLI command: `uniqc`
   - supported module fallback: `python -m uniqc.cli`
 - Never recommend `python -m uniqc` unless the latest CLI help explicitly supports it.
+- Never invent `uniqc workflow`; use `--ai-hint(s)` and workflow docs as progressive disclosure unless the release adds a real command.
 - Keep old API history out of the main path. Mention old names only in troubleshooting or migration notes.
 - Treat best-practices docs as the highest-priority source for recommended user paths.
 - For real hardware workflows, include dry-run, backend discovery, low shots, result query, and cache/result recording.
+- For AI-agent workflows, recommend `uniqc config always-ai-hint on` as a best-practice one-time setup so hints appear without repeating `--ai-hint`.
+- For IBM, check whether docs/help describe proxy config such as `uniqc config set ibm.proxy.https <URL>` and mirror it in this skill when available.
 - If Quafu is still deprecated in upstream docs, do not present it as a default path.
 
 ## Validation

@@ -43,10 +43,12 @@ Use these defaults unless the user gives a reason not to:
   - `dummy:virtual-line-N` / `dummy:virtual-grid-RxC`: constrained virtual topology, noiseless.
   - `dummy:<platform>:<backend>`: real backend topology and calibration, compile/transpile, then local noisy execution.
 - Run `dry_run_task(...)` or `uniqc submit --dry-run` before real-device submission.
+- For CLI-heavy AI-agent work, enable progressive hints once with `uniqc config always-ai-hint on`, or pass `--ai-hints` / `--ai-hint` on individual commands.
 - Use `uniqc backend update`, `list`, `show`, and `chip-display` before real-device submission.
 - Use `RegionSelector` or backend characterization data when hardware quality and topology matter.
 - Keep shot counts low for initial real-device checks; increase only after the workflow and backend choice are verified.
 - Treat Quafu as deprecated and install `[quafu]` only when explicitly needed; `[all]` does not include it in v0.0.8.
+- Configure IBM proxy through `uniqc config set ibm.proxy.https <URL>` / `ibm.proxy.http <URL>` when the network path requires it.
 
 ## Core Snippets
 
@@ -106,6 +108,7 @@ If the user only needs the CLI, use `uv tool install unified-quantum`. If the us
 - CLI command: `uniqc`
 - CLI module fallback: `python -m uniqc.cli`
 - Config file: `~/.uniqc/config.yaml`
+- AI CLI hints: `--ai-hints` / `--ai-hint`, `UNIQC_AI_HINTS=1`, or `uniqc config always-ai-hint on`
 - Local task cache: `~/.uniqc/cache/tasks.sqlite`
 - Backend cache: `~/.uniqc/cache/backends.json`
 - Chip characterization cache: `~/.uniqc/backend-cache/*.json`

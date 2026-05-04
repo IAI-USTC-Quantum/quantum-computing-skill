@@ -26,6 +26,17 @@ python -m uniqc.cli
 
 不要再推荐 `python -m uniqc`；v0.0.8 中 package root 不提供该入口。
 
+CLI 的 AI 渐进式提示入口：
+
+```bash
+uniqc config list --ai-hint
+uniqc backend list --ai-hints
+UNIQC_AI_HINTS=1 uniqc config validate
+uniqc config always-ai-hint on
+```
+
+`--ai-hints` 和 `--ai-hint` 等价。给弱一点的 agent 配环境时，推荐先运行 `uniqc config always-ai-hint on`，这样后续命令不用每次加参数也会显示下一步提示。不要推荐 `uniqc workflow --help`，除非当前版本 help 明确列出该子命令；通常 `workflow` 是文档页，不是 CLI 命令。
+
 推荐 shell 工作流：
 
 ```bash
@@ -127,6 +138,8 @@ uniqc config init
 uniqc config set originq.token YOUR_ORIGINQ_TOKEN
 uniqc config set quafu.token YOUR_QUAFU_TOKEN
 uniqc config set ibm.token YOUR_IBM_TOKEN
+uniqc config set ibm.proxy.https http://127.0.0.1:7890
+uniqc config set ibm.proxy.http http://127.0.0.1:7890
 uniqc config validate
 ```
 
