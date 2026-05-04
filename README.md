@@ -30,32 +30,65 @@
 
 ## 通过 npx skills 安装
 
-同时安装到 Codex 和 Claude Code：
+默认建议一次性安装本仓库下的所有 skills。当前只有 `uniqc-basic-usage`，后续新增算法开发、QEM、真机提交等专用 skills 后，下面的命令会一起安装。
+
+### For Codex
+
+安装到当前项目：
 
 ```bash
 npx skills add IAI-USTC-Quantum/quantum-computing.skill \
   --agent codex \
-  --agent claude-code \
-  --skill uniqc-basic-usage
+  --skill '*'
 ```
 
-只安装到 Codex：
+全局安装到当前用户：
 
 ```bash
 npx skills add IAI-USTC-Quantum/quantum-computing.skill \
+  -g \
   --agent codex \
-  --skill uniqc-basic-usage
+  --skill '*'
 ```
 
-只安装到 Claude Code：
+### For Claude Code
+
+安装到当前项目：
 
 ```bash
 npx skills add IAI-USTC-Quantum/quantum-computing.skill \
   --agent claude-code \
-  --skill uniqc-basic-usage
+  --skill '*'
 ```
 
-安装到全局目录时加 `-g`。项目级安装时，Codex 会落到 `.agents/skills/`，Claude Code 会落到 `.claude/skills/`。
+全局安装到当前用户：
+
+```bash
+npx skills add IAI-USTC-Quantum/quantum-computing.skill \
+  -g \
+  --agent claude-code \
+  --skill '*'
+```
+
+### 安装到项目还是全局
+
+不加 `-g` 时是项目级安装，适合只在当前仓库使用、或者希望团队通过仓库共享同一组 skills。项目级安装会写入当前目录下的 agent 配置目录：
+
+- Codex: `.agents/skills/`
+- Claude Code: `.claude/skills/`
+
+加 `-g` 时是全局安装，适合个人常用、跨多个项目复用、不希望修改当前项目文件的情况。全局安装会写入用户目录：
+
+- Codex: `~/.codex/skills/`
+- Claude Code: `~/.claude/skills/`
+
+如果你只想列出仓库里有哪些 skills，不安装，可以运行：
+
+```bash
+npx skills add IAI-USTC-Quantum/quantum-computing.skill --list
+```
+
+如果你确实想安装到所有已支持/检测到的 Agent，可以使用 `--all`；但日常更推荐显式写 `--agent codex` 或 `--agent claude-code`，避免安装到不需要的 Agent 目录。
 
 ## 维护者命令
 
