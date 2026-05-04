@@ -1,17 +1,19 @@
 ---
-name: uniqc-version-follow-up
-description: "Use when updating the quantum-computing skill after a new UnifiedQuantum/uniqc release. Reads release notes, best-practices docs, notebooks, and CLI help, then updates SKILL.md, references, README, examples, and scripts so the skill follows the latest recommended UnifiedQuantum workflows."
+description: "Maintainer-only follow-up workflow after a new UnifiedQuantum/uniqc release. Reads release notes, best-practices docs, notebooks, and CLI help, then updates this skills repository so supported skills follow the latest recommended UnifiedQuantum workflows."
+argument-hint: "[release-tag-or-version]"
 ---
 
-# UnifiedQuantum Version Follow-Up Skill
+# UnifiedQuantum Version Follow-Up
 
-Use this skill to update `quantum-computing.skill` after every UnifiedQuantum release. The result should be a focused PR that makes the skill match the latest release, especially the official best-practices chapter and CLI help.
+Use this Claude Code slash command to update `quantum-computing.skill` after every UnifiedQuantum release. This is a maintainer-stage workflow and should be invoked explicitly as `/uniqc-version-follow-up`, optionally with a release tag or version in `$ARGUMENTS`.
+
+The result should be a focused PR that makes the repository's supported skills match the latest release, especially the official best-practices chapter and CLI help.
 
 ## Goal
 
-Make the skill answer current UnifiedQuantum questions correctly. Do not only update version text. Check the release notes, best-practices docs, CLI help, examples, and code entry points, then update this skill's instructions, references, examples, and README.
+Make the supported skills answer current UnifiedQuantum questions correctly. Do not only update version text. Check the release notes, best-practices docs, CLI help, examples, and code entry points, then update skill instructions, references, examples, and README.
 
-Use [references/update-checklist.md](references/update-checklist.md) as the required checklist and [references/follow-up-report-template.md](references/follow-up-report-template.md) for the PR summary or final handoff.
+Use [uniqc-version-follow-up/references/update-checklist.md](uniqc-version-follow-up/references/update-checklist.md) as the required checklist and [uniqc-version-follow-up/references/follow-up-report-template.md](uniqc-version-follow-up/references/follow-up-report-template.md) for the PR summary or final handoff.
 
 ## Inputs to Discover
 
@@ -25,6 +27,9 @@ Use [references/update-checklist.md](references/update-checklist.md) as the requ
 3. Current skill checkout:
    - Check `git status -sb`.
    - Do not stage unrelated local changes.
+4. Requested target if provided:
+   - Treat `$ARGUMENTS` as the intended release tag/version to verify.
+   - If `$ARGUMENTS` is empty, discover the latest release from GitHub and tags.
 
 ## Source Material Order
 
@@ -93,15 +98,16 @@ Update only files that should change for the new release.
 
 Common targets:
 
-- `README.md`: state the UnifiedQuantum version that has been followed up.
-- `SKILL.md`: update the mental model, practical defaults, names, snippets, and navigation.
-- `references/best-practices.md`: summarize the latest best-practices chapter.
-- `references/cli-guide.md`: align commands, module fallback, subcommands, and examples with CLI help.
-- `references/cloud-platforms.md`: update backend ids, dry-run, real-device guidance, task/cache behavior.
-- `references/simulators.md`: update local/dummy simulation behavior.
-- `references/troubleshooting.md`: update known install/config/dependency failures.
+- `README.md`: state the UnifiedQuantum version that has been followed up and update install commands.
+- `skills/uniqc-basic-usage/SKILL.md`: update the mental model, practical defaults, names, snippets, and navigation.
+- `skills/uniqc-basic-usage/references/best-practices.md`: summarize the latest best-practices chapter.
+- `skills/uniqc-basic-usage/references/cli-guide.md`: align commands, module fallback, subcommands, and examples with CLI help.
+- `skills/uniqc-basic-usage/references/cloud-platforms.md`: update backend ids, dry-run, real-device guidance, task/cache behavior.
+- `skills/uniqc-basic-usage/references/simulators.md`: update local/dummy simulation behavior.
+- `skills/uniqc-basic-usage/references/troubleshooting.md`: update known install/config/dependency failures.
 - Algorithm and integration references when release notes changed them.
-- `examples/` and `scripts/`: update imports, CLI commands, config paths, and deprecated names.
+- `skills/uniqc-basic-usage/examples/` and `skills/uniqc-basic-usage/scripts/`: update imports, CLI commands, config paths, and deprecated names.
+- Future dedicated skill directories under `skills/` when the release adds enough material for a separate workflow, such as algorithm development, QEM, or real-device submission.
 
 ## Rules for Content Changes
 
@@ -126,9 +132,9 @@ Common targets:
 Run checks that fit the changed files:
 
 ```bash
-python3 -m py_compile examples/*.py
-bash -n examples/cli_demo.sh
-bash -n scripts/setup_uniqc.sh
+python3 -m py_compile skills/uniqc-basic-usage/examples/*.py
+bash -n skills/uniqc-basic-usage/examples/cli_demo.sh
+bash -n skills/uniqc-basic-usage/scripts/setup_uniqc.sh
 git diff --check
 ```
 

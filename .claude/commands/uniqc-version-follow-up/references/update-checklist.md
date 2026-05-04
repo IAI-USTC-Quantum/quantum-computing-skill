@@ -14,7 +14,7 @@ Use this as a gate before opening a PR.
 - [ ] `docs/source/guide/best_practices.md` was read.
 - [ ] `docs/source/best_practices/index.md` was read.
 - [ ] Every notebook in `docs/source/best_practices/*.ipynb` was scanned for imports, commands, backend ids, and outputs.
-- [ ] `references/best-practices.md` reflects the latest recommended paths.
+- [ ] `skills/uniqc-basic-usage/references/best-practices.md` reflects the latest recommended paths.
 - [ ] README states the skill has followed up the latest UnifiedQuantum version.
 
 ## CLI Help Alignment
@@ -24,13 +24,13 @@ Use this as a gate before opening a PR.
 - [ ] Every visible subcommand help checked.
 - [ ] Nested backend command help checked.
 - [ ] `--ai-hints` / `--ai-hint`, `UNIQC_AI_HINTS=1`, and `uniqc config always-ai-hint` checked when present.
-- [ ] `references/cli-guide.md` matches help output.
+- [ ] `skills/uniqc-basic-usage/references/cli-guide.md` matches help output.
 - [ ] Examples and scripts use supported CLI commands only.
 - [ ] No nonexistent CLI commands such as `uniqc workflow` are introduced unless help confirms them.
 
 ## API and Module Alignment
 
-- [ ] `SKILL.md` imports/snippets use current recommended top-level APIs.
+- [ ] `skills/uniqc-basic-usage/SKILL.md` imports/snippets use current recommended top-level APIs.
 - [ ] Deprecated or old entries are not recommended in the happy path.
 - [ ] Dummy backend id semantics match upstream docs.
 - [ ] Config, task cache, backend cache, chip cache, and calibration cache paths match upstream docs/code.
@@ -41,9 +41,9 @@ Use this as a gate before opening a PR.
 
 ## Validation
 
-- [ ] `python3 -m py_compile examples/*.py`
-- [ ] `bash -n examples/cli_demo.sh`
-- [ ] `bash -n scripts/setup_uniqc.sh`
+- [ ] `python3 -m py_compile skills/uniqc-basic-usage/examples/*.py`
+- [ ] `bash -n skills/uniqc-basic-usage/examples/cli_demo.sh`
+- [ ] `bash -n skills/uniqc-basic-usage/scripts/setup_uniqc.sh`
 - [ ] `git diff --check`
 - [ ] Any skipped check has a concrete reason.
 

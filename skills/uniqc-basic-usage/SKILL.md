@@ -1,11 +1,11 @@
 ---
-name: quantum-computing
-description: "Use when the user asks about UnifiedQuantum, uniqc, OriginIR, OpenQASM, quantum circuit construction, local simulation, dummy backend ids, dry-run, cloud submission, backend discovery/cache, RegionSelector, compile/transpile, calibration, QEM, XEB, VQE, QAOA, UCCSD, quantum ML, or PyTorch integration. Provide practical UnifiedQuantum workflows for algorithm development, simulation, and real-device experiments."
+name: uniqc-basic-usage
+description: "Use when the user asks about UnifiedQuantum or uniqc basic usage: installation, Python imports, Circuit construction, OriginIR/OpenQASM export, local simulation, CLI help, config, dummy backends, dry-run, backend discovery/cache, simple cloud submission, result queries, and first-pass troubleshooting. Provide practical runnable workflows for getting started and validating common UnifiedQuantum tasks."
 ---
 
-# Quantum-Computing Skill
+# Uniqc Basic Usage Skill
 
-Use this skill to help agents build useful quantum-computing work with UnifiedQuantum. Prefer direct, runnable workflows over package history.
+Use this skill to help agents handle common UnifiedQuantum usage. Prefer direct, runnable workflows over package history. Keep the guidance broad enough for first-pass usage; deep algorithm development, QEM, and real-hardware operations can move into dedicated skills as they are added.
 
 ## Core Mental Model
 

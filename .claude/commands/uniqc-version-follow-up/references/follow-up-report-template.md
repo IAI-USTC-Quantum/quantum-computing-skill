@@ -21,8 +21,8 @@ Use this for the final handoff or PR body.
 ## Skill Updates
 
 - `README.md`:
-- `SKILL.md`:
-- `references/best-practices.md`:
+- `skills/uniqc-basic-usage/SKILL.md`:
+- `skills/uniqc-basic-usage/references/best-practices.md`:
 - CLI/cloud/simulator/troubleshooting references:
 - Examples/scripts:
 
@@ -45,9 +45,9 @@ Examples:
 
 | Command | Status | Notes |
 |---|---|---|
-| `python3 -m py_compile examples/*.py` |  |  |
-| `bash -n examples/cli_demo.sh` |  |  |
-| `bash -n scripts/setup_uniqc.sh` |  |  |
+| `python3 -m py_compile skills/uniqc-basic-usage/examples/*.py` |  |  |
+| `bash -n skills/uniqc-basic-usage/examples/cli_demo.sh` |  |  |
+| `bash -n skills/uniqc-basic-usage/scripts/setup_uniqc.sh` |  |  |
 | `git diff --check` |  |  |
 
 ## Known Gaps
