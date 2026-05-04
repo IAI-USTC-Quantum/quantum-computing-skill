@@ -1,0 +1,7 @@
+interface:
+  display_name: "Uniqc Basic Usage"
+  short_description: "UnifiedQuantum setup, CLI, circuits, and validation"
+  default_prompt: "Use $uniqc-basic-usage to build and validate a simple UnifiedQuantum workflow."
+
+policy:
+  allow_implicit_invocation: true

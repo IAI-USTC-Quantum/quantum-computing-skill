@@ -24,7 +24,25 @@ uniqc
 python -m uniqc.cli
 ```
 
-不要再推荐 `python -m uniqc`；v0.0.8 中 package root 不提供该入口。
+不要再推荐 `python -m uniqc`；v0.0.9 中 package root 不提供该入口。
+
+如果你要给当前环境下的 AI Agent（Codex/Claude Code）补齐基础技能，执行：
+
+```bash
+npx skills add IAI-USTC-Quantum/quantum-computing.skill --agent codex --skill '*'
+npx skills add IAI-USTC-Quantum/quantum-computing.skill --agent claude-code --skill '*'
+```
+
+CLI 的 AI 渐进式提示入口：
+
+```bash
+uniqc config list --ai-hint
+uniqc backend list --ai-hints
+UNIQC_AI_HINTS=1 uniqc config validate
+uniqc config always-ai-hint on
+```
+
+`--ai-hints` 和 `--ai-hint` 等价。给弱一点的 agent 配环境时，推荐先运行 `uniqc config always-ai-hint on`，这样后续命令不用每次加参数也会显示下一步提示。不要推荐 `uniqc workflow --help`，除非当前版本 help 明确列出该子命令；通常 `workflow` 是文档页，不是 CLI 命令。
 
 推荐 shell 工作流：
 
@@ -79,6 +97,7 @@ uniqc submit bell.ir --platform dummy --backend originq:WK_C180 --shots 1000 --w
 ```bash
 uniqc backend list --platform originq
 uniqc backend list --platform quafu
+uniqc backend list --platform quark
 uniqc backend list --platform ibm
 ```
 
@@ -94,11 +113,18 @@ Quafu 示例：
 uniqc submit bell.ir --platform quafu --backend ScQ-Sim10 --shots 100 --wait
 ```
 
+Quark 示例（需配置 `QUARK_API_KEY`）：
+
+```bash
+uniqc submit bell.ir --platform quark --backend Baihua --shots 100 --wait
+```
+
 如果不想立即提交真实任务，先做 dry run：
 
 ```bash
 uniqc submit bell.ir --platform dummy --shots 100 --dry-run
 uniqc submit bell.ir --platform originq --backend WK_C180 --shots 100 --dry-run
+uniqc submit bell.ir --platform quark --backend Baihua --shots 100 --dry-run
 ```
 
 ## 任务查询
@@ -122,11 +148,16 @@ uniqc task list
 
 配置文件默认是 `~/.uniqc/config.yaml`。
 
+Python 侧配置模块是顶级 `uniqc.config`，因为配置已经覆盖 profile、token、proxy、AI hints 等项目级状态，不再只是 backend adapter 的内部配置。旧的 `uniqc.backend_adapter.config` 可兼容旧代码，但新示例不要优先推荐它。
+
 ```bash
 uniqc config init
 uniqc config set originq.token YOUR_ORIGINQ_TOKEN
 uniqc config set quafu.token YOUR_QUAFU_TOKEN
+uniqc config set quark.QUARK_API_KEY YOUR_QUARK_API_KEY
 uniqc config set ibm.token YOUR_IBM_TOKEN
+uniqc config set ibm.proxy.https http://127.0.0.1:7890
+uniqc config set ibm.proxy.http http://127.0.0.1:7890
 uniqc config validate
 ```
 
@@ -141,6 +172,25 @@ uniqc backend chip-display originq/WK_C180 --update
 ```
 
 用 `uniqc backend update` 刷新 backend 列表 cache；用 `chip-display ... --update` 刷新芯片标定 cache。不用时优先复用本地 cache，避免反复打云端 API。
+
+## 标定与 QEM
+
+CLI 标定命令（结果自动缓存到 `~/.uniqc/calibration_cache/`）：
+
+```bash
+# XEB benchmarking（1q / 2q / parallel）
+uniqc calibrate xeb --qubits 0 1 2 3 --type 1q --backend dummy --shots 1000 --depths 5 10 20 40
+uniqc calibrate xeb --qubits 0 1 --type 2q --backend dummy --shots 1000
+
+# Readout 标定（1q / 2q joint）
+uniqc calibrate readout --qubits 0 1 --backend dummy --shots 1000
+
+# Pattern 分析（DSatur 并行分组）
+uniqc calibrate pattern --qubits 0 1 2 3 4 5
+uniqc calibrate pattern --type circuit --circuit my_circuit.ir
+```
+
+标定后可用 Python API 做 QEM（见 [references/calibration-qem.md](calibration-qem.md)）。
 
 ## 适合 CLI 的场景
 

@@ -1,21 +1,22 @@
 ---
-name: quantum-computing
-description: "Use when the user asks about UnifiedQuantum, uniqc, OriginIR, OpenQASM, quantum circuit construction, local simulation, dummy backend ids, dry-run, cloud submission, backend discovery/cache, RegionSelector, compile/transpile, calibration, QEM, XEB, VQE, QAOA, UCCSD, quantum ML, or PyTorch integration. Provide practical UnifiedQuantum workflows for algorithm development, simulation, and real-device experiments."
+name: uniqc-basic-usage
+description: "Use when the user asks about UnifiedQuantum or uniqc basic usage: installation, Python imports, Circuit construction, OriginIR/OpenQASM export, local simulation, CLI help, config, dummy backends, dry-run, backend discovery/cache, simple cloud submission, result queries, calibration, QEM, timeline visualization, and first-pass troubleshooting. Provide practical runnable workflows for getting started and validating common UnifiedQuantum tasks."
 ---
 
-# Quantum-Computing Skill
+# Uniqc Basic Usage Skill
 
-Use this skill to help agents build useful quantum-computing work with UnifiedQuantum. Prefer direct, runnable workflows over package history.
+Use this skill to help agents handle common UnifiedQuantum usage. Prefer direct, runnable workflows over package history. Keep the guidance broad enough for first-pass usage; deep algorithm development, QEM, and real-hardware operations can move into dedicated skills as they are added.
 
 ## Core Mental Model
 
-UnifiedQuantum v0.0.8 has five common surfaces:
+UnifiedQuantum v0.0.9 has six common surfaces:
 
 1. **Circuit authoring**: build circuits with top-level `uniqc.Circuit`, then export OriginIR or OpenQASM.
 2. **Local simulation**: validate circuits with `uniqc simulate` or `OriginIR_Simulator` before spending cloud quota.
 3. **Algorithm development**: compose ansatz helpers, simulators, analyzers, SciPy/PyTorch, and optimization loops.
 4. **Compile and dummy workflows**: use explicit dummy backend ids to check task, topology, and chip-backed noisy paths locally.
-5. **Cloud and calibration experiments**: discover a backend, dry-run, map/select qubits, submit through CLI/API, then query and record results.
+5. **Calibration and QEM**: characterize chip errors with XEB and readout calibration, then mitigate measurement errors with ReadoutEM or M3Mitigator.
+6. **Cloud experiments**: discover a backend, dry-run, map/select qubits, submit through CLI/API (OriginQ, Quafu, Quark, IBM), then query and record results.
 
 For new projects, assume a current UnifiedQuantum release. Do not discuss old release history unless the user is explicitly debugging an old environment.
 
@@ -29,6 +30,8 @@ Choose the path from the user's goal:
 - **Develop VQE/QAOA/UCCSD-style algorithms**: read [references/variational-algorithms.md](references/variational-algorithms.md); use [references/h2-molecular-simulation.md](references/h2-molecular-simulation.md) for H2-style VQE.
 - **Use PyTorch or batching helpers**: read [references/pytorch-integration.md](references/pytorch-integration.md).
 - **Run dummy, cloud simulator, or real hardware**: read [references/cloud-platforms.md](references/cloud-platforms.md).
+- **Calibrate, benchmark, or mitigate readout errors**: read [references/calibration-qem.md](references/calibration-qem.md).
+- **Visualize circuit timelines or render to HTML**: read [references/timeline-visualization.md](references/timeline-visualization.md).
 - **Something fails after following the feature reference**: read [references/troubleshooting.md](references/troubleshooting.md).
 
 ## Practical Defaults
@@ -43,10 +46,15 @@ Use these defaults unless the user gives a reason not to:
   - `dummy:virtual-line-N` / `dummy:virtual-grid-RxC`: constrained virtual topology, noiseless.
   - `dummy:<platform>:<backend>`: real backend topology and calibration, compile/transpile, then local noisy execution.
 - Run `dry_run_task(...)` or `uniqc submit --dry-run` before real-device submission.
+- For CLI-heavy AI-agent work, enable progressive hints once with `uniqc config always-ai-hint on`, or pass `--ai-hints` / `--ai-hint` on individual commands.
 - Use `uniqc backend update`, `list`, `show`, and `chip-display` before real-device submission.
 - Use `RegionSelector` or backend characterization data when hardware quality and topology matter.
+- Use `uniqc calibrate xeb/readout/pattern` CLI commands for chip characterization experiments; results are cached to `~/.uniqc/calibration_cache/`.
+- Use `ReadoutEM` or `M3Mitigator` from `uniqc.qem` for readout error mitigation on measurement results.
+- Quark platform requires `QUARK_API_KEY` in config (not `token`); use `--platform quark` in CLI or `backend="quark"` in Python. Install with `unified-quantum[quark]` (Python ≥ 3.12).
 - Keep shot counts low for initial real-device checks; increase only after the workflow and backend choice are verified.
-- Treat Quafu as deprecated and install `[quafu]` only when explicitly needed; `[all]` does not include it in v0.0.8.
+- Treat Quafu as deprecated and install `[quafu]` only when explicitly needed; `[all]` does not include it in v0.0.9.
+- Configure IBM proxy through `uniqc config set ibm.proxy.https <URL>` / `ibm.proxy.http <URL>` when the network path requires it.
 
 ## Core Snippets
 
@@ -87,6 +95,24 @@ Variational building blocks:
 from uniqc import calculate_expectation, hea, qaoa_ansatz, uccsd_ansatz
 ```
 
+Compile:
+
+```python
+from uniqc import compile, TranspilerConfig
+
+result = compile(circuit, backend_info, config=TranspilerConfig(level=2))
+compiled_circuit = result.output
+```
+
+QEM:
+
+```python
+from uniqc import ReadoutEM
+
+em = ReadoutEM(adapter, max_age_hours=24.0, shots=1000)
+corrected_counts = em.mitigate_counts(raw_counts, measured_qubits=[0, 1])
+```
+
 ## Environment Guidance
 
 Do not silently modify a user's Python environment. If setup is needed, first identify whether they are using `venv`, Conda, Pixi, uv, or system Python. For a fresh project, recommend:
@@ -106,6 +132,14 @@ If the user only needs the CLI, use `uv tool install unified-quantum`. If the us
 - CLI command: `uniqc`
 - CLI module fallback: `python -m uniqc.cli`
 - Config file: `~/.uniqc/config.yaml`
+- Python config module: `uniqc.config` (canonical; `uniqc.backend_adapter.config` is a pure re-export shim)
+- Compile entry point: `uniqc.compile` (`compile()`, `TranspilerConfig`, `CompilationResult`)
+- Calibration module: `uniqc.calibration` (XEB, readout calibration, `XEBResult`, `ReadoutCalibrationResult`)
+- QEM module: `uniqc.qem` (`M3Mitigator`, `ReadoutEM`, `StaleCalibrationError`)
+- Visualization module: `uniqc.visualization` (`circuit_to_html`, `plot_time_line_html`, `schedule_circuit`)
+- Algorithms workflows: `uniqc.algorithms.workflows` (`xeb_workflow`, `readout_em_workflow`)
+- BackendOptions hierarchy: `BackendOptions`, `OriginQOptions`, `QuafuOptions`, `QuarkOptions`, `IBMOptions`, `DummyOptions`
+- AI CLI hints: `--ai-hints` / `--ai-hint`, `UNIQC_AI_HINTS=1`, or `uniqc config always-ai-hint on`
 - Local task cache: `~/.uniqc/cache/tasks.sqlite`
 - Backend cache: `~/.uniqc/cache/backends.json`
 - Chip characterization cache: `~/.uniqc/backend-cache/*.json`

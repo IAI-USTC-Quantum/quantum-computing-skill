@@ -82,6 +82,7 @@ result = wait_for_result(task_id, timeout=60)
 
 line_task = submit_task(circuit, backend="dummy:virtual-line-3", shots=1000)
 noisy_task = submit_task(circuit, backend="dummy:originq:WK_C180", shots=1000)
+quark_noisy = submit_task(circuit, backend="dummy:quark:Baihua", shots=1000)
 
 task_ids = submit_batch([circuit, circuit], backend="dummy", shots=1000)
 results = [wait_for_result(task_id, timeout=60) for task_id in task_ids]
@@ -93,11 +94,21 @@ CLI：
 uniqc submit bell.ir --platform dummy --shots 1000 --wait --format json
 uniqc submit bell.ir --platform dummy --backend virtual-line-3 --shots 1000 --wait
 uniqc submit bell.ir --platform dummy --backend originq:WK_C180 --shots 1000 --wait
+uniqc submit bell.ir --platform dummy --backend quark:Baihua --shots 1000 --wait
+```
+
+Python API 中使用 `DummyOptions` 控制噪声模型：
+
+```python
+from uniqc import DummyOptions
+
+opts = DummyOptions(noise_model={"depol_1q": 0.001, "depol_2q": 0.01})
+task_id = submit_task(circuit, backend="dummy", shots=1000, options=opts)
 ```
 
 使用建议：
 
-- 写 cloud workflow 示例时，先给 dummy，再给 OriginQ/Quafu/IBM。
+- 写 cloud workflow 示例时，先给 dummy，再给 OriginQ/Quafu/Quark/IBM。
 - `dummy` 通过后，如果关心拓扑，先换 `dummy:virtual-*`；如果关心真实芯片标定噪声，再换 `dummy:<platform>:<backend>`。
 - chip-backed dummy 是规则型写法，不会出现在 `uniqc backend list` 中。
 - 不要把无约束 `dummy` counts 当成硬件噪声模型结论。

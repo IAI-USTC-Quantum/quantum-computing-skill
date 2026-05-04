@@ -4,58 +4,99 @@
 [![ClawHub](https://img.shields.io/badge/ClawHub-published-9b59b6?style=flat-square)](https://clawhub.ai/agony5757/quantum-computing)
 [![SkillHub](https://img.shields.io/badge/SkillHub-published-58a6ff?style=flat-square)](https://www.skillhub.cn/skills/quantum-computing)
 
-面向 [UnifiedQuantum](https://github.com/IAI-USTC-Quantum/UnifiedQuantum) 的本地 skill 仓库。
+面向 [UnifiedQuantum](https://github.com/IAI-USTC-Quantum/UnifiedQuantum) 的 Agent Skills 集合仓库。
 
-当前版本已 follow-up UnifiedQuantum v0.0.8，重点同步了官方文档“最佳实践”章节中的推荐路径、显式 dummy backend id、dry-run、Calibration/QEM/XEB 和新模块入口约定。
+当前版本已 follow-up UnifiedQuantum v0.0.9，重点同步了 v0.0.9 的新特性：Quark 后端、标定/QEM 模块、timeline 可视化、顶层 config 模块、扩展的 dummy backend 标识符。
 
-安装后，支持 skills 的 Agent 可以更稳地处理 UnifiedQuantum 相关任务，例如线路构建、OriginIR / QASM 转换、本地模拟、v0.0.8 显式 dummy backend id、dry-run、云平台与真机实验、backend cache、RegionSelector、compile/transpile、Calibration/QEM/XEB、变分算法示例、PyTorch 集成和通用排障。
+当前提供的通用 skill 是 `uniqc-basic-usage`。它覆盖 UnifiedQuantum/uniqc 的基础使用路径，例如安装、线路构建、OriginIR / QASM 转换、本地模拟、CLI、config、dummy backend、dry-run、backend cache、简单提交、标定/QEM、timeline 可视化和通用排障。
 
-## 这个 skill 能帮你什么
+## 当前 Skills
 
-适合让 Agent 帮你处理这类事情：
+- `uniqc-basic-usage`: 通用、跨 Agent 的 UnifiedQuantum 基础使用 skill。
 
-- 写或修改 `Circuit` 线路代码
-- 把线路导出成 OriginIR 或 OpenQASM
-- 用 `uniqc` CLI 做转换、模拟、提交和查结果
-- 搭建本地模拟、`dummy` / `dummy:virtual-*` / `dummy:<platform>:<backend>` 任务排练、云平台 simulator 和真机实验工作流
-- 查看 backend cache、选择真机 backend、使用 chip-display / RegionSelector 规划 qubit 区域
-- 使用 v0.0.8 “最佳实践”路径覆盖配置、dry-run、API/CLI 提交、Calibration/QEM 和 XEB workflow
-- 搭一个 VQE / QAOA / UCCSD 风格的算法开发示例
-- 看 `QuantumLayer`、parameter-shift 和批处理接口怎么接进 PyTorch
+后续可以继续在 `skills/` 下增加更窄的专用 skill，例如算法开发、QEM 使用、真机提交、release 前测试等。
 
-## 你可以直接让 Agent 做什么
+## 可以直接让 Agent 做什么
 
-安装后，可以直接对 Agent 说这类请求：
+安装 `uniqc-basic-usage` 后，可以直接对 Agent 说这类请求：
 
 - “帮我写一个 Bell state 的 UnifiedQuantum 示例，并导出 OriginIR。”
 - “帮我把这段 QASM 转成更适合 `uniqc simulate` 的流程。”
-- “帮我写一个最小 QAOA MaxCut 例子。”
-- “帮我把这个线路先用 dummy 跑通，再提交到 OriginQ 真机。”
-- “帮我根据 backend cache 选择一组适合 Bell/GHZ 线路的 qubit。”
-- “帮我把这个 PyTorch 训练循环接上 `QuantumLayer`。”
+- “帮我把这个线路先用 dummy 跑通。”
+- “帮我打开 `uniqc config always-ai-hint` 并解释 CLI 的下一步提示。”
+- “帮我根据 backend cache 看一下可用 backend。”
 
-## 安装此 skill
+## 通过 npx skills 安装（推荐）
 
-先把仓库放到本地，再把它链接或复制到你的 skill 目录。
+默认建议一次性安装本仓库下的所有 skills。当前只有 `uniqc-basic-usage`，后续新增算法开发、QEM、真机提交等专用 skills 后，下面的命令会一起安装。
+这个命令与 `uniqc --help` 中展示的 AI 安装建议保持一致，是目前最推荐的安装方式。
+
+### For Codex
+
+安装到当前项目：
 
 ```bash
-git clone https://github.com/IAI-USTC-Quantum/quantum-computing.skill.git
-mkdir -p ~/.Agents/skills
-ln -s /path/to/quantum-computing.skill ~/.Agents/skills/quantum-computing
+npx skills add IAI-USTC-Quantum/quantum-computing.skill \
+  --agent codex \
+  --skill '*'
 ```
 
-如果你已经有自己的共享 skills 目录，就安装到那个目录里。
+全局安装到当前用户：
 
-安装完成后，Agent 就可以从 `SKILL.md` 和 `references/` 里读取更具体的操作规则、主题说明和排障步骤。
+```bash
+npx skills add IAI-USTC-Quantum/quantum-computing.skill \
+  -g \
+  --agent codex \
+  --skill '*'
+```
+
+### For Claude Code
+
+安装到当前项目：
+
+```bash
+npx skills add IAI-USTC-Quantum/quantum-computing.skill \
+  --agent claude-code \
+  --skill '*'
+```
+
+全局安装到当前用户：
+
+```bash
+npx skills add IAI-USTC-Quantum/quantum-computing.skill \
+  -g \
+  --agent claude-code \
+  --skill '*'
+```
+
+### 安装到项目还是全局
+
+不加 `-g` 时是项目级安装，适合只在当前仓库使用、或者希望团队通过仓库共享同一组 skills。项目级安装会写入当前目录下的 agent 配置目录：
+
+- Codex: `.agents/skills/`
+- Claude Code: `.claude/skills/`
+
+加 `-g` 时是全局安装，适合个人常用、跨多个项目复用、不希望修改当前项目文件的情况。全局安装会写入用户目录：
+
+- Codex: `~/.codex/skills/`
+- Claude Code: `~/.claude/skills/`
+
+如果你只想列出仓库里有哪些 skills，不安装，可以运行：
+
+```bash
+npx skills add IAI-USTC-Quantum/quantum-computing.skill --list
+```
+
+如果你确实想安装到所有已支持/检测到的 Agent，可以使用 `--all`；但日常更推荐显式写 `--agent codex` 或 `--agent claude-code`，避免安装到不需要的 Agent 目录。
 
 ## 仓库内容
 
-- `SKILL.md`：主入口，包含触发条件、操作规则和导航
-- `references/`：按主题整理的使用说明与排障参考
-- `examples/`：可复用的示例代码
-- `scripts/`：环境检查和辅助脚本
+- `skills/uniqc-basic-usage/SKILL.md`：通用 skill 主入口
+- `skills/uniqc-basic-usage/references/`：按主题整理的使用说明与排障参考，包括 `calibration-qem.md`（标定与量子纠错）和 `timeline-visualization.md`（时间线可视化）
+- `skills/uniqc-basic-usage/examples/`：可复用的示例代码（含 Quark 平台提交示例）
+- `skills/uniqc-basic-usage/scripts/`：环境检查和辅助脚本
 
-## 通过 ClawHub 安装（推荐）
+## 通过 ClawHub 安装
 
 ```bash
 # 访问 https://clawhub.ai/agony5757/quantum-computing 获取安装命令

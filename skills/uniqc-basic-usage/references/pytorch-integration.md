@@ -36,6 +36,8 @@ from uniqc.torch_adapter import (
 )
 ```
 
+v0.0.9 起这些对象也是 `uniqc` 顶层的 lazy export，可以写 `from uniqc import batch_execute`，但显式 `from uniqc.torch_adapter import ...` 仍然可用且更明确。
+
 可选情况下还可能有：
 
 ```python
