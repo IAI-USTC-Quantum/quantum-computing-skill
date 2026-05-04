@@ -10,8 +10,6 @@
 
 当前提供的通用 skill 是 `uniqc-basic-usage`。它覆盖 UnifiedQuantum/uniqc 的基础使用路径，例如安装、线路构建、OriginIR / QASM 转换、本地模拟、CLI、config、dummy backend、dry-run、backend cache、简单提交和通用排障。
 
-`uniqc-version-follow-up` 已改为 Claude Code 项目级 slash command，只供维护者在本仓库内主动调用，用于每次 UnifiedQuantum 发版后的最终同步。
-
 ## 当前 Skills
 
 - `uniqc-basic-usage`: 通用、跨 Agent 的 UnifiedQuantum 基础使用 skill。
@@ -91,23 +89,12 @@ npx skills add IAI-USTC-Quantum/quantum-computing.skill --list
 
 如果你确实想安装到所有已支持/检测到的 Agent，可以使用 `--all`；但日常更推荐显式写 `--agent codex` 或 `--agent claude-code`，避免安装到不需要的 Agent 目录。
 
-## 维护者命令
-
-本仓库包含 Claude Code 项目级 slash command：
-
-```text
-/uniqc-version-follow-up [release-tag-or-version]
-```
-
-它位于 `.claude/commands/uniqc-version-follow-up.md`，只面向维护者在本仓库中主动调用，不作为跨 Agent skill 分发。
-
 ## 仓库内容
 
 - `skills/uniqc-basic-usage/SKILL.md`：通用 skill 主入口
 - `skills/uniqc-basic-usage/references/`：按主题整理的使用说明与排障参考
 - `skills/uniqc-basic-usage/examples/`：可复用的示例代码
 - `skills/uniqc-basic-usage/scripts/`：环境检查和辅助脚本
-- `.claude/commands/uniqc-version-follow-up.md`：维护者 follow-up slash command
 
 ## 通过 ClawHub 安装（推荐）
 
