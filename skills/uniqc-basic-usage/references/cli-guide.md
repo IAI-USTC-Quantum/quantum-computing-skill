@@ -26,6 +26,13 @@ python -m uniqc.cli
 
 不要再推荐 `python -m uniqc`；v0.0.8 中 package root 不提供该入口。
 
+如果你要给当前环境下的 AI Agent（Codex/Claude Code）补齐基础技能，执行：
+
+```bash
+npx skills add IAI-USTC-Quantum/quantum-computing.skill --agent codex --skill '*'
+npx skills add IAI-USTC-Quantum/quantum-computing.skill --agent claude-code --skill '*'
+```
+
 CLI 的 AI 渐进式提示入口：
 
 ```bash

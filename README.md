@@ -31,6 +31,7 @@
 ## 通过 npx skills 安装
 
 默认建议一次性安装本仓库下的所有 skills。当前只有 `uniqc-basic-usage`，后续新增算法开发、QEM、真机提交等专用 skills 后，下面的命令会一起安装。
+这个命令与 `uniqc --help` 中展示的 AI 安装建议保持一致。
 
 ### For Codex
 
