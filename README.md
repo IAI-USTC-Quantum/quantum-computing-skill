@@ -6,9 +6,9 @@
 
 面向 [UnifiedQuantum](https://github.com/IAI-USTC-Quantum/UnifiedQuantum) 的 Agent Skills 集合仓库。
 
-当前版本已 follow-up UnifiedQuantum v0.0.8，重点同步了官方文档“最佳实践”章节中的推荐路径、显式 dummy backend id、dry-run、Calibration/QEM/XEB 和新模块入口约定。
+当前版本已 follow-up UnifiedQuantum v0.0.9，重点同步了 v0.0.9 的新特性：Quark 后端、标定/QEM 模块、timeline 可视化、顶层 config 模块、扩展的 dummy backend 标识符。
 
-当前提供的通用 skill 是 `uniqc-basic-usage`。它覆盖 UnifiedQuantum/uniqc 的基础使用路径，例如安装、线路构建、OriginIR / QASM 转换、本地模拟、CLI、config、dummy backend、dry-run、backend cache、简单提交和通用排障。
+当前提供的通用 skill 是 `uniqc-basic-usage`。它覆盖 UnifiedQuantum/uniqc 的基础使用路径，例如安装、线路构建、OriginIR / QASM 转换、本地模拟、CLI、config、dummy backend、dry-run、backend cache、简单提交、标定/QEM、timeline 可视化和通用排障。
 
 ## 当前 Skills
 
@@ -26,10 +26,10 @@
 - “帮我打开 `uniqc config always-ai-hint` 并解释 CLI 的下一步提示。”
 - “帮我根据 backend cache 看一下可用 backend。”
 
-## 通过 npx skills 安装
+## 通过 npx skills 安装（推荐）
 
 默认建议一次性安装本仓库下的所有 skills。当前只有 `uniqc-basic-usage`，后续新增算法开发、QEM、真机提交等专用 skills 后，下面的命令会一起安装。
-这个命令与 `uniqc --help` 中展示的 AI 安装建议保持一致。
+这个命令与 `uniqc --help` 中展示的 AI 安装建议保持一致，是目前最推荐的安装方式。
 
 ### For Codex
 
@@ -92,11 +92,11 @@ npx skills add IAI-USTC-Quantum/quantum-computing.skill --list
 ## 仓库内容
 
 - `skills/uniqc-basic-usage/SKILL.md`：通用 skill 主入口
-- `skills/uniqc-basic-usage/references/`：按主题整理的使用说明与排障参考
-- `skills/uniqc-basic-usage/examples/`：可复用的示例代码
+- `skills/uniqc-basic-usage/references/`：按主题整理的使用说明与排障参考，包括 `calibration-qem.md`（标定与量子纠错）和 `timeline-visualization.md`（时间线可视化）
+- `skills/uniqc-basic-usage/examples/`：可复用的示例代码（含 Quark 平台提交示例）
 - `skills/uniqc-basic-usage/scripts/`：环境检查和辅助脚本
 
-## 通过 ClawHub 安装（推荐）
+## 通过 ClawHub 安装
 
 ```bash
 # 访问 https://clawhub.ai/agony5757/quantum-computing 获取安装命令

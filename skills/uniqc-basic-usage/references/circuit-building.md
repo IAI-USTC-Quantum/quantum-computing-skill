@@ -10,7 +10,7 @@
 - 复制、拼接、重映射、屏障
 - 输出建议
 
-当前 UnifiedQuantum 的核心对象仍然是 `Circuit`。v0.0.8 新代码优先从 `uniqc` 顶层导入常用对象；只有需要底层类型时才进入 `uniqc.circuit_builder`。
+当前 UnifiedQuantum 的核心对象仍然是 `Circuit`。v0.0.9 新代码优先从 `uniqc` 顶层导入常用对象；只有需要底层类型时才进入 `uniqc.circuit_builder`。
 
 最常见的工作流是：
 
@@ -183,3 +183,5 @@ c.barrier(0, 1, 2)
 - 需要和第三方工具交换时：使用 `qasm`
 
 如果后续步骤涉及 `uniqc simulate`，建议先把输入统一到 OriginIR，再继续执行。
+
+构建完成后，可用 `circuit_to_html()` 或 `schedule_circuit()` 可视化线路结构和时间线（见 [timeline-visualization.md](timeline-visualization.md)）。

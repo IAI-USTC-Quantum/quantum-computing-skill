@@ -30,7 +30,7 @@ which uniqc || true
 uniqc --help | head -40
 ```
 
-如果 `python -m uniqc.cli` 和 `uniqc` 行为不同，优先处理 PATH/venv 问题。不要使用 `python -m uniqc` 作为 v0.0.8 的排错入口。
+如果 `python -m uniqc.cli` 和 `uniqc` 行为不同，优先处理 PATH/venv 问题。不要使用 `python -m uniqc` 作为 v0.0.9 的排错入口。
 
 ## 安装与 extra
 
@@ -44,6 +44,7 @@ uv pip install "unified-quantum[all]"
 
 - 本地模拟 / dummy：`unified-quantum[simulation]`
 - OriginQ：`unified-quantum[originq]`
+- Quark：`unified-quantum[quark]`（Python ≥ 3.12）
 - Quafu：`unified-quantum[quafu]`，该平台已 deprecated，且不包含在 `[all]` 中
 - IBM：`unified-quantum[qiskit]`
 - PyTorch：`unified-quantum[pytorch]`
@@ -118,3 +119,12 @@ Issue 内容应包含：
 - 完整 traceback 或任务状态
 - 期望行为与实际行为
 - 是否涉及真实云端 task id，注意不要泄露 token
+
+## 标定与 QEM 排错
+
+| 症状 | 原因 | 处理 |
+|------|------|------|
+| `StaleCalibrationError` | 标定数据超过 `max_age_hours` TTL | 重新执行 `uniqc calibrate readout` 或 `uniqc calibrate xeb`，或在 Python API 中增大 `max_age_hours` |
+| `FileNotFoundError` in `M3Mitigator` | 标定 cache 文件不存在 | 先执行 `uniqc calibrate readout` |
+| 在 dummy backend 上做 QEM 结果全零 | DummyAdapter 返回的 counts 默认是无噪声的 | QEM 在 dummy 上无实际意义；用含噪 dummy（`dummy:originq:WK_C180`）或真机才有校准效果 |
+| `TimelineDurationError` | 逻辑线路没有门时长数据 | 传入 `gate_durations` dict，或使用 `backend_info` 带时长信息的 backend |

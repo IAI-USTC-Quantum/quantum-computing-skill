@@ -26,20 +26,20 @@ with open("bell.ir", "w", encoding="utf-8") as f:
     f.write(c.originir)
 PY
 
-echo "[1/4] Build a Bell circuit as OriginIR"
+echo "[1/7] Build a Bell circuit as OriginIR"
 (cd "$TMP_DIR" && python3 build_bell.py)
 
 echo
-echo "[2/4] Show circuit info"
+echo "[2/7] Show circuit info"
 run_uniqc circuit "$TMP_DIR/bell.ir" --info
 
 echo
-echo "[3/4] Convert to OpenQASM 2.0"
+echo "[3/7] Convert to OpenQASM 2.0"
 run_uniqc circuit "$TMP_DIR/bell.ir" --format qasm -o "$TMP_DIR/bell.qasm"
 sed -n '1,40p' "$TMP_DIR/bell.qasm"
 
 echo
-echo "[4/4] Try local simulation and dummy submission"
+echo "[4/7] Try local simulation and dummy submission"
 echo "These steps usually require unified-quantum[simulation]."
 
 if run_uniqc simulate "$TMP_DIR/bell.ir" --shots 1024 --format json; then
@@ -49,3 +49,24 @@ if run_uniqc simulate "$TMP_DIR/bell.ir" --shots 1024 --format json; then
 else
   echo "Simulation failed. Install unified-quantum[simulation] and retry."
 fi
+
+echo
+echo "[5/7] Run readout calibration on dummy backend"
+echo "Results are cached to ~/.uniqc/calibration_cache/."
+if run_uniqc calibrate readout --qubits 0 1 --backend dummy --shots 1000; then
+  echo "Readout calibration complete."
+else
+  echo "Readout calibration failed (requires simulation extras). Skipping."
+fi
+
+echo
+echo "[6/7] Run XEB benchmarking on dummy backend"
+if run_uniqc calibrate xeb --qubits 0 1 --type 1q --backend dummy --shots 500 --depths 5 10 --n-circuits 10; then
+  echo "XEB benchmarking complete."
+else
+  echo "XEB benchmarking failed (requires simulation extras). Skipping."
+fi
+
+echo
+echo "[7/7] Show backend list (first 5 lines)"
+run_uniqc backend list --format table 2>/dev/null | head -5 || true

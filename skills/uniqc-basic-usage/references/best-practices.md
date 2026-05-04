@@ -1,6 +1,6 @@
-# v0.0.8 最佳实践参考
+# v0.0.9 最佳实践参考
 
-UnifiedQuantum v0.0.8 文档的“最佳实践”章节是一组已执行 notebooks，用于发布前验证主路径：配置、后端缓存、裸 Circuit、Named Circuit、虚拟/本地后端、API/CLI 提交、云后端 dry-run 模板、变分线路、Torch 集成、Calibration/QEM 和 XEB workflow。
+UnifiedQuantum v0.0.9 文档的”最佳实践”章节是一组已执行 notebooks，用于发布前验证主路径：配置、后端缓存、裸 Circuit、Named Circuit、虚拟/本地后端、API/CLI 提交（含 Quark）、云后端 dry-run 模板、变分线路、Torch 集成、Calibration/QEM、XEB workflow 和 timeline visualization。
 
 ## 首选导入与模块边界
 
@@ -10,9 +10,10 @@ UnifiedQuantum v0.0.8 文档的“最佳实践”章节是一组已执行 notebo
 from uniqc import Circuit, compile, dry_run_task, submit_task, wait_for_result
 from uniqc import BackendInfo, Platform, QubitTopology
 from uniqc import calculate_expectation, hea, qaoa_ansatz, uccsd_ansatz
+from uniqc import M3Mitigator, ReadoutEM, QuarkOptions, DummyOptions
 ```
 
-只有在需要特定子模块能力时才使用深层路径，例如 `uniqc.simulator.OriginIR_Simulator`、`uniqc.config`、`uniqc.torch_adapter`、`uniqc.calibration`、`uniqc.qem`、`uniqc.algorithms.workflows`。配置属于项目级能力，新代码应优先使用 `uniqc.config`；`uniqc.backend_adapter.config` 只作为兼容入口理解。
+只有在需要特定子模块能力时才使用深层路径，例如 `uniqc.simulator.OriginIR_Simulator`、`uniqc.config`、`uniqc.torch_adapter`、`uniqc.calibration`、`uniqc.qem`、`uniqc.algorithms.workflows`、`uniqc.visualization`。配置属于项目级能力，新代码应优先使用 `uniqc.config`；`uniqc.backend_adapter.config` 是纯 re-export shim，只作为兼容入口理解。
 
 不要在新代码里依赖旧入口：`uniqc.transpiler`、`uniqc.task`、`uniqc.qasm`、`uniqc.originir`、`uniqc.pytorch`、`uniqc.analyzer`。
 
@@ -66,6 +67,7 @@ uv pip install unified-quantum
 按功能安装 extras：
 
 - OriginQ: `unified-quantum[originq]`
+- Quark: `unified-quantum[quark]`（Python ≥ 3.12）
 - IBM/Qiskit: `unified-quantum[qiskit]`
 - 高级模拟: `unified-quantum[simulation]`
 - 可视化: `unified-quantum[visualization]`
@@ -91,9 +93,26 @@ uv run python scripts/generate_best_practice_notebooks.py
 
 ## Calibration、QEM、XEB
 
+CLI 标定命令：
+
+```bash
+uniqc calibrate xeb --qubits 0 1 2 3 --type 1q --backend dummy --shots 1000
+uniqc calibrate readout --qubits 0 1 --backend dummy --shots 1000
+uniqc calibrate pattern --qubits 0 1 2 3 4 5
+```
+
+Python API：
+
+```python
+from uniqc import ReadoutEM, M3Mitigator, StaleCalibrationError
+from uniqc.algorithms.workflows import xeb_workflow, readout_em_workflow
+```
+
 - Calibration 结果写入 `~/.uniqc/calibration_cache/`。
-- `uniqc.calibration` 负责生成和保存标定数据。
-- `uniqc.qem` 负责读取标定数据并执行 error mitigation，包含 TTL 新鲜度检查。
-- XEB workflow 走 `from uniqc import xeb_workflow`，例如 `xeb_workflow.run_1q_xeb_workflow(...)`。
+- `uniqc.calibration` 负责生成和保存标定数据（`XEBResult`、`ReadoutCalibrationResult`）。
+- `uniqc.qem` 负责读取标定数据并执行 error mitigation，包含 TTL 新鲜度检查（`max_age_hours`）。
+- `ReadoutEM` 是统一接口，自动分派 1q/2q/多qubit 标定；`M3Mitigator` 提供混淆矩阵线性反转。
+- XEB workflow 走 `from uniqc.algorithms.workflows import xeb_workflow`，例如 `xeb_workflow.run_1q_xeb_workflow(...)`。
+- readout_em workflow 走 `from uniqc.algorithms.workflows import readout_em_workflow`。
 
 示例默认用 `backend="dummy"` 做无约束、无噪声发布检查；要验证真实芯片标定噪声路径时才改成 `backend="dummy:originq:WK_C180"`。

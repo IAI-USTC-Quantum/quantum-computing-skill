@@ -167,6 +167,19 @@ else
   check_warn "IBM qiskit runtime packages are not importable; IBM adapter may fail unless qiskit extra is installed"
 fi
 
+if run_py - <<'PY'
+try:
+    import quark
+    print("quark", getattr(quark, "__version__", "ok"))
+except Exception as exc:
+    raise SystemExit(str(exc))
+PY
+then
+  check_pass "quark (QuarkStudio) is importable"
+else
+  check_warn "quark is not importable; Quark platform adapter will not work (requires Python >= 3.12)"
+fi
+
 echo
 echo "7. Local Simulation Smoke Test"
 echo "------------------------------------------------------------"
@@ -216,5 +229,6 @@ else
   echo "  uv pip install unified-quantum"
   echo "  uv pip install \"unified-quantum[simulation]\""
   echo "  uv pip install \"unified-quantum[pytorch]\""
+  echo "  uv pip install \"unified-quantum[quark]\"    # Python >= 3.12 only"
   exit 1
 fi

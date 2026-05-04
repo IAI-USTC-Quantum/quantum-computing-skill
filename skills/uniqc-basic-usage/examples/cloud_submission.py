@@ -134,6 +134,25 @@ def real_ibm_example(shots: int) -> str:
     )
 
 
+def real_quark_example(shots: int) -> str:
+    """Skeleton for a real Quark submission.
+
+    Requires:
+      1. pip install "unified-quantum[quark]"  (Python >= 3.12)
+      2. configure ~/.uniqc/config.yaml or export QUARK_API_KEY=...
+    """
+
+    load_adapter_env_from_uniqc_config()
+    circuit = build_bell_circuit()
+    return submit_task(
+        circuit,
+        backend="quark",
+        shots=shots,
+        chip_id="Baihua",
+        metadata={"example": "real-quark"},
+    )
+
+
 def load_adapter_env_from_uniqc_config() -> None:
     """Map ~/.uniqc/config.yaml tokens into env vars for script portability."""
 
@@ -148,6 +167,7 @@ def load_adapter_env_from_uniqc_config() -> None:
     mappings = {
         ("originq", "token"): "ORIGINQ_API_KEY",
         ("quafu", "token"): "QUAFU_API_TOKEN",
+        ("quark", "QUARK_API_KEY"): "QUARK_API_KEY",
         ("ibm", "token"): "IBM_TOKEN",
     }
     for (platform, key), env_name in mappings.items():
@@ -166,6 +186,7 @@ def main() -> None:
     print("\nReal backend entry points are available as helper functions:")
     print("  - real_originq_example(shots)")
     print("  - real_quafu_example(shots)")
+    print("  - real_quark_example(shots)")
     print("  - real_ibm_example(shots)")
 
 
