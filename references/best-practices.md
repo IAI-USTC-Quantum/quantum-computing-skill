@@ -12,7 +12,7 @@ from uniqc import BackendInfo, Platform, QubitTopology
 from uniqc import calculate_expectation, hea, qaoa_ansatz, uccsd_ansatz
 ```
 
-只有在需要特定子模块能力时才使用深层路径，例如 `uniqc.simulator.OriginIR_Simulator`、`uniqc.torch_adapter`、`uniqc.calibration`、`uniqc.qem`、`uniqc.algorithms.workflows`。
+只有在需要特定子模块能力时才使用深层路径，例如 `uniqc.simulator.OriginIR_Simulator`、`uniqc.config`、`uniqc.torch_adapter`、`uniqc.calibration`、`uniqc.qem`、`uniqc.algorithms.workflows`。配置属于项目级能力，新代码应优先使用 `uniqc.config`；`uniqc.backend_adapter.config` 只作为兼容入口理解。
 
 不要在新代码里依赖旧入口：`uniqc.transpiler`、`uniqc.task`、`uniqc.qasm`、`uniqc.originir`、`uniqc.pytorch`、`uniqc.analyzer`。
 

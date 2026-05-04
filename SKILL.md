@@ -108,6 +108,7 @@ If the user only needs the CLI, use `uv tool install unified-quantum`. If the us
 - CLI command: `uniqc`
 - CLI module fallback: `python -m uniqc.cli`
 - Config file: `~/.uniqc/config.yaml`
+- Python config module: `uniqc.config` (project-level; `uniqc.backend_adapter.config` is legacy-compatible)
 - AI CLI hints: `--ai-hints` / `--ai-hint`, `UNIQC_AI_HINTS=1`, or `uniqc config always-ai-hint on`
 - Local task cache: `~/.uniqc/cache/tasks.sqlite`
 - Backend cache: `~/.uniqc/cache/backends.json`

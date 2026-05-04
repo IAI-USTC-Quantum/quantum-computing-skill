@@ -45,6 +45,7 @@ Read in this order. Stop only when enough evidence is collected; do not skip bes
    - help for every visible subcommand and nested command.
 4. Implementation entry points when docs are ambiguous:
    - `uniqc/__init__.py`
+   - `uniqc/config.py`
    - `uniqc/cli/`
    - `uniqc/backend_adapter/`
    - `uniqc/gateway/`
@@ -116,6 +117,7 @@ Common targets:
 - Treat best-practices docs as the highest-priority source for recommended user paths.
 - For real hardware workflows, include dry-run, backend discovery, low shots, result query, and cache/result recording.
 - For AI-agent workflows, recommend `uniqc config always-ai-hint on` as a best-practice one-time setup so hints appear without repeating `--ai-hint`.
+- Treat `uniqc.config` as the preferred project-level Python config module when upstream exposes it; mention `uniqc.backend_adapter.config` only as a legacy-compatible path.
 - For IBM, check whether docs/help describe proxy config such as `uniqc config set ibm.proxy.https <URL>` and mirror it in this skill when available.
 - If Quafu is still deprecated in upstream docs, do not present it as a default path.
 

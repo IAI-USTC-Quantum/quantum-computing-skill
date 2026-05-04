@@ -34,6 +34,7 @@ Use this as a gate before opening a PR.
 - [ ] Deprecated or old entries are not recommended in the happy path.
 - [ ] Dummy backend id semantics match upstream docs.
 - [ ] Config, task cache, backend cache, chip cache, and calibration cache paths match upstream docs/code.
+- [ ] Project-level config module path checked; prefer `uniqc.config` when available.
 - [ ] Cloud/real-device guidance includes dry-run and low-shot verification.
 - [ ] IBM proxy configuration is documented if upstream exposes it through `uniqc config`.
 - [ ] Frontend/Gateway behavior is mentioned if release notes or docs changed it.

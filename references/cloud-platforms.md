@@ -45,7 +45,7 @@ uniqc config always-ai-hint on
 uniqc config validate
 ```
 
-Python adapters 会读取配置。IBM proxy 优先放进 `~/.uniqc/config.yaml`，这样 CLI、Python API 和测试路径能共用同一份网络配置。自动化脚本也可以显式设置环境变量，便于 CI 或临时凭证：
+Python adapters 会读取配置。新代码优先通过顶级 `uniqc.config` 理解和操作项目级配置。IBM proxy 优先放进 `~/.uniqc/config.yaml`，这样 CLI、Python API 和测试路径能共用同一份网络配置。自动化脚本也可以显式设置环境变量，便于 CI 或临时凭证：
 
 ```bash
 export ORIGINQ_API_KEY=...

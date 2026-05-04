@@ -133,6 +133,8 @@ uniqc task list
 
 配置文件默认是 `~/.uniqc/config.yaml`。
 
+Python 侧配置模块是顶级 `uniqc.config`，因为配置已经覆盖 profile、token、proxy、AI hints 等项目级状态，不再只是 backend adapter 的内部配置。旧的 `uniqc.backend_adapter.config` 可兼容旧代码，但新示例不要优先推荐它。
+
 ```bash
 uniqc config init
 uniqc config set originq.token YOUR_ORIGINQ_TOKEN
