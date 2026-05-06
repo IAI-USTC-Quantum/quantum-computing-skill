@@ -44,7 +44,7 @@ Use these defaults unless the user gives a reason not to:
 - Use explicit dummy backend ids:
   - `dummy`: unconstrained, noiseless local virtual machine.
   - `dummy:virtual-line-N` / `dummy:virtual-grid-RxC`: constrained virtual topology, noiseless.
-  - `dummy:<platform>:<backend>`: real backend topology and calibration, compile/transpile, then local noisy execution. Requires `unified-quantum[qiskit]` for the topology-aware compile pass; without it `submit_task` raises `CompilationFailedException`.
+  - `dummy:<platform>:<backend>`: real backend topology and calibration, compile/transpile, then local noisy execution. Requires `unified-quantum[qiskit]` for the topology-aware compile pass; without it `submit_task` raises `CompilationFailedError`.
 - Run `dry_run_task(...)` or `uniqc submit --dry-run` before real-device submission.
 - For CLI-heavy AI-agent work, enable progressive hints once with `uniqc config always-ai-hint on`, or pass `--ai-hints` / `--ai-hint` on individual commands.
 - Use `uniqc backend update`, `list`, `show`, and `chip-display` before real-device submission.
@@ -56,7 +56,7 @@ Use these defaults unless the user gives a reason not to:
 - Treat Quafu as deprecated and install `[quafu]` only when explicitly needed; `[all]` does not include it (still true on 0.0.11.x).
 - Configure IBM proxy through `uniqc config set ibm.proxy.https <URL>` / `ibm.proxy.http <URL>` when the network path requires it.
 - Real `originq` paths (cloud simulator AND hardware AND chip-backed dummy compile) require `pip install unified-quantum[originq]` (pulls `pyqpanda3`); likewise `[quafu]` for Quafu, `[quark]` for Quark, `[qiskit]` for IBM and for chip-backed dummy backends (`dummy:originq:<chip>`, `dummy:quark:<chip>`).
-- `UNIQC_DUMMY` and `UNIQC_SKIP_VALIDATION` are read **at module import time**. Set them BEFORE `import uniqc` (or in the shell environment); changing them at runtime via `os.environ[...]` has no effect.
+- `UNIQC_DUMMY` and `UNIQC_SKIP_VALIDATION` env vars have been **removed** (uniqc ≥ 0.0.11.dev10). Activate dummy mode by passing `backend="dummy"` / `backend="dummy:..."` to `submit_task`. Skip pre-submission validation per call with `submit_task(..., skip_validation=True)`.
 
 ## Core Snippets
 

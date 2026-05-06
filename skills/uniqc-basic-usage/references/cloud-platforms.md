@@ -2,7 +2,7 @@
 
 > ⚠️ 平台 extras 速查：所有 `originq` 提交路径（云端模拟器和真机）都需要 `pip install unified-quantum[originq]`（拉 `pyqpanda3`）；同理 `[quafu]`（Quafu）、`[quark]`（Quark）、`[qiskit]`（IBM **以及** chip-backed dummy backend `dummy:originq:<chip>` / `dummy:quark:<chip>` 的拓扑感知 compile 通道）。
 >
-> 没装对应 extra 时，`submit_task(...)` 会抛 `CompilationFailedException` 或 `Package '...' is required for this feature` 错误。
+> 没装对应 extra 时，`submit_task(...)` 会抛 `CompilationFailedError` 或 `Package '...' is required for this feature` 错误。
 
 ## 目录
 
@@ -52,7 +52,7 @@ uniqc config validate
 
 Python adapters 会读取配置。新代码优先通过顶级 `uniqc.config` 理解和操作项目级配置。IBM proxy 优先放进 `~/.uniqc/config.yaml`，这样 CLI、Python API 和测试路径能共用同一份网络配置。
 
-> ⚠️ **环境变量真相**（破除常见误解）：uniqc 自己**只**读 `UNIQC_PROFILE`、`UNIQC_DUMMY`、`UNIQC_SKIP_VALIDATION` 以及 `HTTP(S)_PROXY`。它**不会**自动读取 `ORIGINQ_API_KEY` / `QUAFU_API_TOKEN` / `QUARK_API_KEY` / `IBM_TOKEN`。这些 token 必须写进 `~/.uniqc/config.yaml`：
+> ⚠️ **环境变量真相**（破除常见误解）：uniqc 自己**只**读 `UNIQC_PROFILE` 以及 `HTTP(S)_PROXY`。它**不会**自动读取 `ORIGINQ_API_KEY` / `QUAFU_API_TOKEN` / `QUARK_API_KEY` / `IBM_TOKEN`。这些 token 必须写进 `~/.uniqc/config.yaml`：
 >
 > ```bash
 > uniqc config set originq.token <TOKEN>
@@ -63,7 +63,9 @@ Python adapters 会读取配置。新代码优先通过顶级 `uniqc.config` 理
 >
 > 如果一定要用环境变量传 token，需要在自己的脚本里手动把 env → config 同步（参见 `examples/cloud_submission.py` 里的 `_sync_env_to_config` 辅助函数，那是脚本自己的便利封装，不是 uniqc 的内置行为）。
 >
-> 另外：`UNIQC_DUMMY` / `UNIQC_SKIP_VALIDATION` 在 **`import uniqc` 时**就被读取，`os.environ[...] = ...` 设在 import 之后无效——必须在 shell 里或在 `import uniqc` 之前设。
+> 另外：旧版 `UNIQC_DUMMY` / `UNIQC_SKIP_VALIDATION` 环境变量在 0.0.11.dev10 起**已移除**。改用：
+>   - **dummy 模式**：传 `backend="dummy"` / `backend="dummy:virtual-line-N"` / `backend="dummy:originq:WK_C180"` 等到 `submit_task` 即可激活，无需任何环境变量。
+>   - **跳过提交前校验**：在 `submit_task(..., skip_validation=True)` 单次调用上传 kwarg。
 
 不要把 token 写进示例代码、日志或 issue。
 
@@ -116,7 +118,7 @@ line_task = submit_task(circuit, backend="dummy:virtual-line-3", shots=1000)
 noisy_task = submit_task(circuit, backend="dummy:originq:WK_C180", shots=1000)
 ```
 
-`dummy:originq:WK_C180` 这类写法会按真实 backend compile/transpile，再本地含噪执行；它是**提交规则**（`submit_task(backend=...)` 专用），不是 `backend list` / `find_backend(...)` 里的枚举项。`find_backend('dummy:originq:WK_C180')` 直接抛 `ValueError: Backend ... not found`；`list_backends()` 只返回显式注册的后端（`dummy`、`dummy:virtual-line-N`、`dummy:virtual-grid-RxC`、`dummy:mps:linear-N`，加全部真实云后端）。它还需要 `unified-quantum[qiskit]`，否则 `submit_task` 会抛 `CompilationFailedException`。
+`dummy:originq:WK_C180` 这类写法会按真实 backend compile/transpile，再本地含噪执行；它是**提交规则**（`submit_task(backend=...)` 专用），不是 `backend list` / `find_backend(...)` 里的枚举项。`find_backend('dummy:originq:WK_C180')` 直接抛 `ValueError: Backend ... not found`；`list_backends()` 只返回显式注册的后端（`dummy`、`dummy:virtual-line-N`、`dummy:virtual-grid-RxC`、`dummy:mps:linear-N`，加全部真实云后端）。它还需要 `unified-quantum[qiskit]`，否则 `submit_task` 会抛 `CompilationFailedError`。
 
 OriginQ 真机：
 
@@ -128,10 +130,10 @@ c = Circuit(2); c.h(0); c.cnot(0, 1); c.measure(0, 1)
 backend_info = find_backend('originq:WK_C180')
 c_native = compile(c, backend_info, level=2)         # H/CNOT → CZ/SX/RZ
 task_id = submit_task(c_native, backend='originq', backend_name='WK_C180', shots=200)
-result = wait_for_result(task_id, timeout=300)       # → dict[bitstring|int, int]
+result = wait_for_result(task_id, timeout=300)       # → UnifiedResult (dict-like over counts)
 ```
 
-> 如果跳过显式 `compile`，`submit_task` 会按芯片 basis 校验线路，遇到 H、CNOT 这类逻辑门时抛 `UnsupportedGateError`（`auto_compile=True` 在当前实现中**不会**自动 compile —— 已知问题，见 `uniqc-report.md` D2）。养成提交前先 `compile(...)` 的习惯最稳。
+> 默认 `auto_compile=True`（uniqc ≥ 0.0.11.dev10）：当线路不满足芯片 basis/topology 时，`submit_task` 会先调用 `compile_for_backend` 自动编译再提交；若仍不能落到 basis/topology 则抛 `UnsupportedGateError`。需要手动绕过校验时传 `submit_task(..., skip_validation=True)`。要完全跳过自动编译可传 `auto_compile=False`。
 
 真实提交前先 dry-run：
 
@@ -179,9 +181,24 @@ results = [wait_for_result(task_id, timeout=60) for task_id in task_ids]
 
 ### `wait_for_result` 的返回结构
 
-`wait_for_result(task_id, ...)` 当前返回一个**普通的 counts dict**：`dict[bitstring | int, int]`，所以 `result["00"]`、`result[0]` 这样直接当 counts 用就好。**不要**写 `result["counts"]` / `result["probabilities"]` —— 那不是 `wait_for_result` 的返回形态。
+`wait_for_result(task_id, ...)` 返回一个 **`UnifiedResult`** dataclass（uniqc ≥ 0.0.11.dev10）。它**同时**实现了 dict-like 协议（`result["00"]`、`for k in result`、`result.get(...)`、`len(result)`、`result.values()`），所以旧的"当 counts dict 用"的代码继续可用——counts 通过 dict 接口暴露：
 
-uniqc 内部还有一个结构化的 `UnifiedResult` 类（带 `counts`、`probabilities`、`shots`、`platform`、`task_id` 字段），但 `wait_for_result` **不会**直接返回它；只有 `normalize_*` 系列辅助函数（如 `normalize_originq_result`）会输出 `UnifiedResult`。
+```python
+result = wait_for_result(task_id, timeout=300)
+result["00"]            # 直接当 counts dict 索引（推荐）
+sum(result.values())    # 总 shots
+result.counts           # 显式拿 counts dict
+result.probabilities    # 显式拿概率（同样 dict）
+result.shots            # int
+result.platform         # 'originq' / 'quafu' / 'quark' / 'ibm' / 'dummy'
+result.task_id          # str
+result.backend_name     # str | None
+result.raw()            # 拿到平台原始 payload（用于 debug 或访问平台特有字段）
+```
+
+`result == {"00": 512, "11": 488}` 这样的等值比较（与普通 dict 比较 counts）也保持向后兼容。failure 路径返回 `None`，所以仍要做 `if result is None: ...` 判断。
+
+如果只想要平台原始格式（不经 normalize），用 `result.raw()`。`normalize_*` 系列辅助函数（如 `normalize_originq_result`）依然存在，行为等价于 `wait_for_result` 内部逻辑。
 
 ## RegionSelector 与芯片数据
 
@@ -214,7 +231,7 @@ sel = RegionSelector(chip)
 chain = sel.find_best_1D_chain(length=3)
 ```
 
-> 性能提示：`find_best_1D_chain` 当前**没有** `max_search_seconds` 参数，在 `originq:WK_C180`（169 qubit）这种大芯片上可能跑 > 30 秒。非平凡芯片优先用 `find_best_2D_from_circuit(circuit, min_qubits=N, max_search_seconds=10.0)`，它支持超时控制。
+> 性能提示：`find_best_1D_chain` 现在**支持** `max_search_seconds` 参数（uniqc ≥ 0.0.11.dev10）。在 `originq:WK_C180`（169 qubit）这种大芯片上，建议传 `max_search_seconds=10.0` 限制搜索时间；超时会回退到当前最优解。`find_best_2D_from_circuit(circuit, min_qubits=N, max_search_seconds=10.0)` 也同样支持。
 
 ## 平台建议
 
