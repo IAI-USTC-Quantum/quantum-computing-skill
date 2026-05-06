@@ -24,7 +24,7 @@ uniqc
 python -m uniqc.cli
 ```
 
-不要再推荐 `python -m uniqc`；v0.0.9 中 package root 不提供该入口。
+不要再推荐 `python -m uniqc` 作为入口；当前 release 中 package root 不提供该入口。
 
 如果你要给当前环境下的 AI Agent（Codex/Claude Code）补齐基础技能，执行：
 
@@ -131,9 +131,11 @@ uniqc submit bell.ir --platform quark --backend Baihua --shots 100 --dry-run
 
 ```bash
 uniqc result TASK_ID --format json
-uniqc task status TASK_ID
+uniqc task show TASK_ID         # 子命令是 `show`，不是 `status`（`uniqc task --help` 验证）
 uniqc task list
 ```
+
+如果想**等任务跑完并直接拿结果**，用 `uniqc result TASK_ID --wait`。`uniqc task show` 只读 cache 中的快照，不会主动等待或刷新远端状态。
 
 结果通常会进入本地任务 cache。给用户写实验记录时，保留：
 
@@ -160,6 +162,8 @@ uniqc config set ibm.proxy.https http://127.0.0.1:7890
 uniqc config set ibm.proxy.http http://127.0.0.1:7890
 uniqc config validate
 ```
+
+Quark 必须用 **`QUARK_API_KEY` 字段名**（不是 `token`），`uniqc config validate` 通过 `PLATFORM_REQUIRED_FIELDS` 强制校验这一点；写成 `quark.token` 会被报错。
 
 Backend 发现：
 

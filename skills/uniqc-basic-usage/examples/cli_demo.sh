@@ -3,8 +3,9 @@
 
 set -euo pipefail
 
-TMP_DIR="$(mktemp -d)"
-trap 'rm -rf "$TMP_DIR"' EXIT
+DEMO_DIR="${UNIQC_DEMO_DIR:-./.uniqc-demo}"
+mkdir -p "$DEMO_DIR"
+TMP_DIR="$DEMO_DIR"
 
 run_uniqc() {
   if command -v uniqc >/dev/null 2>&1; then
@@ -70,3 +71,7 @@ fi
 echo
 echo "[7/7] Show backend list (first 5 lines)"
 run_uniqc backend list --format table 2>/dev/null | head -5 || true
+
+echo
+echo "Demo artefacts kept in: $DEMO_DIR"
+echo "(override with UNIQC_DEMO_DIR=/path/to/dir before re-running)"

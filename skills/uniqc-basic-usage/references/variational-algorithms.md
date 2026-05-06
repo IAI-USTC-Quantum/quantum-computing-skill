@@ -111,6 +111,16 @@ def objective(params):
 result = minimize(objective, x0=np.zeros(4), method="COBYLA")
 ```
 
+### `calculate_expectation` 的 Hamiltonian 格式
+
+`calculate_expectation(measured_result, hamiltonian)` 接受**位置式 `Z`/`I` 字符串**，长度必须等于 `n_qubit`，例如 `"ZZII"`（对前两个 qubit 取 ⟨Z⊗Z⟩，后两个忽略）。
+
+它**不接受** `qaoa_ansatz.cost_hamiltonian` / `pauli_expectation` 那种带索引的 Pauli-string 写法（例如 `"Z0 Z1"`、`"Z0Z1"`）。如果你已经在用索引格式，需要先转成位置式字符串再传入。
+
+### `calculate_multi_basis_expectation` 的语义陷阱
+
+`calculate_multi_basis_expectation(measured_result, basis_label)` 只看 `basis_label` 的**第一个字符**，并在 **qubit 0** 上计算单比特期望：传 `"XX"` 等价于 `⟨X⟩` on qubit 0，**不是** `⟨X⊗X⟩`。要算多比特 Pauli 期望请改用 `pauli_expectation(...)`。
+
 ## 一个典型 QAOA 结构
 
 1. 从图构造 cost Hamiltonian

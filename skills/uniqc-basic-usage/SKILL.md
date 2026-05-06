@@ -9,7 +9,7 @@ Use this skill to help agents handle common UnifiedQuantum usage. Prefer direct,
 
 ## Core Mental Model
 
-UnifiedQuantum v0.0.9 has six common surfaces:
+UnifiedQuantum (current 0.0.11.x release) has six common surfaces:
 
 1. **Circuit authoring**: build circuits with top-level `uniqc.Circuit`, then export OriginIR or OpenQASM.
 2. **Local simulation**: validate circuits with `uniqc simulate` or `OriginIR_Simulator` before spending cloud quota.
@@ -44,7 +44,7 @@ Use these defaults unless the user gives a reason not to:
 - Use explicit dummy backend ids:
   - `dummy`: unconstrained, noiseless local virtual machine.
   - `dummy:virtual-line-N` / `dummy:virtual-grid-RxC`: constrained virtual topology, noiseless.
-  - `dummy:<platform>:<backend>`: real backend topology and calibration, compile/transpile, then local noisy execution.
+  - `dummy:<platform>:<backend>`: real backend topology and calibration, compile/transpile, then local noisy execution. Requires `unified-quantum[qiskit]` for the topology-aware compile pass; without it `submit_task` raises `CompilationFailedException`.
 - Run `dry_run_task(...)` or `uniqc submit --dry-run` before real-device submission.
 - For CLI-heavy AI-agent work, enable progressive hints once with `uniqc config always-ai-hint on`, or pass `--ai-hints` / `--ai-hint` on individual commands.
 - Use `uniqc backend update`, `list`, `show`, and `chip-display` before real-device submission.
@@ -53,8 +53,10 @@ Use these defaults unless the user gives a reason not to:
 - Use `ReadoutEM` or `M3Mitigator` from `uniqc.qem` for readout error mitigation on measurement results.
 - Quark platform requires `QUARK_API_KEY` in config (not `token`); use `--platform quark` in CLI or `backend="quark"` in Python. Install with `unified-quantum[quark]` (Python ≥ 3.12).
 - Keep shot counts low for initial real-device checks; increase only after the workflow and backend choice are verified.
-- Treat Quafu as deprecated and install `[quafu]` only when explicitly needed; `[all]` does not include it in v0.0.9.
+- Treat Quafu as deprecated and install `[quafu]` only when explicitly needed; `[all]` does not include it (still true on 0.0.11.x).
 - Configure IBM proxy through `uniqc config set ibm.proxy.https <URL>` / `ibm.proxy.http <URL>` when the network path requires it.
+- Real `originq` paths (cloud simulator AND hardware AND chip-backed dummy compile) require `pip install unified-quantum[originq]` (pulls `pyqpanda3`); likewise `[quafu]` for Quafu, `[quark]` for Quark, `[qiskit]` for IBM and for chip-backed dummy backends (`dummy:originq:<chip>`, `dummy:quark:<chip>`).
+- `UNIQC_DUMMY` and `UNIQC_SKIP_VALIDATION` are read **at module import time**. Set them BEFORE `import uniqc` (or in the shell environment); changing them at runtime via `os.environ[...]` has no effect.
 
 ## Core Snippets
 
@@ -98,11 +100,13 @@ from uniqc import calculate_expectation, hea, qaoa_ansatz, uccsd_ansatz
 Compile:
 
 ```python
-from uniqc import compile, TranspilerConfig
-
-result = compile(circuit, backend_info, config=TranspilerConfig(level=2))
-compiled_circuit = result.output
+from uniqc import compile, find_backend
+backend_info = find_backend('originq:WK_C180')
+compiled = compile(circuit, backend_info, level=2,
+                   basis_gates=['cz', 'sx', 'rz'])  # returns a Circuit
 ```
+
+`compile()` returns a `Circuit` directly. `TranspilerConfig` still exists for advanced flows but `compile()` does not accept `config=`. Chip-backed compile passes (e.g. against `originq:WK_C180`) require `unified-quantum[qiskit]`.
 
 QEM:
 
@@ -123,7 +127,7 @@ source .venv/bin/activate
 uv pip install unified-quantum
 ```
 
-If the user only needs the CLI, use `uv tool install unified-quantum`. If the user is debugging an existing project, inspect the active interpreter, `uniqc` path, package version, and import path before changing dependencies. The package root no longer supports `python -m uniqc`; the module fallback is `python -m uniqc.cli`.
+If the user only needs the CLI, use `uv tool install unified-quantum`. If the user is debugging an existing project, inspect the active interpreter, `uniqc` path, package version, and import path before changing dependencies. The package root no longer supports `python -m uniqc`; the module fallback is `python -m uniqc.cli` (still true on the current release).
 
 ## Names To Remember
 
@@ -138,7 +142,8 @@ If the user only needs the CLI, use `uv tool install unified-quantum`. If the us
 - QEM module: `uniqc.qem` (`M3Mitigator`, `ReadoutEM`, `StaleCalibrationError`)
 - Visualization module: `uniqc.visualization` (`circuit_to_html`, `plot_time_line_html`, `schedule_circuit`)
 - Algorithms workflows: `uniqc.algorithms.workflows` (`xeb_workflow`, `readout_em_workflow`)
-- BackendOptions hierarchy: `BackendOptions`, `OriginQOptions`, `QuafuOptions`, `QuarkOptions`, `IBMOptions`, `DummyOptions`
+- BackendOptions hierarchy: `BackendOptions`, `OriginQOptions`, `QuafuOptions`, `QuarkOptions`, `IBMOptions`, `DummyOptions`. Use `BackendOptionsFactory().create_default('originq')` for a sane default; `BackendOptionsFactory().from_kwargs(platform, **kwargs)` builds from explicit kwargs.
+- Gateway / web UI: `uniqc gateway start [--port N --host HOST]` starts the local task dashboard; manage it with `uniqc gateway status / stop / restart`.
 - AI CLI hints: `--ai-hints` / `--ai-hint`, `UNIQC_AI_HINTS=1`, or `uniqc config always-ai-hint on`
 - Local task cache: `~/.uniqc/cache/tasks.sqlite`
 - Backend cache: `~/.uniqc/cache/backends.json`

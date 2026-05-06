@@ -32,7 +32,7 @@ which uniqc || true
 uniqc --help | head -40
 ```
 
-如果 `python -m uniqc.cli` 和 `uniqc` 行为不同，优先处理 PATH/venv 问题。不要使用 `python -m uniqc` 作为 v0.0.9 的排错入口。
+如果 `python -m uniqc.cli` 和 `uniqc` 行为不同，优先处理 PATH/venv 问题。不要使用 `python -m uniqc` 作为排错入口（package root 不提供）。
 
 ## 安装与 extra
 
@@ -81,8 +81,8 @@ uniqc backend chip-display originq/WK_C180 --update
 2. backend：`uniqc backend list --platform ...`
 3. 线路：先 `uniqc simulate` 或 dummy submit
 4. 平台参数：OriginQ 用 `backend_name`，Quafu 用 `chip_id`
-5. 任务状态：`query_task` / `uniqc task status`
-6. 结果：`wait_for_result` timeout 不等价于提交失败，继续查 task status
+5. 任务状态：`query_task` / `uniqc task show TASK_ID`（不是 `task status`）
+6. 结果：`wait_for_result` timeout 不等价于提交失败，继续查 `uniqc task show`；要等到完成再拿结果，用 `uniqc result TASK_ID --wait`
 
 如果 timeout，先返回 task id 和查询命令，让用户能继续追踪。
 
@@ -150,7 +150,7 @@ Issue 内容应包含：
 
 | 症状 | 原因 | 处理 |
 |------|------|------|
-| `StaleCalibrationError` | 标定数据超过 `max_age_hours` TTL | 重新执行 `uniqc calibrate readout` 或 `uniqc calibrate xeb`，或在 Python API 中增大 `max_age_hours` |
+| `StaleCalibrationError` | 标定数据超过 `max_age_hours` TTL | 重新执行 `uniqc calibrate readout` 或 `uniqc calibrate xeb`，或在 Python API 中增大 `max_age_hours`。注意 `StaleCalibrationError` 直接继承自 `Exception`（不是 `UnifiedQuantumError`），需要显式 `except StaleCalibrationError:` 才能捕获。 |
 | `FileNotFoundError` in `M3Mitigator` | 标定 cache 文件不存在 | 先执行 `uniqc calibrate readout` |
 | 在 dummy backend 上做 QEM 结果全零 | DummyAdapter 返回的 counts 默认是无噪声的 | QEM 在 dummy 上无实际意义；用含噪 dummy（`dummy:originq:WK_C180`）或真机才有校准效果 |
 | `TimelineDurationError` | 逻辑线路没有门时长数据 | 传入 `gate_durations` dict，或使用 `backend_info` 带时长信息的 backend |

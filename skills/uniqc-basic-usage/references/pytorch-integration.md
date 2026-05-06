@@ -36,7 +36,7 @@ from uniqc.torch_adapter import (
 )
 ```
 
-v0.0.9 起这些对象也是 `uniqc` 顶层的 lazy export，可以写 `from uniqc import batch_execute`，但显式 `from uniqc.torch_adapter import ...` 仍然可用且更明确。
+这些对象也是 `uniqc` 顶层的 lazy export，可以写 `from uniqc import batch_execute`，但显式 `from uniqc.torch_adapter import ...` 仍然可用且更明确。
 
 可选情况下还可能有：
 
@@ -60,6 +60,32 @@ from uniqc.torch_adapter import TorchQuantumLayer
 - 如果用户只是想先验证思路，通常先用 `parameter_shift_gradient` 或 `batch_execute_with_params` 更稳
 
 因此更稳妥的理解是：把 `QuantumLayer` 当成“已有参数化线路模板后的包装器”，不要把它当成零配置的端到端训练入口。
+
+最小可运行示例：
+
+```python
+import torch
+from uniqc import Circuit, Parameter
+from uniqc.torch_adapter import QuantumLayer
+
+theta = Parameter('theta')
+qc = Circuit(); qc.ry(0, theta); qc.measure(0)
+
+def expectation(circuit) -> float:
+    from uniqc import OriginIR_Simulator
+    probs = OriginIR_Simulator().simulate_pmeasure(circuit.originir)
+    return probs[0] - probs[1]            # ⟨Z⟩
+
+layer = QuantumLayer(
+    circuit=qc,
+    expectation_fn=expectation,
+    init_params=torch.zeros(1),
+)
+```
+
+- 构造签名是 `QuantumLayer(circuit, expectation_fn, n_outputs=1, init_params=None, shift=π/2)`。
+- 参数名从 `circuit._parameters` 自动读取，**不要**传 `param_names=`。
+- `expectation_fn(circuit)` 接收一个**已经绑定好参数**的 `Circuit`，返回 Python `float`（或者长度 `n_outputs` 的浮点序列）。
 
 ## Parameter-shift 辅助函数
 

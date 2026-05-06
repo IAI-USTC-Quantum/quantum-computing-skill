@@ -1,6 +1,6 @@
-# v0.0.9 最佳实践参考
+# 当前最佳实践参考
 
-UnifiedQuantum v0.0.9 文档的”最佳实践”章节是一组已执行 notebooks，用于发布前验证主路径：配置、后端缓存、裸 Circuit、Named Circuit、虚拟/本地后端、API/CLI 提交（含 Quark）、云后端 dry-run 模板、变分线路、Torch 集成、Calibration/QEM、XEB workflow 和 timeline visualization。
+UnifiedQuantum 0.0.11.x（当前 release）文档的"最佳实践"章节是一组已执行 notebooks，用于发布前验证主路径：配置、后端缓存、裸 Circuit、Named Circuit、虚拟/本地后端、API/CLI 提交（含 Quark）、云后端 dry-run 模板、变分线路、Torch 集成、Calibration/QEM、XEB workflow 和 timeline visualization。
 
 ## 首选导入与模块边界
 

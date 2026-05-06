@@ -1,6 +1,8 @@
 # Timeline Visualization Reference
 
-UnifiedQuantum v0.0.9 provides circuit scheduling and HTML/SVG rendering for analyzing gate parallelism, timing, and resource usage. The visualization module is an optional dependency.
+UnifiedQuantum (current 0.0.11.x) provides circuit scheduling and HTML/SVG rendering for analyzing gate parallelism, timing, and resource usage. The visualization module is an optional dependency.
+
+> ⚠️ `schedule_circuit` and `plot_time_line*` internally call `compile()` to expand logical gates → native gates, which requires `unified-quantum[qiskit]`. To use these helpers without `[qiskit]`, pass a circuit that already uses only the chip's native gate set (e.g. CZ/SX/RZ).
 
 ## Quick Path
 
@@ -49,10 +51,12 @@ Raises `TimelineDurationError` if a non-virtual gate cannot be assigned a durati
 Pass a compiled circuit directly — compiled circuits have concrete gate sequences that scheduling needs:
 
 ```python
-from uniqc import compile, TranspilerConfig, schedule_circuit
+from uniqc import compile, find_backend, schedule_circuit
 
-result = compile(circuit, backend_info, config=TranspilerConfig(level=2))
-schedule = schedule_circuit(result.output, backend_info=backend_info)
+backend_info = find_backend('originq:WK_C180')
+compiled = compile(circuit, backend_info, level=2,
+                   basis_gates=['cz', 'sx', 'rz'])  # returns Circuit
+schedule = schedule_circuit(compiled, backend_info=backend_info)
 ```
 
 ---
@@ -62,16 +66,18 @@ schedule = schedule_circuit(result.output, backend_info=backend_info)
 ```python
 @dataclass(frozen=True, slots=True)
 class TimelineSchedule:
-    gates: list[TimelineGate]
+    gates: tuple[TimelineGate, ...]
+    qubits: tuple[int, ...]
     total_duration: float
-    n_layers: int
     unit: str
+    gate_durations: dict[str, float]
 
     @property
     def time_points(self) -> tuple[int | float, ...]: ...
 
-    @property
-    def resources(self) -> tuple[int, ...]: ...
+# Note: `n_layers` and `resources` are NOT fields. If you need the layer count,
+# compute it from the gate list:
+#     n_layers = max((g.layer for g in sched.gates), default=-1) + 1
 
 @dataclass(frozen=True, slots=True)
 class TimelineGate:
@@ -153,9 +159,9 @@ Gate durations can come from multiple sources:
 Example with backend metadata:
 
 ```python
-from uniqc import BackendInfo, schedule_circuit
+from uniqc import find_backend, schedule_circuit
 
-backend = BackendInfo.get("origin:wuyuan:WK_C180")
+backend = find_backend("originq:WK_C180")
 schedule = schedule_circuit(circuit, backend_info=backend)
 ```
 
@@ -163,6 +169,6 @@ schedule = schedule_circuit(circuit, backend_info=backend)
 
 ## Notes
 
-- The visualization module is an optional dependency. Install with `unified-quantum[visualization]` for `matplotlib` and `pandas` support; the core `circuit_to_html` and `plot_time_line_html` work without them.
-- `circuit_to_html` does not require gate durations (it uses logical layer grouping, not physical timing).
+- The visualization module is an optional dependency. Install with `unified-quantum[visualization]` for `matplotlib` and `pandas` support; the core `circuit_to_html` and `plot_time_line_html` work without `matplotlib`, **but `plot_time_line_html` and `schedule_circuit` still need `unified-quantum[qiskit]` for scheduling logical (non-native) circuits** — they call `compile()` internally.
+- `circuit_to_html` does not require gate durations (it uses logical layer grouping, not physical timing) and does not require `[qiskit]`.
 - `plot_time_line_html` and `schedule_circuit` require gate durations for circuits without explicit pulse timing data.

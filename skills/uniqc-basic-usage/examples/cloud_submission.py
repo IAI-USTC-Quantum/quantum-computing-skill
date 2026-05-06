@@ -4,6 +4,22 @@
 By default this script runs a dummy submission so it is safe for local
 testing. Real backend examples are included as callable functions but are
 not executed automatically.
+
+Notes for readers:
+
+* uniqc itself does NOT auto-read ``ORIGINQ_API_KEY`` / ``QUAFU_API_TOKEN`` /
+  ``QUARK_API_KEY`` / ``IBM_TOKEN`` environment variables. Tokens live in
+  ``~/.uniqc/config.yaml`` (set them via ``uniqc config set <platform>.<key>``).
+  The :func:`_sync_env_to_config` helper below is a per-script convenience
+  that copies env vars INTO that config so CI-style workflows work; it is not
+  built into uniqc.
+* ``wait_for_result(...)`` returns a plain ``dict[bitstring|int, int]`` (counts).
+  There is no ``result["counts"]`` / ``result["probabilities"]`` envelope on
+  this code path -- structured envelopes are only produced by the
+  ``normalize_*`` helpers, which return ``UnifiedResult``.
+* For real ``originq`` (and chip-backed ``dummy:originq:<chip>``) submissions
+  you need ``unified-quantum[originq]`` (and ``[qiskit]`` for the chip-backed
+  dummy compile pass).
 """
 
 from __future__ import annotations
@@ -15,7 +31,14 @@ from pprint import pprint
 
 import yaml
 
-from uniqc import Circuit, query_task, submit_task, wait_for_result
+from uniqc import (
+    Circuit,
+    compile,
+    find_backend,
+    query_task,
+    submit_task,
+    wait_for_result,
+)
 
 
 def build_bell_circuit() -> Circuit:
@@ -27,25 +50,14 @@ def build_bell_circuit() -> Circuit:
 
 
 def print_result(result: dict | None) -> None:
+    """``wait_for_result`` returns a flat counts dict; print it as such."""
+
     if not result:
         print("No result returned.")
         return
 
-    print("Normalized result payload:")
+    print("Counts (dict[bitstring|int, int]):")
     pprint(result)
-
-    if all(isinstance(value, int) for value in result.values()):
-        print("\nCounts:")
-        pprint(result)
-        return
-
-    if "counts" in result:
-        print("\nCounts:")
-        pprint(result["counts"])
-
-    if "probabilities" in result:
-        print("\nProbabilities:")
-        pprint(result["probabilities"])
 
 
 def run_dummy_demo(shots: int) -> None:
@@ -81,14 +93,23 @@ def real_originq_example(shots: int) -> str:
     """Skeleton for a real OriginQ submission.
 
     Requires:
-      1. pip install "unified-quantum[originq]"
-      2. configure ~/.uniqc/config.yaml or export ORIGINQ_API_KEY=...
+      1. ``pip install "unified-quantum[originq]"``
+      2. ``uniqc config set originq.token <TOKEN>`` (uniqc does NOT read
+         ``ORIGINQ_API_KEY`` automatically; set the token in
+         ``~/.uniqc/config.yaml``).
+
+    The circuit is compiled to the chip's native gate set BEFORE submission.
+    ``submit_task`` does not currently auto-compile (``auto_compile=True`` is
+    a no-op today), so a logical Bell circuit (H + CNOT) would otherwise
+    raise ``UnsupportedGateError``.
     """
 
-    load_adapter_env_from_uniqc_config()
+    _sync_env_to_config()
     circuit = build_bell_circuit()
+    backend_info = find_backend("originq:WK_C180")
+    compiled = compile(circuit, backend_info, level=2)
     return submit_task(
-        circuit,
+        compiled,
         backend="originq",
         shots=shots,
         backend_name="WK_C180",
@@ -100,11 +121,12 @@ def real_quafu_example(shots: int) -> str:
     """Skeleton for a real Quafu submission.
 
     Requires:
-      1. pip install "unified-quantum[quafu]"
-      2. configure ~/.uniqc/config.yaml or export QUAFU_API_TOKEN=...
+      1. ``pip install "unified-quantum[quafu]"``
+      2. ``uniqc config set quafu.token <TOKEN>`` (uniqc does NOT read
+         ``QUAFU_API_TOKEN`` automatically).
     """
 
-    load_adapter_env_from_uniqc_config()
+    _sync_env_to_config()
     circuit = build_bell_circuit()
     return submit_task(
         circuit,
@@ -119,12 +141,13 @@ def real_ibm_example(shots: int) -> str:
     """Skeleton for a real IBM submission.
 
     Requires:
-      1. pip install "unified-quantum[qiskit]"
-      2. configure ~/.uniqc/config.yaml with ibm.token and, if needed,
-         ibm.proxy.https / ibm.proxy.http.
+      1. ``pip install "unified-quantum[qiskit]"``
+      2. ``uniqc config set ibm.token <TOKEN>`` (and, if needed,
+         ``uniqc config set ibm.proxy.https <URL>``). uniqc does NOT read
+         ``IBM_TOKEN`` automatically.
     """
 
-    load_adapter_env_from_uniqc_config()
+    _sync_env_to_config()
     circuit = build_bell_circuit()
     return submit_task(
         circuit,
@@ -138,11 +161,12 @@ def real_quark_example(shots: int) -> str:
     """Skeleton for a real Quark submission.
 
     Requires:
-      1. pip install "unified-quantum[quark]"  (Python >= 3.12)
-      2. configure ~/.uniqc/config.yaml or export QUARK_API_KEY=...
+      1. ``pip install "unified-quantum[quark]"``  (Python >= 3.12)
+      2. ``uniqc config set quark.QUARK_API_KEY <TOKEN>`` (uniqc does NOT
+         read ``QUARK_API_KEY`` automatically).
     """
 
-    load_adapter_env_from_uniqc_config()
+    _sync_env_to_config()
     circuit = build_bell_circuit()
     return submit_task(
         circuit,
@@ -153,8 +177,14 @@ def real_quark_example(shots: int) -> str:
     )
 
 
-def load_adapter_env_from_uniqc_config() -> None:
-    """Map ~/.uniqc/config.yaml tokens into env vars for script portability."""
+def _sync_env_to_config() -> None:
+    """Per-script convenience: copy ``~/.uniqc/config.yaml`` tokens into env vars.
+
+    This is NOT how uniqc itself looks up tokens -- uniqc reads tokens straight
+    out of ``~/.uniqc/config.yaml``. This helper is here only so that downstream
+    code which does read env vars (e.g. some legacy adapter SDKs, CI tooling)
+    sees the same values without the user having to duplicate them.
+    """
 
     config_path = Path.home() / ".uniqc" / "config.yaml"
     if not config_path.exists():
@@ -174,6 +204,10 @@ def load_adapter_env_from_uniqc_config() -> None:
         token = profile.get(platform, {}).get(key)
         if token and not os.getenv(env_name):
             os.environ[env_name] = token
+
+
+# Backwards-compatible alias for the previous public name.
+load_adapter_env_from_uniqc_config = _sync_env_to_config
 
 
 def main() -> None:

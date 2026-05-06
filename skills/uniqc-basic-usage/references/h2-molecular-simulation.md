@@ -56,6 +56,8 @@ from uniqc import uccsd_ansatz
 
 如果只做教学示例，第一种通常更简单。
 
+> `calculate_expectation(measured_result, hamiltonian)` 在这里接受的是**位置式 `Z`/`I` 字符串**（长度 = `n_qubit`，例如 `"ZZII"`）。它**不接受** `qaoa_ansatz.cost_hamiltonian` 用的带索引格式（例如 `"Z0 Z1"`）。要算非对角的 X/Y 项请改用 `pauli_expectation`。
+
 ## 应该明确说出的限制
 
 - H2 示例通常依赖本地模拟能力，因此往往需要 `unified-quantum[simulation]`

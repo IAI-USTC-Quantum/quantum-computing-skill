@@ -49,6 +49,17 @@ sim = OriginIR_Simulator(backend_type="densitymatrix")
 rho = sim.simulate_density_matrix(circuit.originir)
 ```
 
+### `OriginIR_Simulator` 方法速查
+
+| 方法 | 返回类型 | 说明 |
+|------|---------|------|
+| `simulate_shots(ir, shots) -> dict[int, int]` | counts dict | 有限采样结果，key 是按 cbit 顺序解码出的整数 |
+| `simulate_pmeasure(ir) -> list[float]` | 长度 `2**n_measured` 的概率向量 | 仅测量子集，向量长度按测量数决定 |
+| `simulate_statevector(ir) -> np.ndarray` | 复数 statevector，长度 `2**n_qubit` | 任何 `backend_type` 下都可用 |
+| `simulate_density_matrix(ir) -> np.ndarray` | `(2**n, 2**n)` 复矩阵 | **仅** `backend_type="density_matrix"` (或 `"densitymatrix"`) 时可用 |
+
+**没有** `simulate(...)` 这种 “统一入口” —— 必须显式调用上面四个方法之一。
+
 CLI 用法：
 
 ```bash
@@ -96,6 +107,9 @@ for i in range(63):
     c.cnot(i, i + 1)
 
 sim = MPSSimulator(MPSConfig(chi_max=64, svd_cutoff=1e-12, seed=42))
+# Note: MPSConfig() defaults to chi_max=64. For high-entanglement / mid-depth
+# random circuits pass chi_max=256 (or higher). [Some older docs claim 256 is
+# the default — that is incorrect for current 0.0.11.x; the default is 64.]
 counts = sim.simulate_shots(c.originir, shots=1000)   # ≤ 数百比特都可行
 print(sim.max_bond, sim.truncation_errors[-3:])
 # 仅 ≤ 24 比特时使用：
