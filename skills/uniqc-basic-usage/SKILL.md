@@ -1,6 +1,6 @@
 ---
 name: uniqc-basic-usage
-description: "Use when the user asks about UnifiedQuantum or uniqc basic usage: installation, Python imports, Circuit construction, OriginIR/OpenQASM export, local simulation, CLI help, config, dummy backends, dry-run, backend discovery/cache, simple cloud submission, result queries, calibration, QEM, timeline visualization, and first-pass troubleshooting. Provide practical runnable workflows for getting started and validating common UnifiedQuantum tasks."
+description: "Use when the user asks about UnifiedQuantum or uniqc basic usage: installation, Python imports, Circuit construction, OriginIR/OpenQASM export, local simulation (incl. MPS / matrix-product-state / tensor network on linear topology), CLI help, config, dummy backends (`dummy:virtual-line-N`, `dummy:mps:linear-N`), dry-run, backend discovery/cache, simple cloud submission, result queries, calibration, QEM, timeline visualization, and first-pass troubleshooting. Provide practical runnable workflows for getting started and validating common UnifiedQuantum tasks."
 ---
 
 # Uniqc Basic Usage Skill

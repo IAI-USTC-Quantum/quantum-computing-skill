@@ -8,6 +8,8 @@
 - CLI 与 Python 不一致
 - 云端任务失败
 - 结果看起来不对
+- OriginIR 解析与门名陷阱
+- MPS 模拟器排错
 - 何时上报 issue
 
 ## 排错顺序
@@ -102,7 +104,31 @@ uniqc backend chip-display originq/WK_C180 --update
 - 真机是否开启平台级 mapping、optimization、measurement amend
 - 是否混用了概率和 counts
 
-## 何时上报 issue
+## OriginIR 解析与门名陷阱
+
+来自 floquet-pump 实验（2026-05）的实战教训：
+
+| 错误信息 / 症状 | 原因 | 处理 |
+|---|---|---|
+| `NotImplementedError: A invalid line: RXX(...) q[a],q[b]` | OriginIR 里 Ising 旋转门是 `XX/YY/ZZ`，**不是** `RXX/RYY/RZZ`（Qiskit 风格） | 用 `XX q[a],q[b],(theta)` 等写法；如果是从 Qiskit 转过来的电路，先在导出阶段统一名字 |
+| `NotImplementedError: A invalid line: XX(theta) q[a],q[b]` | 参数语法错了 | OriginIR 是 `GATE q[..],q[..],(p1,...)`，参数永远在末尾的圆括号里，不在门名后 |
+| `OriginIR input does not have correct CREG statement.` | 直接拼字符串时漏了 `CREG N` | `QINIT N` 后面**必须**紧跟 `CREG N`（或对应宽度），即使用不到经典寄存器 |
+| `ValueError: Qubit exceeds the maximum (QINIT n)` | 直接生成 IR 时 `QINIT` 宽度小于实际用到的 qubit 索引 | 把 `QINIT` 设成 `max(qubit_index)+1` 或交给 `Circuit` 自动算 |
+| `Circuit.measure(q, c)` 在 IR 里出现两次 MEASURE 同一 q | 当前 `Circuit` 对每次 measure 都生成一条 OriginIR 行 | 多次 measure 不会损坏统计，但 result counts 的位宽会变（每条 MEASURE 对应一位 cbit），后处理时按 cbit 顺序解码而不是按 qubit |
+| `ReadoutCalibrator(adapter=BackendInfo)` 报错或返回空 | calibrator 期望一个**带 `submit` 方法的 adapter**，而 `BackendInfo` 只是元数据容器 | 传具体平台 adapter，如 `OriginQAdapter`、`QuafuAdapter`，或在 dummy 流程里传 `DummyAdapter` 实例 |
+
+## MPS 模拟器排错
+
+| 症状 | 原因 | 处理 |
+|---|---|---|
+| `MPSSimulator: long-range 2q gate 'CNOT' on (0,3) is not supported` | MPS 不接受跨距 > 1 的双比特门 | 先 SWAP 到最近邻；或换 `OriginIR_Simulator` |
+| `NotImplementedError: MPSSimulator does not support CONTROL...` | 任意控制门不在 MPS 引擎支持范围内 | 把控制门展开到 `CNOT/CZ` 加单比特门，或换稠密模拟器 |
+| `MPSSimulator.simulate_pmeasure refuses to materialise a 2**N probability vector` | N > 24 时不允许展平 | 改用 `simulate_shots(...)`；或通过 `submit_task(..., backend="dummy:mps:linear-N")`，dummy adapter 内部自动走 shots 路径 |
+| `dummy:mps:linear-N` 跟 `noise_model` 一起用时报错 | MPS 路径强制无噪声 | 想要含噪 + 大 N？目前没有 tractable 的开箱方案；要么缩小 N 用 `dummy:<platform>:<chip>`，要么手动在测量后做 readout error mitigation |
+| `sim.truncation_errors` 的最大值很大（≫ 1e-4） | `chi_max` 设小了，电路真实键维超过它 | 加大 `chi_max`（成本 O(χ³)）；或者承认这个电路对 MPS 不友好，换稠密 |
+| 结果跟预期相反，比如 GHZ 出来全 0 | bitstring 顺序约定 | uniqc 整体采用 **q0 = LSB** 约定；从右往左数第 0 位才是 q0。MPS 输出的 statevector 与 counts 都遵守这条 |
+
+
 
 只有在满足这些条件后再建议上报：
 

@@ -5,6 +5,7 @@
 - 选择哪种执行方式
 - 本地模拟器
 - shots 与 counts
+- MPS 模拟器（大规模一维链）
 - dummy backend
 - 拓扑与 qubit remapping
 - 从模拟走向真机
@@ -69,6 +70,67 @@ counts = sim.simulate_shots(circuit.originir, shots=4096)
 - probability/statevector：理想模拟分布
 - counts：有限采样结果
 - hardware counts：带有设备噪声、排队状态和平台后处理的真实实验结果
+
+## MPS 模拟器（大规模一维链）
+
+`MPSSimulator` 是 v0.0.11 起新增的纯 Python 矩阵乘积态模拟器，适合**大量比特、纠缠适中、一维最近邻**的电路（典型场景：Trotterized TFIM/Heisenberg、Floquet pump、QSP/QSVT）。
+
+适用判定：
+
+| 你的电路 | 推荐 |
+|---|---|
+| ≤ 24 比特、任意拓扑、要 statevector | `OriginIR_Simulator(backend_type="statevector")` |
+| ≤ 28 比特、任意拓扑、要噪声 | `OriginIR_NoisySimulator` 或 `dummy:<platform>:<chip>` |
+| > 28 比特、一维 NN、纠缠浅 | **`MPSSimulator` / `dummy:mps:linear-N`** |
+| > 28 比特、深随机电路 | 没有 tractable 方案，请缩小比特数 |
+
+直接 API：
+
+```python
+from uniqc import Circuit
+from uniqc.simulator import MPSSimulator, MPSConfig
+
+c = Circuit(64)
+c.h(0)
+for i in range(63):
+    c.cnot(i, i + 1)
+
+sim = MPSSimulator(MPSConfig(chi_max=64, svd_cutoff=1e-12, seed=42))
+counts = sim.simulate_shots(c.originir, shots=1000)   # ≤ 数百比特都可行
+print(sim.max_bond, sim.truncation_errors[-3:])
+# 仅 ≤ 24 比特时使用：
+# psi = sim.simulate_statevector(c.originir)
+# probs = sim.simulate_pmeasure(c.originir)
+```
+
+通过 dummy 后端调用（推荐用法，能走完整 task pipeline）：
+
+```python
+from uniqc import submit_task, wait_for_result
+
+task = submit_task(circuit, backend="dummy:mps:linear-32:chi=64:cutoff=1e-10", shots=500)
+result = wait_for_result(task, timeout=60)
+```
+
+后端 identifier 语法：
+
+```
+dummy:mps:linear-<N>[:chi=<int>][:cutoff=<float>][:seed=<int>]
+```
+
+约束（dry-run 阶段就会检查）：
+
+- 双比特门必须最近邻 `(i, i+1)`，跨距 > 1 直接拒绝（请先编译为 SWAP-NN 形式）。
+- 不支持 `controlled_by(...)` 与 `CONTROL/ENDCONTROL`。
+- **不支持任何噪声**（`dummy:mps:*` 总是理想模拟）；要噪声请改 `dummy:<platform>:<chip>`。
+- 支持的门：`H X Y Z S T SX I` / `RX RY RZ U1 U2 U3 RPhi RPhi90 RPhi180` / `CNOT CZ SWAP ISWAP ECR` / `XX(θ) YY(θ) ZZ(θ) XY(θ) PHASE2Q`.
+- OriginIR 参数语法是 `XX q[0],q[1],(theta)`，**不是** `XX(theta) q[0],q[1]`。
+- `simulate_pmeasure` 与 `simulate_statevector` 仍然会展平为 2^N 向量，因此在 N > 24 时会拒绝；请改用 `simulate_shots`（或 `submit_task` + `dummy:mps:linear-N`，后者内部就走 shots 路径）。
+
+诊断字段：
+
+- `sim.max_bond` — 实际达到的最大键维（理想 GHZ ≤ 2，深随机电路会顶到 `chi_max`）。
+- `sim.truncation_errors` — 每次 SVD 截断丢掉的奇异值平方和；如果 max ≫ 1e-6 说明 χ 设小了。
 
 ## dummy backend
 
