@@ -9,7 +9,7 @@ Use this skill to help agents handle common UnifiedQuantum usage. Prefer direct,
 
 ## Core Mental Model
 
-UnifiedQuantum (current 0.0.11.x release) has six common surfaces:
+UnifiedQuantum (current 0.0.12 release) has six common surfaces:
 
 1. **Circuit authoring**: build circuits with top-level `uniqc.Circuit`, then export OriginIR or OpenQASM.
 2. **Local simulation**: validate circuits with `uniqc simulate` or `OriginIR_Simulator` before spending cloud quota.
@@ -57,6 +57,7 @@ Use these defaults unless the user gives a reason not to:
 - Configure IBM proxy through `uniqc config set ibm.proxy.https <URL>` / `ibm.proxy.http <URL>` when the network path requires it.
 - Real `originq` paths (cloud simulator AND hardware AND chip-backed dummy compile) require `pip install unified-quantum[originq]` (pulls `pyqpanda3`); likewise `[quafu]` for Quafu, `[quark]` for Quark, `[qiskit]` for IBM and for chip-backed dummy backends (`dummy:originq:<chip>`, `dummy:quark:<chip>`).
 - `UNIQC_DUMMY` and `UNIQC_SKIP_VALIDATION` env vars have been **removed** (uniqc ≥ 0.0.11.dev10). Activate dummy mode by passing `backend="dummy"` / `backend="dummy:..."` to `submit_task`. Compile/validation behavior is now controlled per-call by `local_compile: int` (0=skip qiskit transpile; 1-3=qiskit `optimization_level`) and `cloud_compile: int` (0=ask cloud to skip optimization; >0=ask cloud to optimize). The legacy `auto_compile=` / `skip_validation=` kwargs are gone (pre-release breaking change).
+- **uniqc-managed task IDs (uqt_*)** — uniqc ≥ 0.0.12: `submit_task` and `submit_batch` always return a single opaque uniqc task id of the form `uqt_<32-hex>` (36 chars). It maps internally to one or more platform-issued task ids via the new `task_shards` table. `submit_batch` returns one `uqt_*` (not a list), and `wait_for_result(uid)` returns a single `UnifiedResult` for single-circuit tasks or a `list[UnifiedResult]` for batches. To recover the underlying platform ids, call `uniqc.get_platform_task_ids(uid) -> list[TaskShard]` (also: `uniqc task shards <uid>` CLI / `GET /api/tasks/{uid}/shards` REST). Passing a raw platform id to `query_task` still works but emits `DeprecationWarning`. `submit_batch(..., return_platform_ids=True)` returns the platform-id list when explicitly needed. Auto-sharding kicks in when a batch exceeds the adapter's `max_native_batch_size` (OriginQ default 200 via `originq.task_group_size`, IBM 100, others 1) — the user still sees one task id.
 
 ## Core Snippets
 

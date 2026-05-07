@@ -5,6 +5,27 @@ All notable changes to the `quantum-computing.skill` package (currently
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-05-07 — UnifiedQuantum 0.0.12 alignment
+
+UnifiedQuantum 0.0.12 引入了**uniqc 自管理的任务 ID 间接层**（breaking）以及**原生批量提交**。Skill 已对齐：
+
+### `SKILL.md`
+
+- 顶部版本字符串改为 0.0.12。
+- 新增 cloud-task 顶层注意事项条目，说明 `submit_task` / `submit_batch` 现在统一返回 `uqt_<32-hex>` 的 uniqc 任务 ID，以及 `get_platform_task_ids` / `uniqc task shards` / `GET /api/tasks/{uid}/shards` 三种查 shard 路径，以及 `submit_batch(..., return_platform_ids=True)` 兜底。
+
+### `references/cloud-platforms.md`
+
+- 新增 “uniqc 任务 ID（`uqt_*`）⚠ 0.0.12 起的改动” 章节，覆盖：
+  - 为什么这么改（统一平台 ID 格式 + auto-sharding）
+  - `get_platform_task_ids` Python API、`uniqc task shards` CLI、`GET /api/tasks/{uid}/shards` REST
+  - 兼容性 / 迁移（旧本地缓存自动迁移、`query_task(<平台 ID>)` 仍可用但 `DeprecationWarning`、`return_platform_ids=True` 兜底）
+- 批量任务示例改为 `uid = submit_batch(...)` + `wait_for_result(uid)` → `list[UnifiedResult]` 模式。
+
+### `README.md`
+
+- follow-up 版本说明从 0.0.11 升级到 0.0.12，并列出新引入的 IDL / 原生 batch 特性。
+
 ## [1.3.0] - 2026-05-07 — UnifiedQuantum 0.0.11 alignment
 
 This release aligns the skill with the four-round audit fixes that landed in
