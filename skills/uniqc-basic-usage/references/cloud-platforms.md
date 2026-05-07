@@ -188,11 +188,47 @@ result = wait_for_result(task_id, timeout=300)
 批量任务：
 
 ```python
-task_ids = submit_batch(circuits, backend="dummy", shots=1000)
-results = [wait_for_result(task_id, timeout=60) for task_id in task_ids]
+# uniqc ≥ 0.0.12: submit_batch 返回单个 uniqc 任务 ID（uqt_*），
+# 内部映射到一个或多个平台 task ID。wait_for_result 自动聚合。
+uid = submit_batch(circuits, backend="dummy", shots=1000)
+results = wait_for_result(uid, timeout=60)   # → list[UnifiedResult]
 ```
 
 批量真机任务要更保守：先用 1 到 2 个小任务确认 backend、认证和线路都正常，再提交更大的批次。
+
+### uniqc 任务 ID（`uqt_*`）⚠ 0.0.12 起的改动
+
+`submit_task` 与 `submit_batch` 现在统一返回一个 **uniqc 自管理的任务 ID**，格式为 `uqt_<32 位 16 进制>`（共 36 字符）。它在内部映射到一个或多个平台原生的 task ID（保存在本地 sqlite 缓存的 `task_shards` 表里）。
+
+为什么这么改：
+
+- 不同平台返回的 ID 格式各异（OriginQ MD5、IBM `cp...`、Quafu UUID、dummy `0x...`），下游脚本经常因为格式假设而踩坑；现在统一成一种可识别格式。
+- 当一个 batch 超过适配器的 `max_native_batch_size`（OriginQ 默认 200，可通过 `originq.task_group_size` 配置；IBM 默认 100；其他平台 1）时，uniqc 自动拆分为多次提交，对外仍然只暴露一个 task ID。
+- 不支持原生批量的平台（Quafu/Quark/Dummy）会被视作 `max=1`，N 个线路对应 N 个 shard，但用户依然只拿到一个 ID。
+
+#### 查看 shard 映射
+
+```python
+from uniqc import get_platform_task_ids
+shards = get_platform_task_ids(uid)
+for s in shards:
+    print(s.shard_index, s.platform_task_id, s.circuit_count, s.status)
+```
+
+或在命令行：
+
+```bash
+uniqc task shards uqt_xxxxxxxx...           # 表格输出
+uniqc task shards uqt_xxxxxxxx... -f json   # 机读
+```
+
+或通过 gateway HTTP：`GET /api/tasks/{uniqc_id}/shards`。
+
+#### 兼容性与迁移
+
+- 本地缓存里旧的平台 ID 行会在第一次访问时自动迁移成 `uqt_*` 父行 + 一个 shard（原 ID 保留在 `metadata.legacy_platform_id` 里）。
+- `query_task(<平台 ID>)` 仍然可以用，但会触发 `DeprecationWarning` 并通过 shard 索引解析回父 ID。新代码请始终使用 `uqt_*`。
+- 如果你**确实需要拿到底层平台 ID**（例如要在云控制台手动查询），传 `submit_batch(..., return_platform_ids=True)`，这会返回 `list[str]` 而不是 `uqt_*`。但 `query_task` / `wait_for_result` 仍以 `uqt_*` 为准。
 
 ### `wait_for_result` 的返回结构
 
