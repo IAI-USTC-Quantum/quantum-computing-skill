@@ -66,7 +66,8 @@ from uniqc import XEBResult
 # Real fields (verify with: dataclasses.fields(XEBResult)):
 result.calibrated_at        # str: ISO-8601 UTC timestamp
 result.backend              # str: backend identifier
-result.type                 # str: '1q' or '2q'
+result.type                 # str: 'xeb_1q' | 'xeb_2q' | 'xeb_2q_parallel'
+                            #      (NOT '1q' / '2q' — check the full literal)
 result.qubit                # int | None: target qubit (1q runs)
 result.pairs                # tuple[tuple[int, int], ...] | None: target pairs (2q runs)
 result.fidelity_per_layer   # float: per-layer fidelity (exponential decay rate r)
@@ -102,8 +103,10 @@ from uniqc.calibration.readout import ReadoutCalibrator
 
 calibrator = ReadoutCalibrator(adapter=dummy_adapter, shots=1000)
 result = calibrator.calibrate_1q(qubit=0)
-print(result.confusion_matrix)      # [[p00, p10], [p01, p11]]
-print(result.assignment_fidelity)   # (p00 + p11) / 2
+# 1q confusion_matrix: rows=measured, cols=prepared.
+# So result.confusion_matrix[i][j] == P(measure=i | prep=j); diagonal == [P(0|0), P(1|1)].
+print(result.confusion_matrix)
+print(result.assignment_fidelity)   # average of diagonal = (P(0|0) + P(1|1)) / 2
 ```
 
 ### Result Type: `ReadoutCalibrationResult`
@@ -111,13 +114,21 @@ print(result.assignment_fidelity)   # (p00 + p11) / 2
 ```python
 from uniqc import ReadoutCalibrationResult
 
-result.confusion_matrix     # list[list[float]]: row=measured, col=prepared
+result.confusion_matrix     # tuple[tuple[float, ...], ...]: row=measured, col=prepared.
+                            # 1q: 2x2, ``M[i][j] = P(measure=i | prep=j)``
+                            # 2q: 4x4 over (|00>, |01>, |10>, |11>)
 result.assignment_fidelity  # float: average diagonal element
 result.qubit                # int (1q) or tuple[int,int] (2q)
 result.type                 # "readout_1q" or "readout_2q"
 result.backend              # str: backend identifier
 result.calibrated_at        # str: ISO-8601 UTC timestamp
+
+# Dict-like access for dict-era code:
+result["confusion_matrix"]   # equivalent to attribute access
+"qubit" in result            # True
 ```
+
+> Back-compat tip: `ReadoutCalibrationResult` is a frozen dataclass that also implements `__getitem__` and `__contains__`, so old call sites that treated it as a dict still work after the result-type migration.
 
 ---
 
@@ -237,7 +248,7 @@ corrected = em.mitigate_counts(raw_counts, measured_qubits=[0, 1])
 ## Calibration Cache
 
 - **Location**: `~/.uniqc/calibration_cache/`
-- **Naming**: `{type}_{backend}_{qubit}_{timestamp}.json` (e.g. `readout_1q_dummy_0_20250101T120000Z.json`)
+- **Naming**: `{type}_{backend}_{qubit-id}_{timestamp}.json` where `qubit-id` is `q<n>` for 1q and `pair-u-v` for 2q. Example actual filename: `readout_1q_dummy_q0_20260507T010843.099800Z.json`. (uniqc < 0.0.11.dev23 produced `+0000` instead of the trailing `Z`; this was fixed in `fix/audit-review`.)
 - **Persistence**: `save_calibration_result()` and `load_calibration_result()` from `uniqc`
 - **Discovery**: `find_cached_results(cache_dir=None, backend=None, result_type=None)` returns a list of cached results
 
@@ -261,3 +272,11 @@ if cached:
 | `FileNotFoundError` in `M3Mitigator` | Missing calibration cache file | Run `uniqc calibrate readout` first |
 | Confusion matrix all zeros | Adapter returned empty counts | Check adapter connectivity and shot count |
 | `TimelineDurationError` | Duration data missing for a gate | Pass explicit `gate_durations` dict or use backend metadata |
+
+---
+
+## API Reality Check (don't hallucinate these)
+
+- ❌ `uniqc.qem.ZNE` — **does not exist**. UnifiedQuantum's QEM scope is currently **readout-only** (`M3Mitigator`, `ReadoutEM`). For ZNE/PEC/Mitiq integration, use the upstream `mitiq` package directly.
+- ❌ `XEBCalibrator` — **does not exist**. The XEB benchmarking class is `XEBenchmarker` (singular `enchmarker`, no `Calibrator` suffix). Import: `from uniqc.calibration import XEBenchmarker` (uniqc ≥ 0.0.11.dev23) or `from uniqc.calibration.xeb.benchmarker import XEBenchmarker` on older versions.
+- ❌ `M3Mitigator.apply(...)` — **does not exist**. The methods are `mitigate_counts(raw_counts, measured_qubits=...)` and `mitigate_probabilities(raw_probs, measured_qubits=...)`.

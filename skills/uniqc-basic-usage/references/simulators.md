@@ -34,12 +34,53 @@ from uniqc.simulator import OriginIR_Simulator
 circuit = Circuit(2)
 circuit.h(0)
 circuit.cnot(0, 1)
-circuit.measure(0, 1)
+circuit.measure(0)
+circuit.measure(1)
+# 注意：`circuit.measure(0, 1)` 把两个参数都当 qubit 列表，会变成 4 条 MEASURE，
+# 触发 `simulate_pmeasure` 的 `measure_list size = 4` 错误。请逐个 qubit 调用。
 
 sim = OriginIR_Simulator(backend_type="statevector")
 probs = sim.simulate_pmeasure(circuit.originir)
 state = sim.simulate_statevector(circuit.originir)
 counts = sim.simulate_shots(circuit.originir, shots=1000)
+```
+
+### 统一工厂入口（`get_simulator` / `create_simulator`）
+
+```python
+from uniqc.simulator import create_simulator, get_simulator
+
+# create_simulator 推荐：第 1 位是 backend_type
+sim = create_simulator("statevector")
+sim = create_simulator("mps", chi_max=128)
+
+# 注意：get_simulator 的位置参数顺序是 (program_type, backend_type)，与
+# create_simulator 相反，传错就会得到 `Unsupported program type` 错误。
+sim = get_simulator("originir", "statevector")
+
+# 旧写法 `uniqc.simulator.get_backend(...)` 已弃用，会发 DeprecationWarning。
+```
+
+### 含噪声本地模拟（`OriginIR_NoisySimulator` + `error_model.*`）
+
+```python
+from uniqc.simulator import OriginIR_NoisySimulator
+from uniqc.simulator.error_model import (
+    Depolarizing,
+    AmplitudeDamping,
+    ErrorLoader_GenericError,
+)
+
+# 在每个 gate 之后注入 1% depolarizing + 0.5% amplitude damping
+loader = ErrorLoader_GenericError(generic_error=[
+    Depolarizing(0.01),
+    AmplitudeDamping(0.005),
+])
+sim = OriginIR_NoisySimulator(
+    backend_type="density_matrix",  # 必须用 density matrix
+    error_loader=loader,
+)
+counts = sim.simulate_shots(circuit.originir, shots=2000)
 ```
 
 密度矩阵：

@@ -13,10 +13,12 @@ Notes for readers:
   The :func:`_sync_env_to_config` helper below is a per-script convenience
   that copies env vars INTO that config so CI-style workflows work; it is not
   built into uniqc.
-* ``wait_for_result(...)`` returns a plain ``dict[bitstring|int, int]`` (counts).
-  There is no ``result["counts"]`` / ``result["probabilities"]`` envelope on
-  this code path -- structured envelopes are only produced by the
-  ``normalize_*`` helpers, which return ``UnifiedResult``.
+* ``wait_for_result(...)`` returns a :class:`UnifiedResult` dataclass. Access
+  measurement data via ``result.counts`` / ``result.probabilities`` (and
+  ``result.metadata``); ``result.raw()`` returns the platform-specific raw
+  payload. ``UnifiedResult`` also implements a dict-like ``__getitem__``
+  proxy onto ``counts`` so ``result["00"]`` works, but ``result["counts"]``
+  does **not** (it would try to look up a bitstring named ``"counts"``).
 * For real ``originq`` (and chip-backed ``dummy:originq:<chip>``) submissions
   you need ``unified-quantum[originq]`` (and ``[qiskit]`` for the chip-backed
   dummy compile pass).
@@ -45,19 +47,20 @@ def build_bell_circuit() -> Circuit:
     circuit = Circuit(2)
     circuit.h(0)
     circuit.cnot(0, 1)
-    circuit.measure(0, 1)
+    circuit.measure(0)
+    circuit.measure(1)
     return circuit
 
 
-def print_result(result: dict | None) -> None:
-    """``wait_for_result`` returns a flat counts dict; print it as such."""
+def print_result(result) -> None:
+    """``wait_for_result`` returns a :class:`UnifiedResult`; print its counts."""
 
     if not result:
         print("No result returned.")
         return
 
     print("Counts (dict[bitstring|int, int]):")
-    pprint(result)
+    pprint(getattr(result, "counts", result))
 
 
 def run_dummy_demo(shots: int) -> None:

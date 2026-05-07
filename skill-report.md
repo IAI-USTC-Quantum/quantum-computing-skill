@@ -63,7 +63,7 @@
 
 ### A-S5 [medium · 片段过时/描述不完整] `gate_durations` 单独可用的暗示
 - 文件：`references/timeline-visualization.md:13-17, 116-124, 168`
-- 现象：`plot_time_line_html(circuit, gate_durations={...})` / `schedule_circuit(circuit, gate_durations={...})` 对纯逻辑 `Circuit` 都因 `compile()` 进基门集而抛 `CompilationFailedException`（缺 qiskit）；第 168 行 “circuit_to_html 和 plot_time_line_html 不需 matplotlib” 也暗示无重型依赖。
+- 现象：`plot_time_line_html(circuit, gate_durations={...})` / `schedule_circuit(circuit, gate_durations={...})` 对纯逻辑 `Circuit` 都因 `compile()` 进基门集而抛 `CompilationFailedError`（缺 qiskit）；第 168 行 “circuit_to_html 和 plot_time_line_html 不需 matplotlib” 也暗示无重型依赖。
 - 建议：在 Quick Path 与 Notes 中明确 “调度逻辑线路需要 `unified-quantum[qiskit]`”；或先 `compile(..., basis_gates=[...])` 再传给 `schedule_circuit`。
 
 ---
@@ -120,8 +120,8 @@
   ```python
   noisy_task = submit_task(circuit, backend="dummy:originq:WK_C180", shots=1000)
   ```
-  该路径要求 `unified-quantum[qiskit]` 与芯片 cache 命中，未装 qiskit 时 `CompilationFailedException`。
-- 建议：在描述里加 “需要 `unified-quantum[qiskit]` 才能启用 chip-backed dummy 路径，否则 `CompilationFailedException`”。
+  该路径要求 `unified-quantum[qiskit]` 与芯片 cache 命中，未装 qiskit 时 `CompilationFailedError`。
+- 建议：在描述里加 “需要 `unified-quantum[qiskit]` 才能启用 chip-backed dummy 路径，否则 `CompilationFailedError`”。
 
 ### D-S4 [low · 描述误导] `find_backend('dummy:originq:WK_C180')` 在 skill 中暗示可发现
 - 现象：skill 行文 “real-backend mirror `dummy:originq:WK_C180`” 容易被理解为 `find_backend` 可解析；实际抛 `ValueError`，仅 `submit_task` 接受。

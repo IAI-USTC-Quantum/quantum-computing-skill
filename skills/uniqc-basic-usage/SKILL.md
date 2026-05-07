@@ -141,7 +141,9 @@ If the user only needs the CLI, use `uv tool install unified-quantum`. If the us
 - Calibration module: `uniqc.calibration` (XEB, readout calibration, `XEBResult`, `ReadoutCalibrationResult`)
 - QEM module: `uniqc.qem` (`M3Mitigator`, `ReadoutEM`, `StaleCalibrationError`)
 - Visualization module: `uniqc.visualization` (`circuit_to_html`, `plot_time_line_html`, `schedule_circuit`)
-- Algorithms workflows: `uniqc.algorithms.workflows` (`xeb_workflow`, `readout_em_workflow`)
+- Algorithms workflows: `uniqc.algorithms.workflows` (`xeb_workflow`, `readout_em_workflow`). Note: VQE/QAOA/QNN training loops live in `uniqc.algorithms.core.training` (needs `[pytorch] + torchquantum`, install manually).
+- Algorithm fragments (return new `Circuit`): `hea`, `qaoa_ansatz`, `uccsd_ansatz`, `qft_circuit`, `ghz_state`, `w_state`, `dicke_state_circuit`, `cluster_state`, `grover_oracle`, `grover_diffusion`, `amplitude_estimation_circuit`, `vqd_ansatz`, `thermal_state_circuit`, `deutsch_jozsa_circuit`. Legacy `fn(circuit, ...)` in-place form still works but emits `DeprecationWarning`.
+- Measurement helpers: `uniqc.algorithms.core.measurement` — functions (`pauli_expectation`, `basis_rotation_measurement`, `classical_shadow`, `shadow_expectation`, `state_tomography`, `tomography_summary`) **and** classes (`PauliExpectation`, `StateTomography`, `ClassicalShadow`, `BasisRotationMeasurement`) with `.get_readout_circuits()` + `.execute(backend)` API. `tomography_summary` requires `qutip` (manual install) and currently only prints (returns `None`).
 - BackendOptions hierarchy: `BackendOptions`, `OriginQOptions`, `QuafuOptions`, `QuarkOptions`, `IBMOptions`, `DummyOptions`. Use `BackendOptionsFactory().create_default('originq')` for a sane default; `BackendOptionsFactory().from_kwargs(platform, **kwargs)` builds from explicit kwargs.
 - Gateway / web UI: `uniqc gateway start [--port N --host HOST]` starts the local task dashboard; manage it with `uniqc gateway status / stop / restart`.
 - AI CLI hints: `--ai-hints` / `--ai-hint`, `UNIQC_AI_HINTS=1`, or `uniqc config always-ai-hint on`

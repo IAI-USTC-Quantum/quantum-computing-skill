@@ -2,7 +2,7 @@
 
 UnifiedQuantum (current 0.0.11.x) provides circuit scheduling and HTML/SVG rendering for analyzing gate parallelism, timing, and resource usage. The visualization module is an optional dependency.
 
-> ⚠️ `schedule_circuit` and `plot_time_line*` internally call `compile()` to expand logical gates → native gates, which requires `unified-quantum[qiskit]`. To use these helpers without `[qiskit]`, pass a circuit that already uses only the chip's native gate set (e.g. CZ/SX/RZ).
+> ⚠️ `schedule_circuit` 与 `plot_time_line*` **始终**会调用 `compile()` 把逻辑门展开到 native 层，因此无论传入电路是否已用 native gate set（CZ/SX/RZ 等），都需要 `unified-quantum[qiskit]`。缺依赖会抛 `CompilationFailedError`。如果只想画静态线路图、不要时序，请改用 `circuit_to_html`（无需 `[qiskit]`）。
 
 ## Quick Path
 
@@ -169,6 +169,6 @@ schedule = schedule_circuit(circuit, backend_info=backend)
 
 ## Notes
 
-- The visualization module is an optional dependency. Install with `unified-quantum[visualization]` for `matplotlib` and `pandas` support; the core `circuit_to_html` and `plot_time_line_html` work without `matplotlib`, **but `plot_time_line_html` and `schedule_circuit` still need `unified-quantum[qiskit]` for scheduling logical (non-native) circuits** — they call `compile()` internally.
+- The visualization module is an optional dependency. Install with `unified-quantum[visualization]` for `matplotlib` and `pandas` support; the core `circuit_to_html` works without `matplotlib`. **`plot_time_line_html` and `schedule_circuit` always require `unified-quantum[qiskit]`** — they call `compile()` internally even on circuits that already use only native gates (`compile_to_basis=False` raises `TimelineDurationError` unless you supply `explicit_start` pulse data).
 - `circuit_to_html` does not require gate durations (it uses logical layer grouping, not physical timing) and does not require `[qiskit]`.
 - `plot_time_line_html` and `schedule_circuit` require gate durations for circuits without explicit pulse timing data.

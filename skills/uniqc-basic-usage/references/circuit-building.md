@@ -102,6 +102,8 @@ c.toffoli(0, 1, 2)
 c.cswap(0, 1, 2)
 ```
 
+> Gotcha: `iswap / rphi / phase2q / xy / uu15` 目前没有 OpenQASM 2.0 等价表达，调用 `c.qasm` 会抛 `NotImplementedError`。如果需要导出 QASM，请改用 `cz / cnot / u3 / rx / ry / rz / ...`，或先 `from uniqc.compile import compile; compile(c, level=0)` 编译到 basis gates 后再导出。
+
 ## 测量
 
 ```python

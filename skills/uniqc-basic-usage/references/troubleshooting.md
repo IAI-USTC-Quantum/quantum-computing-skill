@@ -154,3 +154,28 @@ Issue 内容应包含：
 | `FileNotFoundError` in `M3Mitigator` | 标定 cache 文件不存在 | 先执行 `uniqc calibrate readout` |
 | 在 dummy backend 上做 QEM 结果全零 | DummyAdapter 返回的 counts 默认是无噪声的 | QEM 在 dummy 上无实际意义；用含噪 dummy（`dummy:originq:WK_C180`）或真机才有校准效果 |
 | `TimelineDurationError` | 逻辑线路没有门时长数据 | 传入 `gate_durations` dict，或使用 `backend_info` 带时长信息的 backend |
+
+## 常见异常速查（uniqc.exceptions）
+
+`uniqc/exceptions.py` 公开导出以下异常，用于在 `try / except` 分支中精准捕获。除 `StaleCalibrationError` 外，所有都继承自 `UnifiedQuantumError`，可一并捕获。
+
+| 异常 | 触发场景 |
+|------|----------|
+| `UnifiedQuantumError` | 所有 uniqc 自定义异常的基类（除 `StaleCalibrationError`） |
+| `BackendNotFoundError` | `find_backend()` / `_get_adapter()` 找不到后端；通常是平台名错或缺 extras |
+| `CompilationFailedError` | `compile()` / `compile_for_backend()` 失败；最常见原因是缺 `[qiskit]` 或目标不在 basis set |
+| `UnsupportedGateError` | 提交时门集不在芯片白名单且 `auto_compile=False` 或 `skip_validation=False` |
+| `CircuitTranslationError` | OriginIR ↔ QASM/适配器格式转换失败 |
+| `TaskFailedError` | `wait_for_result` 看到 task 在云端进入 failed 状态 |
+| `TaskNotFoundError` | `query_task` / `wait_for_result` 找不到 task id（已 GC 或拼错） |
+| `TaskTimeoutError` | `wait_for_result(timeout=...)` 超时 |
+| `AuthenticationError` | adapter 收到 401 / unauthorized；检查 `~/.uniqc/config.yaml` 里的 token |
+| `InsufficientCreditsError` | 平台返回余额不足/billing 错误 |
+| `QuotaExceededError` | 平台返回限流/配额超出 |
+| `NetworkError` | 连接失败、DNS、超时、refused |
+| `ConfigValidationError` | `uniqc config validate` 检测到 schema 不符 |
+| `NotMatrixableError` | `Circuit.get_matrix()` 在含测量/经典控制等不可矩阵化的线路上调用 |
+| `TimelineDurationError` | timeline 调度缺门时长（详见上节） |
+| `StaleCalibrationError` | 标定数据 TTL 超时（**继承自 `Exception`，不是 `UnifiedQuantumError`**） |
+
+`AuthenticationError / InsufficientCreditsError / QuotaExceededError / NetworkError` 由 `_map_adapter_error` 在 originq adapter 路径上根据底层异常关键字映射；其他平台 adapter 暂未走这条映射，可能直接抛 `RuntimeError / ValueError`。

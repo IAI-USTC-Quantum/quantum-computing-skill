@@ -22,7 +22,7 @@ def linear_ghz(n: int) -> Circuit:
     for i in range(n - 1):
         c.cnot(i, i + 1)
     for q in range(n):
-        c.measure(q, q)
+        c.measure(q)
     return c
 
 

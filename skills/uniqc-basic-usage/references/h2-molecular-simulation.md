@@ -49,14 +49,13 @@ from uniqc import uccsd_ansatz
 
 ## 结果估计
 
-当前更推荐两种估计路线：
+当前推荐路线：
 
-1. 从 `simulate_pmeasure()` 得到概率分布，再用 `calculate_expectation()` 算 Z 型项
-2. 从 `simulate_statevector()` 得到态矢，在示例里手工实现所需的观测量计算
+1. **首选** —— 用 `pauli_expectation(circuit, "IZ", shots=N)` / `"ZI"` / `"ZZ"` / `"XX"` 直接拿 Pauli 期望（位置式字符串，长度 = `n_qubit`）。这条路径自动处理基底旋转，对 X/Y 项也工作。
+2. 或：从 `simulate_pmeasure()` 拿概率分布，再用 `calculate_expectation(probs, "ZZ")` 计算 **Z-only** 项（不能用于 X/Y）。
+3. 仅做教学/调试时：从 `simulate_statevector()` 拿态矢，自己实现观测量。
 
-如果只做教学示例，第一种通常更简单。
-
-> `calculate_expectation(measured_result, hamiltonian)` 在这里接受的是**位置式 `Z`/`I` 字符串**（长度 = `n_qubit`，例如 `"ZZII"`）。它**不接受** `qaoa_ansatz.cost_hamiltonian` 用的带索引格式（例如 `"Z0 Z1"`）。要算非对角的 X/Y 项请改用 `pauli_expectation`。
+> 注意：`calculate_expectation` 只接受 **位置式** `Z`/`I` 字符串（如 `"ZZII"`），不接受带索引的 `"Z0Z1"`（那是 `qaoa_ansatz.cost_hamiltonian` 专用）。X/Y 项请改用 `pauli_expectation`。
 
 ## 应该明确说出的限制
 

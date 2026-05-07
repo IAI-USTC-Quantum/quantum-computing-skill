@@ -118,14 +118,23 @@ line_task = submit_task(circuit, backend="dummy:virtual-line-3", shots=1000)
 noisy_task = submit_task(circuit, backend="dummy:originq:WK_C180", shots=1000)
 ```
 
-`dummy:originq:WK_C180` 这类写法会按真实 backend compile/transpile，再本地含噪执行；它是**提交规则**（`submit_task(backend=...)` 专用），不是 `backend list` / `find_backend(...)` 里的枚举项。`find_backend('dummy:originq:WK_C180')` 直接抛 `ValueError: Backend ... not found`；`list_backends()` 只返回显式注册的后端（`dummy`、`dummy:virtual-line-N`、`dummy:virtual-grid-RxC`、`dummy:mps:linear-N`，加全部真实云后端）。它还需要 `unified-quantum[qiskit]`，否则 `submit_task` 会抛 `CompilationFailedError`。
+> ⚠️ **当前已知问题（uniqc 0.0.11.dev22）**：`dummy:originq:<chip>` 形式当前因 uniqc compiler `_route_with_fidelity` 的 `KeyError` 在多数线路上会崩。在补丁落地前，请改用：
+> - `backend="dummy"` / `backend="dummy:virtual-line-N"` / `backend="dummy:virtual-grid-RxC"` / `backend="dummy:mps:linear-N"`，或
+> - `backend="originq", backend_name="WK_C180", skip_validation=True` 直接走真机。
+
+`dummy:originq:WK_C180` 这类写法的设计初衷是按真实 backend compile/transpile，再本地含噪执行；它是**提交规则**（`submit_task(backend=...)` 专用），不是 `backend list` / `find_backend(...)` 里的枚举项。`find_backend('dummy:originq:WK_C180')` 直接抛 `ValueError: Backend ... not found`；`list_backends()` 只返回显式注册的后端（`dummy`、`dummy:virtual-line-N`、`dummy:virtual-grid-RxC`、`dummy:mps:linear-N`，加全部真实云后端）。它还需要 `unified-quantum[qiskit]`，否则 `submit_task` 会抛 `CompilationFailedError`。
+
+> ⚠️ **OriginQ backend ID 大小写规则（务必严格遵守）**：
+> - **真机 / `find_backend` / `submit_task` / `dry_run_task`**：必须使用大写 chip 名加 `originq:` 前缀，**不接受**小写或 `origin:` 前缀。例如 `originq:WK_C180` 可用，`originq:wk_c180` / `origin:WK_C180` / `origin:wk_c180` 全部抛 `ValueError`。
+> - **`dummy:originq:<chip>` 路径**额外接受小写 alias（即 `dummy:originq:wk_c180` 也能解析为 `WK_C180`），但仅限 dummy 链路；不要把这个习惯带到真机入口。
+> - 推荐做法：所有源码里写 chip 名一律大写，调用前用 `find_backend('originq:WK_C180')` 验证一次。
 
 OriginQ 真机：
 
 ```python
 from uniqc import Circuit, compile, find_backend, submit_task, wait_for_result
 
-c = Circuit(2); c.h(0); c.cnot(0, 1); c.measure(0, 1)
+c = Circuit(2); c.h(0); c.cnot(0, 1); c.measure(0); c.measure(1)
 
 backend_info = find_backend('originq:WK_C180')
 c_native = compile(c, backend_info, level=2)         # H/CNOT → CZ/SX/RZ
@@ -142,6 +151,8 @@ check = dry_run_task(circuit, backend="originq", shots=100, backend_name="WK_C18
 if not check.success:
     raise RuntimeError(check.error or check.details)
 ```
+
+> Gotcha: `dry_run_task` 与 `submit_task` 的 backend 写法**不完全等价**。`dry_run_task` 仅接受 `backend="<platform>"` + `backend_name="<chip>"` 这种二元形式；写成 `backend="originq:WK_C180"` 会得到 `Unknown backend` 误导。`submit_task` 两种写法都能工作（`backend="originq:WK_C180"` 自动解析），但为了和 `dry_run_task` 保持一致，统一推荐二元写法。
 
 Quafu simulator 或真机：
 
@@ -276,3 +287,21 @@ chain = sel.find_best_1D_chain(length=3)
 - 是否开启优化、measurement amend、auto mapping 等平台选项
 
 如果要写论文式或报告式结果，保留原始 counts，不只保留归一化概率。
+
+## 审计已配置后端（fetch_all_backends_with_status）
+
+`audit_backends(...)` 与 `fetch_all_backends()` 不会告诉你哪个 platform 在 fetch 时失败（缺 SDK / token 错误等都被吞掉，得到空列表）。需要可见的失败信息时改用：
+
+```python
+from uniqc.backend_adapter.backend_registry import fetch_all_backends_with_status
+from uniqc.backend_adapter.backend_info import Platform
+
+result = fetch_all_backends_with_status()
+print(result.backends.keys())     # 成功 fetch 的 platform → list[BackendInfo]
+print(result.fetch_failures)      # 失败 platform → 异常信息
+```
+
+当前局限（uniqc 0.0.11.dev22）：
+
+- `fetch_all_backends_with_status` 暂未在 `uniqc.*` 顶层导出，必须从 `uniqc.backend_adapter.backend_registry` 导入。
+- 对 `Platform.QUARK / Platform.QUAFU` 的聚合分支当前可能直接跳过（即便 SDK 已装），因此 `fetch_all_backends_with_status()` 看不到这两个 platform。需要单独枚举时用 `fetch_platform_backends(Platform.QUARK)` / `fetch_platform_backends(Platform.QUAFU)` 直接拿。
