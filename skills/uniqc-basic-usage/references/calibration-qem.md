@@ -101,7 +101,10 @@ uniqc calibrate readout --qubits 0 1 --type 2q --backend dummy --shots 1000
 ```python
 from uniqc.calibration.readout import ReadoutCalibrator
 
+# 默认 shots=1000, timeout=300.0s, poll_interval=2.0s（E-U7, uniqc ≥ 0.0.11.dev30）
+# 真机排队较长时可调大 timeout / poll_interval
 calibrator = ReadoutCalibrator(adapter=dummy_adapter, shots=1000)
+# calibrator = ReadoutCalibrator(adapter=originq_adapter, shots=1000, timeout=900.0, poll_interval=10.0)
 result = calibrator.calibrate_1q(qubit=0)
 # 1q confusion_matrix: rows=measured, cols=prepared.
 # So result.confusion_matrix[i][j] == P(measure=i | prep=j); diagonal == [P(0|0), P(1|1)].

@@ -142,15 +142,21 @@ result = wait_for_result(task_id, timeout=300)       # → UnifiedResult (dict-l
 
 > 默认 `local_compile=1, cloud_compile=1`（uniqc ≥ 0.0.11.dev30）：本地用 qiskit `optimization_level=1` 编译并验证芯片 basis/topology，云端也开启自动编译。需要完全跳过本地编译可传 `local_compile=0`，需要本地深度优化可传 `local_compile=2` / `local_compile=3`。要让云端不再二次编译可传 `cloud_compile=0`。无论怎么设置，IR 语言兼容性的硬规则永远不会被绕过（OriginQ 必须 OriginIR、Quafu/IBM 必须 OpenQASM 2.0），不兼容直接抛 `UnsupportedGateError`。
 
-真实提交前先 dry-run：
+> OriginQ 提交链路：`OriginQAdapter` 在把 OriginIR 喂给云端 pyqpanda3 解析器之前，会把 `SX q[i]` / `SX q[i].dagger` 自动改写成等价的 `RX q[i],(±π/2)`（NEW-U2.b fix, uniqc ≥ 0.0.11.dev30）。原因：尽管 OriginQ basis gate 集合声明含 SX，远端 OriginIR 解析器目前不接受 SX token。这次重写对用户透明，无需手动改电路。
+
+真实提交前先 dry-run（与 `submit_task` 等价，两种 backend 写法都接受）：
 
 ```python
-check = dry_run_task(circuit, backend="originq", shots=100, backend_name="WK_C180")
+# 推荐统一写法：单字符串
+check = dry_run_task(circuit, backend="originq:WK_C180", shots=100)
+# 二元写法同样工作（D-U4 已对齐）
+check = dry_run_task(circuit, backend="originq", backend_name="WK_C180", shots=100)
 if not check.success:
     raise RuntimeError(check.error or check.details)
 ```
 
-> Gotcha: `dry_run_task` 与 `submit_task` 的 backend 写法**不完全等价**。`dry_run_task` 仅接受 `backend="<platform>"` + `backend_name="<chip>"` 这种二元形式；写成 `backend="originq:WK_C180"` 会得到 `Unknown backend` 误导。`submit_task` 两种写法都能工作（`backend="originq:WK_C180"` 自动解析），但为了和 `dry_run_task` 保持一致，统一推荐二元写法。
+> `dry_run_task` 与 `submit_task` 现在 backend 写法**完全等价**（D-U4 fix, uniqc ≥ 0.0.11.dev22）：
+> 都接受 `backend="originq:WK_C180"` 单字符串形式，也接受 `backend="originq"` + `backend_name="WK_C180"` 二元形式。推荐前者，更简洁。
 
 Quafu simulator 或真机：
 
@@ -161,7 +167,7 @@ task_id = submit_task(
     chip_id="ScQ-Sim10",
     shots=100,
 )
-result = wait_for_result(task_id, backend="quafu", timeout=300)
+result = wait_for_result(task_id, timeout=300)
 ```
 
 Quark 真机（需配置 `QUARK_API_KEY`，Python ≥ 3.12）：
@@ -176,7 +182,7 @@ task_id = submit_task(
     shots=100,
     options=opts,
 )
-result = wait_for_result(task_id, backend="quark", timeout=300)
+result = wait_for_result(task_id, timeout=300)
 ```
 
 批量任务：

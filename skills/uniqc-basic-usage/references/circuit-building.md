@@ -102,7 +102,7 @@ c.toffoli(0, 1, 2)
 c.cswap(0, 1, 2)
 ```
 
-> Gotcha: `iswap / rphi / phase2q / xy / uu15` 目前没有 OpenQASM 2.0 等价表达，调用 `c.qasm` 会抛 `NotImplementedError`。如果需要导出 QASM，请改用 `cz / cnot / u3 / rx / ry / rz / ...`，或先 `from uniqc.compile import compile; compile(c, level=0)` 编译到 basis gates 后再导出。
+> `iswap / rphi / phase2q / xy / uu15` 没有 OpenQASM 2.0 内建等价表达，但 `c.qasm` 会**自动**为它们生成 `gate ... { ... }` 自定义定义并 inline 调用，所以 export → re-parse 的 round-trip 现在能完整工作（uniqc ≥ 0.0.11.dev22, A-U3）。如果导出 QASM 后给的目标工具链（如旧版 IBM Quantum）不支持自定义 gate def，可先 `from uniqc.compile import compile; compile(c, level=0)` 编译到 basis gates 后再导出。
 
 ## 测量
 

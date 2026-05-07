@@ -25,7 +25,7 @@ from uniqc import hea, qaoa_ansatz, uccsd_ansatz
 - 生成线路后先本地模拟，再考虑 dummy 或真机任务。
 
 > ⚠️ **API 风格 caveat**：`hea / qaoa_ansatz / uccsd_ansatz` 都**返回新 `Circuit`**，与本节其余 ansatz 工厂保持一致。但 `uniqc` 顶层导出的电路构造器在历史上有两套风格：
-> - **fragment 风格（推荐 / 当前默认）**：返回新 `Circuit`，可与 `add_circuit` 拼接 —— `hea / qaoa_ansatz / uccsd_ansatz / qft_circuit / ghz_state / w_state / dicke_state_circuit / cluster_state / grover_oracle / grover_diffusion / amplitude_estimation_circuit / vqd_ansatz / thermal_state_circuit / deutsch_jozsa_circuit`（见 `uniqc/algorithms/core/circuits/`）。
+> - **fragment 风格（推荐 / 当前默认）**：返回新 `Circuit`，可与 `add_circuit` 拼接 —— `hea / qaoa_ansatz / uccsd_ansatz / qft_circuit / qpe_circuit / ghz_state / w_state / dicke_state_circuit / cluster_state / grover_oracle / grover_diffusion / amplitude_estimation_circuit / vqd_ansatz / thermal_state_circuit / deutsch_jozsa_circuit`（见 `uniqc/algorithms/core/circuits/`）。
 > - **in-place 风格（已弃用，仍可调）**：`fn(circuit, ...)` 第一个参数传现有 `Circuit` 时**就地修改**并返回 `None`，调用时会发 `DeprecationWarning`。新代码请只用 fragment 风格。
 > 
 > 完整测量类（`PauliExpectation / StateTomography / ClassicalShadow / BasisRotationMeasurement`）的设计见 [Algorithm Design](../../UnifiedQuantum/docs/source/guide/algorithm_design.md) 或 `from uniqc import PauliExpectation, StateTomography, ClassicalShadow, BasisRotationMeasurement`。
@@ -123,7 +123,11 @@ result = minimize(objective, x0=np.zeros(4), method="COBYLA")
 
 `calculate_expectation(measured_result, hamiltonian)` 接受**位置式 `Z`/`I` 字符串**，长度必须等于 `n_qubit`，例如 `"ZZII"`（对前两个 qubit 取 ⟨Z⊗Z⟩，后两个忽略）。
 
-它**不接受** `qaoa_ansatz.cost_hamiltonian` / `pauli_expectation` 那种带索引的 Pauli-string 写法（例如 `"Z0 Z1"`、`"Z0Z1"`）。如果你已经在用索引格式，需要先转成位置式字符串再传入。
+它**不接受** `qaoa_ansatz.cost_hamiltonian` 那种带索引的 Pauli-string 写法（例如 `"Z0 Z1"`、`"Z0Z1"`）。如果你已经在用索引格式，需要先转成位置式字符串再传入；或者改用 `pauli_expectation(circuit, hamiltonian, ...)`，后者从 uniqc ≥ 0.0.11.dev22 起同时接受三种写法（C-U2 fix）：
+
+- 紧凑位置式 `"ZIZ"`（长度 = `n_qubit`）
+- 带索引 `"Z0Z1"` / `"Z0Z2"`
+- 元组列表 `[("Z", 0), ("Z", 1)]`
 
 ### `calculate_multi_basis_expectation` 的语义陷阱
 

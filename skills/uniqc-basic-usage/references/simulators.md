@@ -50,13 +50,13 @@ counts = sim.simulate_shots(circuit.originir, shots=1000)
 ```python
 from uniqc.simulator import create_simulator, get_simulator
 
-# create_simulator 推荐：第 1 位是 backend_type
+# create_simulator 推荐：第 1 位是 backend_type，第 2 位是 program_type
 sim = create_simulator("statevector")
 sim = create_simulator("mps", chi_max=128)
 
-# 注意：get_simulator 的位置参数顺序是 (program_type, backend_type)，与
-# create_simulator 相反，传错就会得到 `Unsupported program type` 错误。
-sim = get_simulator("originir", "statevector")
+# get_simulator 与 create_simulator 同样采用 (backend_type, program_type)
+# 顺序（uniqc ≥ 0.0.11.dev22, B-U2 fix），与早期某些示例颠倒的写法不同。
+sim = get_simulator("statevector", "originir")
 
 # 旧写法 `uniqc.simulator.get_backend(...)` 已弃用，会发 DeprecationWarning。
 ```
