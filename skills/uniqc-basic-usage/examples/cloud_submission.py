@@ -102,9 +102,10 @@ def real_originq_example(shots: int) -> str:
          ``~/.uniqc/config.yaml``).
 
     The circuit is compiled to the chip's native gate set BEFORE submission.
-    ``submit_task`` does not currently auto-compile (``auto_compile=True`` is
-    a no-op today), so a logical Bell circuit (H + CNOT) would otherwise
-    raise ``UnsupportedGateError``.
+    Since uniqc 0.0.11.dev30, ``submit_task`` itself runs qiskit transpile
+    (``local_compile=1`` default), so explicit pre-compile is not strictly
+    required for simple circuits — but doing it explicitly is still the
+    clearest pattern for examples.
     """
 
     _sync_env_to_config()

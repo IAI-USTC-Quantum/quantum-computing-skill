@@ -164,7 +164,7 @@ Issue 内容应包含：
 | `UnifiedQuantumError` | 所有 uniqc 自定义异常的基类（除 `StaleCalibrationError`） |
 | `BackendNotFoundError` | `find_backend()` / `_get_adapter()` 找不到后端；通常是平台名错或缺 extras |
 | `CompilationFailedError` | `compile()` / `compile_for_backend()` 失败；最常见原因是缺 `[qiskit]` 或目标不在 basis set |
-| `UnsupportedGateError` | 提交时门集不在芯片白名单且 `auto_compile=False` 或 `skip_validation=False` |
+| `UnsupportedGateError` | 提交时 IR 语言或门集不在芯片白名单（IR 不兼容时硬抛，与 `local_compile` / `cloud_compile` 无关；门集不兼容且 `local_compile=0` 时抛） |
 | `CircuitTranslationError` | OriginIR ↔ QASM/适配器格式转换失败 |
 | `TaskFailedError` | `wait_for_result` 看到 task 在云端进入 failed 状态 |
 | `TaskNotFoundError` | `query_task` / `wait_for_result` 找不到 task id（已 GC 或拼错） |

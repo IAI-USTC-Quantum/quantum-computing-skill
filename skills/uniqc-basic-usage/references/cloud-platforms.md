@@ -65,7 +65,7 @@ Python adapters 会读取配置。新代码优先通过顶级 `uniqc.config` 理
 >
 > 另外：旧版 `UNIQC_DUMMY` / `UNIQC_SKIP_VALIDATION` 环境变量在 0.0.11.dev10 起**已移除**。改用：
 >   - **dummy 模式**：传 `backend="dummy"` / `backend="dummy:virtual-line-N"` / `backend="dummy:originq:WK_C180"` 等到 `submit_task` 即可激活，无需任何环境变量。
->   - **跳过提交前校验**：在 `submit_task(..., skip_validation=True)` 单次调用上传 kwarg。
+>   - **跳过提交前校验**：在 `submit_task(..., local_compile=0)` 上把本地 qiskit transpile 关掉；硬性的 IR 兼容性校验仍会执行（向 OriginQ 提交必须是 OriginIR、向 Quafu/IBM 提交必须是 OpenQASM 2.0）。同样地，`cloud_compile=0` 用来要求云端关闭自动编译。旧的 `auto_compile=` / `skip_validation=` 已删除。
 
 不要把 token 写进示例代码、日志或 issue。
 
@@ -118,9 +118,7 @@ line_task = submit_task(circuit, backend="dummy:virtual-line-3", shots=1000)
 noisy_task = submit_task(circuit, backend="dummy:originq:WK_C180", shots=1000)
 ```
 
-> ⚠️ **当前已知问题（uniqc 0.0.11.dev22）**：`dummy:originq:<chip>` 形式当前因 uniqc compiler `_route_with_fidelity` 的 `KeyError` 在多数线路上会崩。在补丁落地前，请改用：
-> - `backend="dummy"` / `backend="dummy:virtual-line-N"` / `backend="dummy:virtual-grid-RxC"` / `backend="dummy:mps:linear-N"`，或
-> - `backend="originq", backend_name="WK_C180", skip_validation=True` 直接走真机。
+> ⚠️ **历史问题已解决**：早期 `_route_with_fidelity` 的 `KeyError` 已在 `fix/audit-review` 上修复（NEW-U1）。`dummy:originq:<chip>` 路径已可正常使用。
 
 `dummy:originq:WK_C180` 这类写法的设计初衷是按真实 backend compile/transpile，再本地含噪执行；它是**提交规则**（`submit_task(backend=...)` 专用），不是 `backend list` / `find_backend(...)` 里的枚举项。`find_backend('dummy:originq:WK_C180')` 直接抛 `ValueError: Backend ... not found`；`list_backends()` 只返回显式注册的后端（`dummy`、`dummy:virtual-line-N`、`dummy:virtual-grid-RxC`、`dummy:mps:linear-N`，加全部真实云后端）。它还需要 `unified-quantum[qiskit]`，否则 `submit_task` 会抛 `CompilationFailedError`。
 
@@ -142,7 +140,7 @@ task_id = submit_task(c_native, backend='originq', backend_name='WK_C180', shots
 result = wait_for_result(task_id, timeout=300)       # → UnifiedResult (dict-like over counts)
 ```
 
-> 默认 `auto_compile=True`（uniqc ≥ 0.0.11.dev10）：当线路不满足芯片 basis/topology 时，`submit_task` 会先调用 `compile_for_backend` 自动编译再提交；若仍不能落到 basis/topology 则抛 `UnsupportedGateError`。需要手动绕过校验时传 `submit_task(..., skip_validation=True)`。要完全跳过自动编译可传 `auto_compile=False`。
+> 默认 `local_compile=1, cloud_compile=1`（uniqc ≥ 0.0.11.dev30）：本地用 qiskit `optimization_level=1` 编译并验证芯片 basis/topology，云端也开启自动编译。需要完全跳过本地编译可传 `local_compile=0`，需要本地深度优化可传 `local_compile=2` / `local_compile=3`。要让云端不再二次编译可传 `cloud_compile=0`。无论怎么设置，IR 语言兼容性的硬规则永远不会被绕过（OriginQ 必须 OriginIR、Quafu/IBM 必须 OpenQASM 2.0），不兼容直接抛 `UnsupportedGateError`。
 
 真实提交前先 dry-run：
 
