@@ -6,7 +6,7 @@
 
 面向 [UnifiedQuantum](https://github.com/IAI-USTC-Quantum/UnifiedQuantum) 的 Agent Skills 集合仓库。
 
-当前版本已 follow-up UnifiedQuantum v0.0.9，重点同步了 v0.0.9 的新特性：Quark 后端、标定/QEM 模块、timeline 可视化、顶层 config 模块、扩展的 dummy backend 标识符。
+当前版本已 follow-up UnifiedQuantum v0.0.11，重点同步了 v0.0.11 的新特性：Quark 后端、标定/QEM 模块、timeline 可视化、顶层 config 模块、扩展的 dummy backend 标识符。
 
 当前提供的通用 skill 是 `uniqc-basic-usage`。它覆盖 UnifiedQuantum/uniqc 的基础使用路径，例如安装、线路构建、OriginIR / QASM 转换、本地模拟、CLI、config、dummy backend、dry-run、backend cache、简单提交、标定/QEM、timeline 可视化和通用排障。
 
