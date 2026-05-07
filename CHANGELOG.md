@@ -5,7 +5,7 @@ All notable changes to the `quantum-computing.skill` package (currently
 
 ## [Unreleased]
 
-## [1.4.0] - 2026-05-07 — UnifiedQuantum 0.0.12 alignment
+## [0.0.12] - 2026-05-07 — UnifiedQuantum 0.0.12 alignment
 
 UnifiedQuantum 0.0.12 引入了**uniqc 自管理的任务 ID 间接层**（breaking）以及**原生批量提交**。Skill 已对齐：
 
@@ -26,7 +26,7 @@ UnifiedQuantum 0.0.12 引入了**uniqc 自管理的任务 ID 间接层**（break
 
 - follow-up 版本说明从 0.0.11 升级到 0.0.12，并列出新引入的 IDL / 原生 batch 特性。
 
-## [1.3.0] - 2026-05-07 — UnifiedQuantum 0.0.11 alignment
+## [0.0.11] - 2026-05-07 — UnifiedQuantum 0.0.11 alignment
 
 This release aligns the skill with the four-round audit fixes that landed in
 UnifiedQuantum 0.0.11. Every reference page was reviewed against the live API.
@@ -95,11 +95,9 @@ UnifiedQuantum 0.0.11. Every reference page was reviewed against the live API.
 
 - `.agents/skills/uniqc-basic-usage/` mirror is kept in sync via rsync.
 
-## [1.2.009] — UnifiedQuantum 0.0.9
-
+## [legacy 1.2.009] — UnifiedQuantum 0.0.9
 - Initial coverage for `Circuit.get_matrix()`, calibration module, MPS
   simulator preview.
 
-## [1.2.0] — UnifiedQuantum 0.0.8
-
+## [legacy 1.2.0] — UnifiedQuantum 0.0.8
 - Refocus skill on UnifiedQuantum workflows.
