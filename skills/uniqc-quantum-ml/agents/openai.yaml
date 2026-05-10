@@ -1,0 +1,7 @@
+interface:
+  display_name: "Uniqc Quantum ML"
+  short_description: "PyTorch QML: QNN/QCNN/Hybrid classifiers and QuantumLayer parameter-shift wrapping."
+  default_prompt: "Use $uniqc-quantum-ml to set up a PyTorch quantum machine learning model."
+
+policy:
+  allow_implicit_invocation: true

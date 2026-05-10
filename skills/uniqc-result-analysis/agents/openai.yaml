@@ -1,0 +1,7 @@
+interface:
+  display_name: "Uniqc Result Analysis"
+  short_description: "Parse UnifiedResult, build counts / probability tables, plot histograms, compute Pauli expectations, render circuits."
+  default_prompt: "Use $uniqc-result-analysis to summarize and plot the result of my UnifiedQuantum task."
+
+policy:
+  allow_implicit_invocation: true

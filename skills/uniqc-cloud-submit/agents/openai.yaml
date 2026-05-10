@@ -1,0 +1,7 @@
+interface:
+  display_name: "Uniqc Cloud Submit"
+  short_description: "End-to-end UnifiedQuantum cloud / real-hardware submission: validate keys, author program file, dry-run, submit, query, wait_for_result."
+  default_prompt: "Use $uniqc-cloud-submit to validate my keys, dry-run my circuit, and submit it to the chosen backend."
+
+policy:
+  allow_implicit_invocation: true

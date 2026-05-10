@@ -3,7 +3,49 @@
 All notable changes to the `quantum-computing.skill` package (currently
 `uniqc-basic-usage`) are documented here.
 
-## [Unreleased]
+## [Unreleased] — narrower skill batch (UnifiedQuantum 0.0.13.dev0)
+
+This release adds the **first batch of narrower, scenario-focused skills**
+alongside the existing `uniqc-basic-usage`. Each new skill follows the same
+shape (`SKILL.md` + `references/` + `examples/` + `agents/openai.yaml`) and
+is independently installable via `npx skills add ... --skill <name>`.
+
+### New skills (`skills/`)
+
+- **`uniqc-cloud-submit`** — end-to-end real-hardware / cloud submission
+  workflow: API-key health check via `uniqc config validate` (the
+  user-mentioned `uniqc doctor` does **not** exist), authoring `.originir`
+  / `.qasm` from a Python `Circuit`, `dry_run_task` → `submit_task` →
+  `query_task` → `wait_for_result`, plus the `uqt_*` task-id / `task_shards`
+  story (uniqc ≥ 0.0.12).
+- **`uniqc-result-analysis`** — parse `UnifiedResult`, build counts /
+  probability tables, plot histograms with `uniqc.visualization.plot_histogram`
+  and `plot_distribution`, compute Pauli expectations, render circuits +
+  timelines via `circuit_to_html` / `plot_time_line_html`, compare two runs
+  with TV / Hellinger.
+- **`uniqc-xeb-qem`** — XEB benchmarking (`xeb_workflow.run_1q/2q/parallel/parallel_cz`)
+  and QEM via `ReadoutEM.apply` / `M3Mitigator.apply`. Documents
+  `find_cached_results(..., result_type=...)`, `StaleCalibrationError`
+  inheriting directly from `Exception`, the `dummy:originq:<chip>` /
+  `[qiskit]` extras requirement, and the `~/.uniqc/calibration_cache/` layout.
+- **`uniqc-qaoa`** — QAOA in three flavours: high-level
+  `qaoa_workflow.run_qaoa_workflow`, hand-rolled
+  `qaoa_ansatz` + `pauli_expectation` + SciPy, and a real-hardware
+  compile / batch / decode flow.
+- **`uniqc-quantum-ml`** — PyTorch QML: `QNNClassifier` / `QCNNClassifier` /
+  `HybridQCLModel` (need torchquantum) and the lower-level
+  `QuantumLayer(circuit, expectation_fn, n_outputs, init_params, shift=π/2)`
+  with parameter-shift gradients. Documents the manual `torchquantum`
+  install line and when each layer is appropriate.
+- **`uniqc-algorithm-cases`** — catalog + runnable templates for canonical
+  algorithms: GHZ / W / Dicke / cluster / thermal state, QFT, QPE
+  (`uniqc.algorithms.core.circuits.qpe_circuit`, **not** at top-level),
+  Grover, amplitude estimation, Deutsch-Jozsa, VQE / VQD, state tomography,
+  classical shadow.
+
+### `README.md`
+
+- Lists the six new skills under "Current Skills" with short descriptions.
 
 ## [0.0.12] - 2026-05-07 — UnifiedQuantum 0.0.12 alignment
 

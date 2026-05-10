@@ -1,0 +1,7 @@
+interface:
+  display_name: "Uniqc XEB & QEM"
+  short_description: "Calibration (XEB 1q/2q/parallel + readout) and quantum error mitigation (ReadoutEM, M3Mitigator)."
+  default_prompt: "Use $uniqc-xeb-qem to characterize my backend or mitigate readout errors on a UnifiedResult."
+
+policy:
+  allow_implicit_invocation: true

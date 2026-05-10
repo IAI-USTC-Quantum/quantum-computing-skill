@@ -1,0 +1,7 @@
+interface:
+  display_name: "Uniqc QAOA"
+  short_description: "QAOA workflows: high-level run_qaoa_workflow, hand-rolled SciPy loops, hardware submission."
+  default_prompt: "Use $uniqc-qaoa to set up and run a QAOA workflow for my optimisation problem."
+
+policy:
+  allow_implicit_invocation: true

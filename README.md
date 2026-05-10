@@ -12,9 +12,37 @@
 
 ## 当前 Skills
 
+通用入口：
+
 - `uniqc-basic-usage`: 通用、跨 Agent 的 UnifiedQuantum 基础使用 skill。
 
-后续可以继续在 `skills/` 下增加更窄的专用 skill，例如算法开发、QEM 使用、真机提交、release 前测试等。
+流程类（按场景细分）：
+
+- `uniqc-cloud-submit`: 真机 / 云端端到端提交 —— `uniqc config validate` 健康检查
+  （注意：用户口中的 `uniqc doctor` **不存在**，请改用 `config validate`）、把 Python
+  `Circuit` 持久化为 `.originir` / `.qasm`、`dry_run_task` → `submit_task` →
+  `query_task` → `wait_for_result`，以及 `uqt_*` 任务 ID / shard 映射。
+- `uniqc-result-analysis`: `UnifiedResult` 解析、counts / probability 表、histogram /
+  distribution 可视化、Pauli 期望、circuit + timeline HTML、双跑对比（TV / Hellinger）。
+- `uniqc-xeb-qem`: XEB 1q / 2q / parallel benchmarking、Readout 标定与 QEM
+  （`ReadoutEM.apply` / `M3Mitigator.apply`），含 `find_cached_results(result_type=...)`、
+  `StaleCalibrationError` 注意事项、`~/.uniqc/calibration_cache/` 布局。
+
+算法类：
+
+- `uniqc-qaoa`: 三层抽象的 QAOA —— `qaoa_workflow.run_qaoa_workflow` 一键、
+  `qaoa_ansatz` + `pauli_expectation` + SciPy 手撸、以及真机 compile / batch / decode。
+- `uniqc-quantum-ml`: PyTorch QML —— `QNNClassifier` / `QCNNClassifier` /
+  `HybridQCLModel`（需 torchquantum）和 `QuantumLayer` parameter-shift 自动微分。
+- `uniqc-algorithm-cases`: 规范化算法目录与模板 —— GHZ / W / Dicke / cluster / thermal
+  state、QFT、QPE（位于 `uniqc.algorithms.core.circuits.qpe_circuit`，**不在顶层**）、
+  Grover、amplitude estimation、Deutsch-Jozsa、VQE / VQD、state tomography、classical
+  shadow。
+
+每个 skill 都遵循 `SKILL.md` + `references/` + `examples/` + `agents/openai.yaml` 的
+结构，可单独安装：`npx skills add ... --skill uniqc-cloud-submit`。
+
+后续会继续在 `skills/` 下扩展更窄的专用 skill。
 
 ## 可以直接让 Agent 做什么
 
@@ -91,10 +119,20 @@ npx skills add IAI-USTC-Quantum/quantum-computing.skill --list
 
 ## 仓库内容
 
-- `skills/uniqc-basic-usage/SKILL.md`：通用 skill 主入口
-- `skills/uniqc-basic-usage/references/`：按主题整理的使用说明与排障参考，包括 `calibration-qem.md`（标定与量子纠错）和 `timeline-visualization.md`（时间线可视化）
-- `skills/uniqc-basic-usage/examples/`：可复用的示例代码（含 Quark 平台提交示例）
-- `skills/uniqc-basic-usage/scripts/`：环境检查和辅助脚本
+- `skills/uniqc-basic-usage/`：通用 skill 主入口（基础使用、CLI、模拟、配置等）。
+- `skills/uniqc-cloud-submit/`：流程类 —— 健康检查 + 真机提交 + 任务追踪。
+- `skills/uniqc-result-analysis/`：流程类 —— 结果解析 + 可视化 + 期望值。
+- `skills/uniqc-xeb-qem/`：流程类 —— XEB 标定 + 读出错误缓解。
+- `skills/uniqc-qaoa/`：算法类 —— QAOA workflow / 手撸 / 真机。
+- `skills/uniqc-quantum-ml/`：算法类 —— PyTorch QML（QNN / QCNN / Hybrid / QuantumLayer）。
+- `skills/uniqc-algorithm-cases/`：算法类 —— 规范化算法目录与可运行模板。
+
+每个 skill 目录的内部结构：
+
+- `SKILL.md`：skill 主入口（含 `description` front-matter）。
+- `references/`：按主题整理的使用说明与排障参考。
+- `examples/`：可独立运行的示例代码。
+- `agents/openai.yaml`：SkillHub / OpenAI Agent 接口元数据。
 
 ## 通过 ClawHub 安装
 

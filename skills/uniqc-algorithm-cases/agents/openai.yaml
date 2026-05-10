@@ -1,0 +1,7 @@
+interface:
+  display_name: "Uniqc Algorithm Cases"
+  short_description: "Catalog and runnable templates for canonical quantum algorithms (VQE, QPE, Grover, QFT, Deutsch-Jozsa, GHZ/W/Dicke, tomography, classical shadow, VQD)."
+  default_prompt: "Use $uniqc-algorithm-cases to set up a canonical quantum algorithm in UnifiedQuantum."
+
+policy:
+  allow_implicit_invocation: true
