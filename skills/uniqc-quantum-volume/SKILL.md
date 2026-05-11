@@ -79,6 +79,16 @@ Sweep `n = 2, 3, 4, …` until a width fails. `QV = 2 ^ (n - 1)`.
   alone can drag the mean below 2/3 even when the gate fidelities
   would otherwise pass.
 
+> ⚠️ **Sanity check first**: run the demo against
+> `dummy:local:simulator`. The measured mean heavy-output should match
+> the *ideal* mean heavy-output (printed by the demo) to within shot
+> noise — both will sit around 0.79 (n=2) / 0.85 (n≥3). If you see
+> **higher** values, something is wrong (the heavy-set computation has
+> a bug, or the measurements skipped). If you see lower values on
+> `dummy:local:simulator`, that is impossible — file an issue. The
+> 0.85 ceiling is a feature of the protocol, not a bug; see
+> `references/protocol.md` for the Porter-Thomas explanation.
+
 ## CLI cheat sheet
 
 There is no `uniqc qv` CLI command. The skill is pure-Python; if you

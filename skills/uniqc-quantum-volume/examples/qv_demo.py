@@ -85,8 +85,11 @@ def run_qv(backend: str, n: int, n_circuits: int, shots: int, seed_base: int = 0
         h, ih = heavy_set(c, n=n)
         circuits.append(c); heavies.append(h); ideal_h.append(ih)
 
-    print(f"  ideal mean heavy-output (asymptote ≈ 0.847): "
-          f"{sum(ideal_h)/len(ideal_h):.4f}", flush=True)
+    ideal_mean = sum(ideal_h) / len(ideal_h)
+    print(f"  ideal mean heavy-output (asymptote (1+ln2)/2 ≈ 0.847): "
+          f"{ideal_mean:.4f}", flush=True)
+    print("  ↑ that is the theoretical CEILING for these specific circuits.", flush=True)
+    print("    A perfect simulator should match it to within shot noise.", flush=True)
 
     print(f"  submitting batch to {backend!r} (shots={shots}) ...", flush=True)
     t0 = time.time()
@@ -105,6 +108,9 @@ def run_qv(backend: str, n: int, n_circuits: int, shots: int, seed_base: int = 0
     s = score(freqs)
     s["seeds"] = seeds
     s["freqs"] = freqs
+    s["ideal_mean"] = ideal_mean
+    # Hardware quality fraction: how close did we get to the ceiling?
+    s["fraction_of_ideal"] = s["mean"] / ideal_mean if ideal_mean > 0 else float("nan")
     return s
 
 
@@ -115,7 +121,9 @@ def sweep(backend: str, max_n: int, n_circuits: int, shots: int, save_dir: Path 
         print(f"\n--- width n={n} ---")
         s = run_qv(backend, n, n_circuits, shots)
         verdict = "PASS" if s["pass"] else "FAIL"
-        print(f"  n={n}: {verdict}  mean={s['mean']:.4f}  "
+        print(f"  n={n}: {verdict}  measured={s['mean']:.4f}  "
+              f"(ideal={s['ideal_mean']:.4f}, "
+              f"fraction_of_ideal={s['fraction_of_ideal']:.3f})  "
               f"LCB(2σ)={s['lcb_2sigma']:.4f}  "
               f"(threshold 0.6667)")
         summary[n] = s
@@ -135,8 +143,14 @@ def sweep(backend: str, max_n: int, n_circuits: int, shots: int, save_dir: Path 
     qv = 2 ** qv_n
     print("\n=== QV summary ===")
     for n, s in summary.items():
-        print(f"  n={n}: pass={s['pass']}  mean={s['mean']:.4f}  LCB={s['lcb_2sigma']:.4f}")
+        print(f"  n={n}: pass={s['pass']}  measured={s['mean']:.4f}  "
+              f"ideal={s['ideal_mean']:.4f}  "
+              f"fraction_of_ideal={s['fraction_of_ideal']:.3f}  "
+              f"LCB={s['lcb_2sigma']:.4f}")
     print(f"\nReported value: QV = 2^{qv_n} = {qv} on backend {backend!r}")
+    print("Note: a *perfect* simulator achieves measured ≈ ideal (fraction ≈ 1.0);")
+    print("the ideal value itself is bounded by Porter-Thomas at (1+ln2)/2 ≈ 0.847,")
+    print("which is why 'noiseless' QV scores look like 0.85 not 1.0.")
     return qv, summary
 
 
