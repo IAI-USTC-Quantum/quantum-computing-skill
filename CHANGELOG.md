@@ -27,25 +27,39 @@ is independently installable via `npx skills add ... --skill <name>`.
   and QEM via `ReadoutEM.apply` / `M3Mitigator.apply`. Documents
   `find_cached_results(..., result_type=...)`, `StaleCalibrationError`
   inheriting directly from `Exception`, the `dummy:originq:<chip>` /
-  `[qiskit]` extras requirement, and the `~/.uniqc/calibration_cache/` layout.
+  `[qiskit]` extras requirement, the `~/.uniqc/calibration_cache/` layout,
+  and that `run_readout_em_workflow` returns a `ReadoutEM` (not a
+  `ReadoutCalibrationResult`).
 - **`uniqc-qaoa`** — QAOA in three flavours: high-level
   `qaoa_workflow.run_qaoa_workflow`, hand-rolled
   `qaoa_ansatz` + `pauli_expectation` + SciPy, and a real-hardware
-  compile / batch / decode flow.
+  compile / batch / decode flow. Documents the compact-vs-indexed Pauli
+  form gotcha (`run_qaoa_workflow` requires compact, `qaoa_ansatz` requires
+  indexed; they are not interchangeable).
 - **`uniqc-quantum-ml`** — PyTorch QML: `QNNClassifier` / `QCNNClassifier` /
   `HybridQCLModel` (need torchquantum) and the lower-level
   `QuantumLayer(circuit, expectation_fn, n_outputs, init_params, shift=π/2)`
   with parameter-shift gradients. Documents the manual `torchquantum`
-  install line and when each layer is appropriate.
+  install line, the `QuantumLayer`-needs-`circuit_def` brittleness on
+  0.0.13.dev0, and a manual parameter-shift fallback.
 - **`uniqc-algorithm-cases`** — catalog + runnable templates for canonical
   algorithms: GHZ / W / Dicke / cluster / thermal state, QFT, QPE
   (`uniqc.algorithms.core.circuits.qpe_circuit`, **not** at top-level),
   Grover, amplitude estimation, Deutsch-Jozsa, VQE / VQD, state tomography,
   classical shadow.
+- **`uniqc-quantum-volume`** — Quantum Volume (QV) test using the standard
+  Cross-2019 protocol. uniqc itself ships no QV implementation, so the
+  skill builds the square QV circuits via `qiskit.circuit.library.quantum_volume`,
+  loads them through `Circuit.from_qasm`, runs ideal statevector + hardware
+  sampling, scores the heavy-output probability with the conventional 2/3
+  + 2σ pass/fail rule, and reports `QV = 2^n_max`. Includes
+  `protocol.md` (definition + decision rule), `circuit-construction.md`
+  (qiskit interop pitfalls), `analysis.md` (scoring, bootstrap CI,
+  plotting, troubleshooting), and a runnable `qv_demo.py`.
 
 ### `README.md`
 
-- Lists the six new skills under "Current Skills" with short descriptions.
+- Lists the new skills under "Current Skills" with short descriptions.
 
 ## [0.0.12] - 2026-05-07 — UnifiedQuantum 0.0.12 alignment
 

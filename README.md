@@ -38,6 +38,9 @@
   state、QFT、QPE（位于 `uniqc.algorithms.core.circuits.qpe_circuit`，**不在顶层**）、
   Grover、amplitude estimation、Deutsch-Jozsa、VQE / VQD、state tomography、classical
   shadow。
+- `uniqc-quantum-volume`: Quantum Volume (QV) 测试 —— 用 qiskit 构造方阵 QV 线路 →
+  uniqc 加载 → ideal statevector + 真机采样 → heavy-output 概率 + 2/3 + 2σ
+  pass/fail 判定，扫宽度并报告 `QV = 2^n_max`。
 
 每个 skill 都遵循 `SKILL.md` + `references/` + `examples/` + `agents/openai.yaml` 的
 结构，可单独安装：`npx skills add ... --skill uniqc-cloud-submit`。
@@ -126,6 +129,7 @@ npx skills add IAI-USTC-Quantum/quantum-computing.skill --list
 - `skills/uniqc-qaoa/`：算法类 —— QAOA workflow / 手撸 / 真机。
 - `skills/uniqc-quantum-ml/`：算法类 —— PyTorch QML（QNN / QCNN / Hybrid / QuantumLayer）。
 - `skills/uniqc-algorithm-cases/`：算法类 —— 规范化算法目录与可运行模板。
+- `skills/uniqc-quantum-volume/`：算法类 —— QV 测试（heavy-output 协议）。
 
 每个 skill 目录的内部结构：
 

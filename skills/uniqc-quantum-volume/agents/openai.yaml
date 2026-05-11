@@ -1,0 +1,7 @@
+interface:
+  display_name: "Uniqc Quantum Volume"
+  short_description: "Run the QV protocol (square random SU(4) circuits + heavy-output test) on a UnifiedQuantum backend and report QV = 2^n_max."
+  default_prompt: "Use $uniqc-quantum-volume to run the QV benchmark on the chosen backend."
+
+policy:
+  allow_implicit_invocation: true
