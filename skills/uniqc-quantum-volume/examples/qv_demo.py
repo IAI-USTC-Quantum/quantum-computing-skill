@@ -10,7 +10,7 @@ Usage:
     python qv_demo.py --backend originq:WK_C180     --max-n 3 --n-circuits 100 --shots 1000
 
 Requires:
-    pip install unified-quantum[qiskit]
+    pip install unified-quantum
 """
 
 from __future__ import annotations
@@ -30,8 +30,8 @@ def build_qv(n: int, *, seed: int):
         from qiskit.qasm2 import dumps
     except ImportError as exc:
         sys.exit(
-            f"qiskit not installed ({exc}). Install with: "
-            "pip install unified-quantum[qiskit]"
+            f"qiskit not installed ({exc}). qiskit is a core dependency of "
+            "uniqc 0.0.13 — reinstall with: pip install --upgrade unified-quantum"
         )
     from uniqc import Circuit
 

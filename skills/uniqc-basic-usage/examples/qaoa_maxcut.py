@@ -52,21 +52,21 @@ def main() -> None:
 
     require_simulation()
 
-    from uniqc.simulator import OriginIR_Simulator
+    from uniqc.simulator import Simulator
 
     np.random.seed(args.seed)
 
     edges = PRESET_GRAPHS[args.graph]
     n_qubits = max(max(edge) for edge in edges) + 1
     cost_hamiltonian = build_cost_hamiltonian(edges)
-    simulator = OriginIR_Simulator(backend_type="statevector")
+    simulator = Simulator(backend_type="statevector")
 
     def objective(parameters: np.ndarray) -> float:
         betas = parameters[: args.p]
         gammas = parameters[args.p :]
         circuit = qaoa_ansatz(cost_hamiltonian, p=args.p, betas=betas, gammas=gammas)
         circuit.measure(*range(n_qubits))
-        raw_probabilities = simulator.simulate_pmeasure(circuit.originir)
+        raw_probabilities = simulator.simulate_pmeasure(circuit)
         probabilities = {
             format(index, f"0{n_qubits}b"): float(value)
             for index, value in enumerate(raw_probabilities)
@@ -86,7 +86,7 @@ def main() -> None:
     best_gammas = result.x[args.p :]
     final_circuit = qaoa_ansatz(cost_hamiltonian, p=args.p, betas=best_betas, gammas=best_gammas)
     final_circuit.measure(*range(n_qubits))
-    final_raw_probabilities = simulator.simulate_pmeasure(final_circuit.originir)
+    final_raw_probabilities = simulator.simulate_pmeasure(final_circuit)
     final_probabilities = {
         format(index, f"0{n_qubits}b"): float(value)
         for index, value in enumerate(final_raw_probabilities)

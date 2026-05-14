@@ -105,15 +105,15 @@ circuit = uccsd_ansatz(
 import numpy as np
 from scipy.optimize import minimize
 from uniqc import calculate_expectation, hea
-from uniqc.simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 
-sim = OriginIR_Simulator(backend_type="statevector")
+sim = Simulator(backend_type="statevector")
 
 def objective(params):
     circuit = hea(n_qubits=2, depth=1, params=params)
     for q in range(2):
         circuit.measure(q)            # 显式测量，避免依赖 simulate_pmeasure 的隐式行为
-    probs = sim.simulate_pmeasure(circuit.originir)
+    probs = sim.simulate_pmeasure(circuit)   # AnyQuantumCircuit input — 直接传 Circuit 即可
     return calculate_expectation(probs, "ZZ")
 
 result = minimize(objective, x0=np.zeros(4), method="COBYLA")

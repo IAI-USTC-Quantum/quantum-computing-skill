@@ -1,38 +1,41 @@
 # 当前最佳实践参考
 
-UnifiedQuantum 0.0.11.x（当前 release）文档的"最佳实践"章节是一组已执行 notebooks，用于发布前验证主路径：配置、后端缓存、裸 Circuit、Named Circuit、虚拟/本地后端、API/CLI 提交（含 Quark）、云后端 dry-run 模板、变分线路、Torch 集成、Calibration/QEM、XEB workflow 和 timeline visualization。
+UnifiedQuantum 0.0.13（当前 release）文档的"最佳实践"章节是一组已执行 notebooks，用于发布前验证主路径：配置、`uniqc doctor` 体检、后端缓存、裸 Circuit、Named Circuit、虚拟/本地后端、API/CLI 提交（含 Quark）、云后端 dry-run 模板、变分线路、Torch 集成、Calibration/QEM（含新的 parallel-CZ XEB）、XEB workflow 和 timeline visualization。
 
 ## 首选导入与模块边界
 
 新代码优先从 `uniqc` 顶层导入常用对象：
 
 ```python
-from uniqc import Circuit, compile, dry_run_task, submit_task, wait_for_result
+from uniqc import Circuit, AnyQuantumCircuit, normalize_to_circuit
+from uniqc import compile, dry_run_task, submit_task, wait_for_result, get_result, poll_result
 from uniqc import BackendInfo, Platform, QubitTopology
 from uniqc import calculate_expectation, hea, qaoa_ansatz, uccsd_ansatz
 from uniqc import M3Mitigator, ReadoutEM, QuarkOptions, DummyOptions
 ```
 
-只有在需要特定子模块能力时才使用深层路径，例如 `uniqc.simulator.OriginIR_Simulator`、`uniqc.config`、`uniqc.torch_adapter`、`uniqc.calibration`、`uniqc.qem`、`uniqc.algorithms.workflows`、`uniqc.visualization`。配置属于项目级能力，新代码应优先使用 `uniqc.config`；`uniqc.backend_adapter.config` 是纯 re-export shim，只作为兼容入口理解。
+只有在需要特定子模块能力时才使用深层路径，例如 `uniqc.simulator.Simulator` / `NoisySimulator`、`uniqc.config`、`uniqc.torch_adapter`、`uniqc.calibration`、`uniqc.qem`、`uniqc.algorithms.workflows`、`uniqc.visualization`。配置属于项目级能力，新代码应优先使用 `uniqc.config`；`uniqc.backend_adapter.config` 是纯 re-export shim，只作为兼容入口理解。
 
-不要在新代码里依赖旧入口：`uniqc.transpiler`、`uniqc.task`、`uniqc.qasm`、`uniqc.originir`、`uniqc.pytorch`、`uniqc.analyzer`。
+不要在新代码里依赖旧入口：`uniqc.transpiler`、`uniqc.task`、`uniqc.qasm`、`uniqc.originir`、`uniqc.pytorch`、`uniqc.analyzer`，**也不要**继续用 `uniqc.simulator.OriginIR_Simulator` / `QASM_Simulator`——0.0.13 已删除，统一为 `Simulator` / `NoisySimulator`。
 
 ## 最稳的用户路径
 
 1. 用 `Circuit()` 构建线路，显式测量需要的 qubit。
-2. 导出 `originir`，必要时也导出 OpenQASM 2.0。
-3. 本地用 `OriginIR_Simulator()` 或 `uniqc simulate` 验证概率/采样结果。
-4. 用 `backend="dummy"` 跑通 API submit/wait/result，或用 `uniqc submit -p dummy --wait` 跑通 CLI。
+2. 导出 `originir`，必要时也导出 OpenQASM 2.0。所有公共 API（compile / simulate / submit）都接受 `AnyQuantumCircuit`：`Circuit` / OriginIR str / QASM2 str / `qiskit.QuantumCircuit` / pyqpanda3 circuit。
+3. 本地用 `Simulator()` 或 `uniqc simulate` 验证概率/采样结果。
+4. 用 `backend="dummy"` 跑通 API submit/wait/result，或用 `uniqc submit --backend dummy:local:simulator --wait` 跑通 CLI（0.0.13：单 `--backend` 标志，`--platform` 已移除）。
 5. 如果需要拓扑约束，改用 `dummy:virtual-line-N` 或 `dummy:virtual-grid-RxC`。
 6. 如果需要真实芯片拓扑和标定噪声，改用 `dummy:<platform>:<backend>`，例如 `dummy:originq:WK_C180`。
 7. 真机提交前先 `dry_run_task(...)` 或 `uniqc submit --dry-run`，再小 shots 提交。
+8. 环境怀疑出问题先 `uniqc doctor`（0.0.13 新增，自带 6 项体检）。
 
 ## Dummy Backend 语义
 
-- `dummy`: 无约束、无噪声的本地虚拟机，适合最快功能检查。
+- `dummy`: 等价于 `dummy:local:simulator`，无约束、无噪声的本地虚拟机。
 - `dummy:virtual-line-N`: N 比特线性拓扑，无噪声。
 - `dummy:virtual-grid-RxC`: R*C 比特网格拓扑，无噪声。
-- `dummy:<platform>:<backend>`: 规则型 backend id；提交时按真实 backend 拓扑和门集 compile/transpile，保存编译后线路，再用本地含噪 dummy 执行。
+- `dummy:mps:linear-N`: MPS / 张量网络模拟器（一维链）。
+- `dummy:<platform>:<backend>`: 规则型 backend id；提交时按真实 backend 拓扑和门集 compile/transpile，保存编译后线路，再用本地含噪 dummy 执行。0.0.13 修复：之前的早返回会跳过 transpile 让 Bell 电路抛 `TopologyError`，现在每条都会真正 compile。
 
 `dummy:<platform>:<backend>` 不会作为独立 backend 出现在 `uniqc backend list` 或 WebUI backend 卡片中。
 
@@ -64,17 +67,17 @@ uv tool install unified-quantum
 uv pip install unified-quantum
 ```
 
-按功能安装 extras：
+按功能安装 extras（0.0.13 起 `[qiskit]` 与 `[quafu]` 不再存在）：
 
-- OriginQ: `unified-quantum[originq]`
+- 核心：`unified-quantum`（自带 numpy / typer / rich / scipy / pyyaml / qiskit / qiskit-aer / qiskit-ibm-runtime）。**plain `pip install unified-quantum` 已足够覆盖 IBM、Qiskit、`dummy:originq:<chip>` / `dummy:quark:<chip>` 的 chip-backed compile 通道**——不再需要 `[qiskit]` extra。
+- OriginQ: `unified-quantum[originq]`（拉 `pyqpanda3`）
 - Quark: `unified-quantum[quark]`（Python ≥ 3.12）
-- IBM/Qiskit: `unified-quantum[qiskit]`
-- 高级模拟: `unified-quantum[simulation]`
-- 可视化: `unified-quantum[visualization]`
+- 高级模拟: `unified-quantum[simulation]`（拉 `qutip`）
+- 可视化: `unified-quantum[visualization]`（拉 `matplotlib`）
 - PyTorch: `unified-quantum[pytorch]`
 - 全部常规 extras: `unified-quantum[all]`
 
-Quafu/`pyquafu` 已 deprecated，且不在 `[all]` 中；只有用户明确需要 Quafu 时才单独安装 `[quafu]`，并提示它可能引入 `numpy<2` 约束。
+Quafu/`pyquafu` 已 archived（0.0.13）：`[quafu]` extra **不再存在**；如需 Quafu，让用户单独 `pip install pyquafu` 并接受 `numpy<2` 约束；导入 Quafu adapter 会发 `DeprecationWarning`，未来不保证一致性。
 
 ## 发布前/维护者路径
 
@@ -87,13 +90,13 @@ uv run pytest uniqc/test --real-cloud-test
 uv run python scripts/generate_best_practice_notebooks.py
 ```
 
-不要把 `uv sync --all-extras` 当成默认维护者命令；deprecated Quafu/`pyquafu` 可能在当前 Python 上阻塞依赖解析。只有明确测试 Quafu 时才单独启用 `[quafu]`。
+不要把 `uv sync --all-extras` 当成默认维护者命令；deprecated Quafu/`pyquafu` 可能在当前 Python 上阻塞依赖解析。只有明确测试 Quafu 时才单独启用 `pyquafu`。
 
 真实云平台测试中，读取后端列表、验证 token、查询 status/API 默认应可跑；会实际提交量子线路的测试才放在 `--real-cloud-test` 下。
 
 ## Calibration、QEM、XEB
 
-CLI 标定命令：
+CLI 标定命令（0.0.13 新增 `parallel_cz` 子模块 + 严格 pre-flight 策略）：
 
 ```bash
 uniqc calibrate xeb --qubits 0 1 2 3 --type 1q --backend dummy --shots 1000

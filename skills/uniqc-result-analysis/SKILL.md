@@ -1,25 +1,32 @@
 ---
 name: uniqc-result-analysis
-description: "Use when the user wants to analyze or visualize quantum execution results from UnifiedQuantum: parse `UnifiedResult`, build counts / probability tables, compute marginals and expectation values, plot histograms with `uniqc.visualization.plot_histogram` / `plot_distribution`, render circuit diagrams with `circuit_to_html`, and compare across runs / batches."
+description: "Use when the user wants to analyze or visualize quantum execution results from UnifiedQuantum (uniqc ≥ 0.0.13): parse `UnifiedResult` returned by `wait_for_result` / `get_result` / `poll_result`, build counts / probability tables, compute marginals and expectation values, plot histograms with `uniqc.visualization.plot_histogram` / `plot_distribution`, render circuit diagrams with `circuit_to_html`, JSON-serialize via `uniqc submit ... --json` (fixed in 0.0.13 to handle UnifiedResult), and compare across runs / batches."
 ---
 
 # Uniqc Result Analysis Skill
 
-Use this skill after a successful `wait_for_result` (or when the user already
-has a `~/.uniqc/cache/tasks.sqlite` row to inspect). It covers everything
-**from result object to plot/table**, including hardware-specific quirks like
-endianness and partial measurements.
+Use this skill after a successful `wait_for_result` / `get_result`
+(or when the user already has a `~/.uniqc/cache/tasks.sqlite` row to
+inspect). It covers everything **from result object to plot/table**,
+including hardware-specific quirks like endianness and partial measurements.
 
 ## Mental model
 
-`wait_for_result` returns either:
+`wait_for_result` (and its 0.0.13 alias `get_result`) returns either:
 
 - `UnifiedResult` — a dataclass that **also** behaves like
   `dict[str, int]` over its `.counts`. So `result["00"]` and
   `for k in result` both work.
-- `list[UnifiedResult]` — when the parent task came from `submit_batch`.
+- `list[UnifiedResult]` — when the parent task came from `submit_batch`
+  (native batch). 0.0.13 fix: `query_batch` on IBM Sampler now flattens
+  to `list[dict]` instead of nested `list[list[dict]]`, so this list shape
+  is consistent across providers.
 - `None` — task failed; check `query_task(uid).error` (or the per-element
   `None` inside the list).
+
+`poll_result(uid)` (top-level export, 0.0.13) returns `TaskInfo` immediately
+(non-blocking) — use `TaskInfo.result` once `TaskInfo.status` reaches
+`SUCCESS`.
 
 `UnifiedResult` exposes:
 
@@ -56,16 +63,30 @@ endianness and partial measurements.
 - Save figures as PNG **and** the underlying counts as JSON next to them.
   Plots without raw data are not reproducible.
 - Endianness: counts keys are **little-endian by default** on uniqc
-  (qubit 0 is the rightmost character). If a paper / co-worker uses
-  big-endian, reverse with `key[::-1]`.
+  (qubit 0 / `c[0]` is the rightmost character). 0.0.13 enforces this end-to-end
+  on Quafu and IBM as well — they previously emitted big-endian strings; if
+  you have hand-reversed Quafu/IBM keys in old code, drop the reversal.
+
+## CLI / JSON note (0.0.13 fix)
+
+`uniqc submit ... --wait --format json` (and `--json`) now correctly
+serialises `UnifiedResult` and `list[UnifiedResult]` payloads — pre-0.0.13
+the helper only handled raw `dict` / `list`, so you would see an empty
+table or a default-repr blob. Upgrade if you hit that.
 
 ## Cheat sheet
 
 ```python
-from uniqc import wait_for_result
+from uniqc import wait_for_result, get_result, poll_result
 from uniqc.visualization import plot_histogram, plot_distribution
 
+# Either spelling is fine; get_result is the 0.0.13 alias.
 result = wait_for_result("uqt_xxx", timeout=300)
+# or: result = get_result("uqt_xxx", timeout=300)
+
+# Non-blocking single-shot status check:
+# info = poll_result("uqt_xxx")
+# if info.status == "SUCCESS": result = info.result
 
 # --- table
 print(f"shots={result.shots}  platform={result.platform}  backend={result.backend_name}")

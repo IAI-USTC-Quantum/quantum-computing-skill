@@ -30,10 +30,10 @@ def try_local_simulation(circuit: Circuit) -> None:
         print("Local simulation skipped: install unified-quantum[simulation] first.")
         return
 
-    from uniqc.simulator import OriginIR_Simulator
+    from uniqc.simulator import Simulator
 
-    simulator = OriginIR_Simulator(backend_type="statevector")
-    probabilities = simulator.simulate_pmeasure(circuit.originir)
+    simulator = Simulator(backend_type="statevector")
+    probabilities = simulator.simulate_pmeasure(circuit)
 
     print("\nState probabilities:")
     pprint(

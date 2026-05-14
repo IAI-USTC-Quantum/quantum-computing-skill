@@ -110,12 +110,12 @@ it unless you need custom logic.
 | kwarg              | default | notes                                                                                                |
 | ------------------ | ------- | ---------------------------------------------------------------------------------------------------- |
 | `shots`            | `1000`  | Real-hardware first run: 100–200.                                                                    |
-| `local_compile`    | `1`     | qiskit transpile pass, `optimization_level`. `0` skips, `2`/`3` deeper. Needs `[qiskit]` if non-zero. |
-| `cloud_compile`    | `1`     | Ask cloud to optimise. `0` to disable.                                                               |
-| `metadata`         | `None`  | `dict` saved alongside the task in `~/.uniqc/cache/tasks.sqlite`.                                    |
-| `options`          | `None`  | Platform-specific `BackendOptions` (e.g. `QuarkOptions(chip_id="Baihua", compile=True)`).            |
-| `backend_name`     | `None`  | Two-arg form, e.g. `backend="originq", backend_name="WK_C180"`. Single-string form is preferred.     |
-| `chip_id`          | `None`  | Quafu uses this (e.g. `chip_id="ScQ-Sim10"`).                                                        |
+| `local_compile`    | `1`     | qiskit transpile pass, `optimization_level`. `0` skips, `2`/`3` deeper. qiskit is a **core dep** in 0.0.13 — no extra needed.        |
+| `cloud_compile`    | `1`     | Ask cloud to optimise. `0` to disable.                                                                                                |
+| `metadata`         | `None`  | `dict` saved alongside the task in `~/.uniqc/cache/tasks.sqlite`.                                                                     |
+| `options`          | `None`  | Platform-specific `BackendOptions` (e.g. `QuarkOptions(chip_id="Baihua", compile=True)`).                                             |
+| `backend_name`     | `None`  | Legacy two-arg form (`backend="originq", backend_name="WK_C180"`). uniqc 0.0.13 prefers (and largely enforces) the single `provider:chip` string. |
+| `chip_id`          | `None`  | Quafu (deprecated). For new code use the single `backend="quafu:ScQ-Sim10"` form.                                                     |
 
 ## Re-attaching to an old task id from a fresh shell
 

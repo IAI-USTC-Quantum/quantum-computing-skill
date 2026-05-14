@@ -38,7 +38,7 @@ result = wait_for_result(uid, timeout=60)
 print(result.counts)
 ```
 
-> Needs `unified-quantum[qiskit]` for the chip-backed compile pass.
+> ℹ️ The chip-backed compile pass uses qiskit, which is a **core dependency** in uniqc 0.0.13 (no `[qiskit]` extra needed).
 
 ## Step 3 — compile and submit to real hardware
 

@@ -50,10 +50,9 @@ plot_time_line_html(compiled, output_path="timeline.html",
 `resources` — read `max(g.layer for g in gates) + 1` if you need layer
 count.)
 
-> ⚠️ `schedule_circuit` and `plot_time_line_html` need
-> `unified-quantum[qiskit]` whenever the input is a logical (un-scheduled)
-> `Circuit` — the scheduling pass goes through qiskit. Already-compiled,
-> backend-aware programs work without it.
+> ℹ️ `schedule_circuit` and `plot_time_line_html` use qiskit internally to
+> handle logical (un-scheduled) `Circuit` input. As of uniqc 0.0.13 qiskit
+> is a **core dependency** — no `[qiskit]` extra required.
 
 ## Result + circuit on one HTML page
 

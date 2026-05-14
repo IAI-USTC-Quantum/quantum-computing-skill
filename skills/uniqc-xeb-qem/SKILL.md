@@ -1,6 +1,6 @@
 ---
 name: uniqc-xeb-qem
-description: "Use when the user wants to characterize hardware (XEB benchmarking) or apply quantum error mitigation (QEM) to readout results in UnifiedQuantum. Covers `xeb_workflow.run_1q/2q/parallel_xeb_workflow`, `readout_em_workflow.run_readout_em_workflow`, and the `ReadoutEM.apply` / `M3Mitigator.apply` pipeline. Includes the CLI (`uniqc calibrate xeb / readout / pattern`) and the calibration cache layout."
+description: "Use when the user wants to characterize hardware (XEB benchmarking, incl. the new parallel-CZ module in 0.0.13) or apply quantum error mitigation (QEM) to readout results in UnifiedQuantum. Covers `xeb_workflow.run_1q/2q/parallel/parallel_cz_xeb_workflow`, `readout_em_workflow.run_readout_em_workflow`, and the `ReadoutEM.apply` / `M3Mitigator.apply` pipeline. Includes the CLI (`uniqc calibrate xeb / readout / pattern`) and the calibration cache layout."
 ---
 
 # Uniqc XEB & QEM Skill
@@ -8,14 +8,22 @@ description: "Use when the user wants to characterize hardware (XEB benchmarking
 This skill covers two adjacent topics:
 
 1. **Calibration / benchmarking** — measure hardware error rates with XEB
-   (1q, 2q, parallel) and readout calibration. Results are cached to
-   `~/.uniqc/calibration_cache/`.
+   (1q, 2q, parallel, parallel-CZ) and readout calibration. Results are
+   cached to `~/.uniqc/calibration_cache/`. uniqc 0.0.13 added the
+   `uniqc.calibration.xeb.parallel_cz` module and a **strict pre-flight
+   policy** that rejects experiments whose chip-level prerequisites
+   (calibrated CZ pairs, in-region qubits, basis-gate availability) are
+   missing — instead of silently dispatching jobs that fail downstream.
 2. **Mitigation** — apply readout error mitigation to a `UnifiedResult`
    via `ReadoutEM.apply()` or `M3Mitigator.apply()` (pipeline-style,
    returns a fresh `UnifiedResult`).
 
 > ⚠️ `uniqc.qem.ZNE` exists but **raises `NotImplementedError`** —
 > only readout mitigation is real today. Do not promise ZNE.
+
+> ℹ️ uniqc 0.0.13 fixed a `NoisySimulator` MRO bug that silently bypassed
+> noise injection on some paths. If you previously saw "noisy" runs that
+> looked suspiciously ideal, re-run them.
 
 ## First decision
 

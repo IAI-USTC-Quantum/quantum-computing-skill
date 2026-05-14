@@ -72,8 +72,8 @@ theta = Parameter('theta')
 qc = Circuit(); qc.ry(0, theta); qc.measure(0)
 
 def expectation(circuit) -> float:
-    from uniqc import OriginIR_Simulator
-    probs = OriginIR_Simulator().simulate_pmeasure(circuit.originir)
+    from uniqc.simulator import Simulator
+    probs = Simulator().simulate_pmeasure(circuit)
     return probs[0] - probs[1]            # ⟨Z⟩
 
 layer = QuantumLayer(
