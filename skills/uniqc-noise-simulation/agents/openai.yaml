@@ -1,0 +1,7 @@
+interface:
+  display_name: "Uniqc Noise Simulation"
+  short_description: "Build NoisySimulator + error_model + ErrorLoader pipelines, including chip-faithful noise"
+  default_prompt: "Use $uniqc-noise-simulation to add a chip-faithful noise model to my circuit and predict the noisy output."
+
+policy:
+  allow_implicit_invocation: true

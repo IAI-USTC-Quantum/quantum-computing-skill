@@ -1,0 +1,7 @@
+interface:
+  display_name: "Uniqc Doctor & Config"
+  short_description: "Diagnose UnifiedQuantum environment, deps, tokens, cache, and connectivity"
+  default_prompt: "Use $uniqc-doctor-config to run `uniqc doctor` and walk me through every issue it surfaces."
+
+policy:
+  allow_implicit_invocation: true

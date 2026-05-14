@@ -1,0 +1,7 @@
+interface:
+  display_name: "Uniqc Platform Verification"
+  short_description: "Verify chip metadata accuracy with measured XEB + readout"
+  default_prompt: "Use $uniqc-platform-verify to audit a chip and tell me where the cached metadata disagrees with measurement."
+
+policy:
+  allow_implicit_invocation: true
