@@ -1,7 +1,100 @@
 # Changelog
 
-All notable changes to the `quantum-computing.skill` package (currently
-`uniqc-basic-usage`) are documented here.
+All notable changes to the `quantum-computing.skill` package are documented here.
+
+## [0.0.13] - 2026-05-14 — UnifiedQuantum 0.0.13 alignment + 5 new skills
+
+This release aligns the entire skill collection with **UnifiedQuantum
+0.0.13** and ships **5 new skills** focused on quantum-computing
+applications, research, and platform-information validation.
+
+### Aligned with UnifiedQuantum 0.0.13 changes (existing skills)
+
+- **CLI** — every reference / example / script switched from
+  `uniqc submit ... --platform <p> [--backend <b>]` to the single
+  `uniqc submit ... --backend <provider>:<chip>` syntax (defaults to
+  `dummy:local:simulator`; bare `dummy` accepted as an alias).
+  `uniqc backend update --platform`, `uniqc task list --platform`,
+  `uniqc result --platform` are unchanged.
+- **Simulator** — replaced every `OriginIR_Simulator` /
+  `QASM_Simulator` reference with `Simulator` / `NoisySimulator`
+  (both from `uniqc.simulator`); dropped `program_type=`. Added the
+  unified `AnyQuantumCircuit` input story (Circuit / OriginIR str /
+  QASM2 str / `qiskit.QuantumCircuit` / pyqpanda3 circuit) plus
+  `normalize_to_circuit()` / `NormalizedCircuit` (with the
+  `original_format → type` rename).
+- **`uniqc doctor`** — every "doctor doesn't exist, use `config
+  validate`" stale guidance is **gone**. Doctor exists in 0.0.13 and
+  is now the recommended first-line health check across
+  `uniqc-basic-usage`, `uniqc-cloud-submit`, `uniqc-doctor-config`,
+  and `uniqc-platform-verify`.
+- **`submit_task` strict `provider:chip`** — examples updated
+  (`backend="originq"` and `backend="ibm"` raise; use
+  `originq:WK_C180`, `ibm:ibm_fez`, etc.).
+- **qiskit core** — references to `pip install
+  unified-quantum[qiskit]` removed everywhere; qiskit ships as a
+  core dependency in 0.0.13.
+- **Quafu archived** — references to `pip install
+  unified-quantum[quafu]` updated to `pip install pyquafu` (with
+  `numpy<2`); deprecation warning called out.
+- **Async-style result API** — `uniqc.get_result` / `uniqc.poll_result`
+  documented as top-level alternatives to `wait_for_result` /
+  `query_task`.
+- **Parallel-CZ XEB** — `uniqc.calibration.xeb.parallel_cz` and the
+  strict pre-flight policy documented in `uniqc-xeb-qem`,
+  `uniqc-platform-verify`, and `uniqc-noise-simulation`.
+- **Bitstring `c[0]=LSB`** — Quafu / IBM endianness fix surfaced
+  (drop hand-reversal in old code).
+- **Other fixes** — `NoisySimulator` MRO, IBM backend cache refresh,
+  Qiskit `query_batch` flatten, `dummy:originq:<chip>` compile
+  always-runs, `UnifiedResult` JSON serialisation — each surfaced in
+  the relevant skill.
+
+### New skills (`skills/`)
+
+- **`uniqc-doctor-config`** — environment / config diagnostics.
+  Wraps `uniqc doctor`, walks the 6-section report (env / core deps /
+  optional groups / config tokens / task DB / backend cache /
+  connectivity), maps every uniqc public-error class to a one-line
+  fix, and covers proxy / firewall / install-extras triage. Includes
+  `examples/run_full_diagnostics.sh`.
+- **`uniqc-platform-verify`** — verify that a platform's published /
+  cached chip metadata is actually accurate today. Refresh the local
+  backend cache, audit topology / available qubits / basis gates,
+  measure 1q-2q-readout-parallel-CZ fidelities via XEB + readout
+  calibration, compare to vendor-published numbers (Δ with sign),
+  detect drift between snapshots. Includes `examples/audit_chip.py`.
+- **`uniqc-noise-simulation`** — model and simulate quantum noise
+  with `NoisySimulator` + `error_model` + `ErrorLoader_*`. Covers
+  `Depolarizing` / `TwoQubitDepolarizing` / `BitFlip` / `PhaseFlip`
+  / `AmplitudeDamping` / `PauliError1Q/2Q` / `Kraus1Q`,
+  `ErrorLoader_GenericError|GateTypeError|GateSpecificError`,
+  readout error, chip-backed dummy paths, and validation against a
+  measured calibration. Includes `examples/noisy_bell.py`.
+- **`uniqc-circuit-interop`** — convert across Circuit / OriginIR /
+  QASM2 / `qiskit.QuantumCircuit` / pyqpanda3 via
+  `AnyQuantumCircuit`, `normalize_to_circuit`,
+  `Circuit.to_qiskit_circuit`, `Circuit.to_pyqpanda3_circuit`,
+  `Circuit.from_qasm` / `OriginIR_BaseParser` /
+  `OpenQASM2_BaseParser`. Covers per-platform IR expectations and
+  round-trip pitfalls (UnitaryGate decomposition, empty creg, SX
+  rewrite). Includes `examples/round_trip.py`.
+- **`uniqc-classical-shadow`** — sample-efficient many-observable
+  estimation via classical-shadow tomography. Covers
+  `classical_shadow`, `shadow_expectation`, `ClassicalShadow` class,
+  `run_classical_shadow_workflow(circuit, pauli_observables, ...)`
+  → `ShadowWorkflowResult`, Hamiltonian-VQE integration, and
+  shadow-vs-state-tomography selection. Includes
+  `examples/bell_shadow.py`.
+
+### `README.md`
+
+- Bumped version banner to UnifiedQuantum 0.0.13 and listed every
+  v0.0.13 alignment in the lede.
+- "Current Skills" reorganised into 5 groups: 通用 / 环境与平台诊断 /
+  流程类 / 线路 & 模拟 / 算法类 — with the 5 new skills placed in
+  their respective groups.
+- "仓库内容" updated with the 5 new skill directories.
 
 ## [Unreleased] — narrower skill batch (UnifiedQuantum 0.0.13.dev0)
 

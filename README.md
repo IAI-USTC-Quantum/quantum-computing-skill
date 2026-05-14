@@ -6,9 +6,23 @@
 
 面向 [UnifiedQuantum](https://github.com/IAI-USTC-Quantum/UnifiedQuantum) 的 Agent Skills 集合仓库。
 
-当前版本已 follow-up UnifiedQuantum v0.0.12，重点同步了 v0.0.12 的新特性：uniqc-managed 任务 ID 间接层（`uqt_*`）、原生批量提交（OriginQ / IBM 单任务 ID 多线路）、自动分片，以及 v0.0.11 的 Quark 后端、标定/QEM 模块、timeline 可视化、顶层 config 模块、扩展的 dummy backend 标识符。
+当前版本已 follow-up **UnifiedQuantum v0.0.13**（2026-05-14 release），重点同步：
 
-当前提供的通用 skill 是 `uniqc-basic-usage`。它覆盖 UnifiedQuantum/uniqc 的基础使用路径，例如安装、线路构建、OriginIR / QASM 转换、本地模拟、CLI、config、dummy backend、dry-run、backend cache、简单提交、标定/QEM、timeline 可视化和通用排障。
+- **CLI 改动**（breaking）：`uniqc submit` 移除 `--platform`，统一为单一 `--backend <provider>:<chip>`（裸 `dummy` / 不带 `--backend` 等价于 `dummy:local:simulator`）。
+- **统一模拟器**（breaking）：`OriginIR_Simulator` / `QASM_Simulator` 移除，由 `Simulator` / `NoisySimulator` 统一接管，自动判别 OriginIR vs QASM 2.0。
+- **`AnyQuantumCircuit` 输入类型**：所有 compile / simulate / submit 接口统一接受 `Circuit` / OriginIR str / QASM2 str / `qiskit.QuantumCircuit` / pyqpanda3 circuit。
+- **qiskit 入核心依赖**：`[qiskit]` extra 移除。
+- **Quafu archived**：`[quafu]` extra 移除，导入会发 `DeprecationWarning`。
+- **`uniqc doctor`**：环境诊断 CLI（环境 / 依赖 / 配置 / 任务 DB / 后端缓存 / 平台连通性 一站式体检）。
+- **`uniqc submit` 强制 `provider:chip`**：`backend="originq"` / `"ibm"` 不带 chip 直接报错。
+- **Parallel-CZ XEB**：`uniqc.calibration.xeb.parallel_cz` 新模块，配合严格 pre-flight 策略。
+- **`Circuit.to_qiskit_circuit()` / `to_pyqpanda3_circuit()`**：first-class circuit 互转。
+- **顶层 `uniqc.get_result` / `uniqc.poll_result`**：异步风格 Result API 别名。
+- **多个 fix**：`NoisySimulator` MRO、IBM backend cache 刷新、Qiskit `query_batch` 扁平化、`dummy:originq:<chip>` compile 强制走 transpile、`UnifiedResult` JSON 序列化、Quafu/IBM `c[0]=LSB` bitstring 约定。
+
+本批同时新增 5 个面向应用 / 研究 / 平台校验的 skill：`uniqc-doctor-config`、`uniqc-platform-verify`、`uniqc-noise-simulation`、`uniqc-circuit-interop`、`uniqc-classical-shadow`。
+
+通用入口仍是 `uniqc-basic-usage`，覆盖 UnifiedQuantum/uniqc 的基础使用路径，例如安装、`uniqc doctor`、线路构建、OriginIR / QASM 转换、本地模拟、CLI、config、dummy backend、dry-run、backend cache、简单提交、标定/QEM、timeline 可视化和通用排障。
 
 ## 当前 Skills
 
@@ -16,34 +30,31 @@
 
 - `uniqc-basic-usage`: 通用、跨 Agent 的 UnifiedQuantum 基础使用 skill。
 
+环境与平台诊断：
+
+- `uniqc-doctor-config`: `uniqc doctor` 一站式诊断 + 配置 / 依赖 / 缓存 / proxy / token 问题排查。
+- `uniqc-platform-verify`: 校验芯片元数据准确性 —— 拓扑 / 可用 qubit / 标定时效 / 1q-2q-parallel-CZ 测得 vs 厂商 published 比较 / 漂移检测。
+
 流程类（按场景细分）：
 
-- `uniqc-cloud-submit`: 真机 / 云端端到端提交 —— `uniqc config validate` 健康检查
-  （注意：用户口中的 `uniqc doctor` **不存在**，请改用 `config validate`）、把 Python
-  `Circuit` 持久化为 `.originir` / `.qasm`、`dry_run_task` → `submit_task` →
-  `query_task` → `wait_for_result`，以及 `uqt_*` 任务 ID / shard 映射。
-- `uniqc-result-analysis`: `UnifiedResult` 解析、counts / probability 表、histogram /
-  distribution 可视化、Pauli 期望、circuit + timeline HTML、双跑对比（TV / Hellinger）。
-- `uniqc-xeb-qem`: XEB 1q / 2q / parallel benchmarking、Readout 标定与 QEM
-  （`ReadoutEM.apply` / `M3Mitigator.apply`），含 `find_cached_results(result_type=...)`、
-  `StaleCalibrationError` 注意事项、`~/.uniqc/calibration_cache/` 布局。
+- `uniqc-cloud-submit`: 真机 / 云端端到端提交 —— `uniqc doctor` 健康检查、把 Python `Circuit` 持久化为 `.originir` / `.qasm`、`dry_run_task` → `submit_task`（单 `--backend provider:chip` 标志）→ `query_task` / `poll_result` → `wait_for_result` / `get_result`，以及 `uqt_*` 任务 ID / shard 映射。
+- `uniqc-result-analysis`: `UnifiedResult` 解析、counts / probability 表、histogram / distribution 可视化、Pauli 期望、circuit + timeline HTML、双跑对比（TV / Hellinger）。
+- `uniqc-xeb-qem`: XEB 1q / 2q / parallel / parallel-CZ benchmarking、Readout 标定与 QEM（`ReadoutEM.apply` / `M3Mitigator.apply`），含 0.0.13 严格 pre-flight 策略 + `find_cached_results(result_type=...)`、`StaleCalibrationError` 注意事项、`~/.uniqc/calibration_cache/` 布局。
+
+线路 & 模拟：
+
+- `uniqc-circuit-interop`: 跨 `Circuit` / OriginIR / QASM2 / qiskit / pyqpanda3 互转 —— `AnyQuantumCircuit`、`normalize_to_circuit`、`Circuit.to_qiskit_circuit` / `Circuit.to_pyqpanda3_circuit`。
+- `uniqc-noise-simulation`: `NoisySimulator` + `error_model` (Depolarizing / AmplitudeDamping / PauliError / Kraus / readout_error) + `ErrorLoader_GenericError|GateTypeError|GateSpecificError` + chip-backed dummy；含 0.0.13 NoisySimulator MRO fix。
 
 算法类：
 
-- `uniqc-qaoa`: 三层抽象的 QAOA —— `qaoa_workflow.run_qaoa_workflow` 一键、
-  `qaoa_ansatz` + `pauli_expectation` + SciPy 手撸、以及真机 compile / batch / decode。
-- `uniqc-quantum-ml`: PyTorch QML —— `QNNClassifier` / `QCNNClassifier` /
-  `HybridQCLModel`（需 torchquantum）和 `QuantumLayer` parameter-shift 自动微分。
-- `uniqc-algorithm-cases`: 规范化算法目录与模板 —— GHZ / W / Dicke / cluster / thermal
-  state、QFT、QPE（位于 `uniqc.algorithms.core.circuits.qpe_circuit`，**不在顶层**）、
-  Grover、amplitude estimation、Deutsch-Jozsa、VQE / VQD、state tomography、classical
-  shadow。
-- `uniqc-quantum-volume`: Quantum Volume (QV) 测试 —— 用 qiskit 构造方阵 QV 线路 →
-  uniqc 加载 → ideal statevector + 真机采样 → heavy-output 概率 + 2/3 + 2σ
-  pass/fail 判定，扫宽度并报告 `QV = 2^n_max`。
+- `uniqc-qaoa`: 三层抽象的 QAOA —— `qaoa_workflow.run_qaoa_workflow` 一键、`qaoa_ansatz` + `pauli_expectation` + SciPy 手撸、以及真机 compile / batch / decode。
+- `uniqc-quantum-ml`: PyTorch QML —— `QNNClassifier` / `QCNNClassifier` / `HybridQCLModel`（需 torchquantum）和 `QuantumLayer` parameter-shift 自动微分。
+- `uniqc-algorithm-cases`: 规范化算法目录与模板 —— GHZ / W / Dicke / cluster / thermal state、QFT、QPE（位于 `uniqc.algorithms.core.circuits.qpe_circuit`，**不在顶层**）、Grover、amplitude estimation、Deutsch-Jozsa、VQE / VQD、state tomography、classical shadow。
+- `uniqc-quantum-volume`: Quantum Volume (QV) 测试 —— 用 qiskit 构造方阵 QV 线路 → uniqc 加载 → ideal statevector + 真机采样 → heavy-output 概率 + 2/3 + 2σ pass/fail 判定，扫宽度并报告 `QV = 2^n_max`。
+- `uniqc-classical-shadow`: 经典 shadow tomography —— `classical_shadow` / `shadow_expectation` / `run_classical_shadow_workflow` 单数据集、多 observable 估计；与 `state_tomography` / `pauli_expectation` 选型对比。
 
-每个 skill 都遵循 `SKILL.md` + `references/` + `examples/` + `agents/openai.yaml` 的
-结构，可单独安装：`npx skills add ... --skill uniqc-cloud-submit`。
+每个 skill 都遵循 `SKILL.md` + `references/` + `examples/` + `agents/openai.yaml` 的结构，可单独安装：`npx skills add ... --skill uniqc-cloud-submit`。
 
 后续会继续在 `skills/` 下扩展更窄的专用 skill。
 
@@ -123,13 +134,18 @@ npx skills add IAI-USTC-Quantum/quantum-computing.skill --list
 ## 仓库内容
 
 - `skills/uniqc-basic-usage/`：通用 skill 主入口（基础使用、CLI、模拟、配置等）。
+- `skills/uniqc-doctor-config/`：环境诊断 + 配置 / 依赖 / 缓存 / proxy / token 排查。
+- `skills/uniqc-platform-verify/`：校验芯片元数据准确性（拓扑 / 标定 / 测得 vs 厂商）。
 - `skills/uniqc-cloud-submit/`：流程类 —— 健康检查 + 真机提交 + 任务追踪。
 - `skills/uniqc-result-analysis/`：流程类 —— 结果解析 + 可视化 + 期望值。
-- `skills/uniqc-xeb-qem/`：流程类 —— XEB 标定 + 读出错误缓解。
+- `skills/uniqc-xeb-qem/`：流程类 —— XEB 标定（含 parallel-CZ） + 读出错误缓解。
+- `skills/uniqc-circuit-interop/`：线路格式互转（Circuit / OriginIR / QASM2 / qiskit / pyqpanda3）。
+- `skills/uniqc-noise-simulation/`：噪声建模 + `NoisySimulator` + chip-backed dummy。
 - `skills/uniqc-qaoa/`：算法类 —— QAOA workflow / 手撸 / 真机。
 - `skills/uniqc-quantum-ml/`：算法类 —— PyTorch QML（QNN / QCNN / Hybrid / QuantumLayer）。
 - `skills/uniqc-algorithm-cases/`：算法类 —— 规范化算法目录与可运行模板。
 - `skills/uniqc-quantum-volume/`：算法类 —— QV 测试（heavy-output 协议）。
+- `skills/uniqc-classical-shadow/`：经典 shadow tomography（多 observable 单数据集估计）。
 
 每个 skill 目录的内部结构：
 
