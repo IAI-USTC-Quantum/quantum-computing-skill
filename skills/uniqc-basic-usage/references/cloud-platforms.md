@@ -1,8 +1,8 @@
 # 云平台与真机实验参考
 
-> ⚠️ 平台 extras 速查：所有 `originq` 提交路径（云端模拟器和真机）都需要 `pip install unified-quantum[originq]`（拉 `pyqpanda3`）；同理 `[quafu]`（Quafu）、`[quark]`（Quark）、`[qiskit]`（IBM **以及** chip-backed dummy backend `dummy:originq:<chip>` / `dummy:quark:<chip>` 的拓扑感知 compile 通道）。
+> ⚠️ 平台 extras 速查（uniqc ≥ 0.0.13）：所有 `originq` 提交路径（云端模拟器和真机）都需要 `pip install unified-quantum[originq]`（拉 `pyqpanda3`）；同理 `[quark]`（Quark, Python ≥ 3.12）。**IBM 与 chip-backed dummy backend `dummy:originq:<chip>` / `dummy:quark:<chip>` 的拓扑感知 compile 通道不再需要 extra**——qiskit / qiskit-aer / qiskit-ibm-runtime 已并入核心依赖（`[qiskit]` extra 已移除）。Quafu 已 archived：`[quafu]` extra **不存在**，需要时单独 `pip install pyquafu`，并接受 `numpy<2` 约束。
 >
-> 没装对应 extra 时，`submit_task(...)` 会抛 `CompilationFailedError` 或 `Package '...' is required for this feature` 错误。
+> 没装对应 extra 时，`submit_task(...)` 会抛 `MissingDependencyError`，且 0.0.13 起的报错消息会嵌入文档链接和具体修复提示。
 
 ## 目录
 
@@ -120,7 +120,7 @@ noisy_task = submit_task(circuit, backend="dummy:originq:WK_C180", shots=1000)
 
 > ⚠️ **历史问题已解决**：早期 `_route_with_fidelity` 的 `KeyError` 已在 `fix/audit-review` 上修复（NEW-U1）。`dummy:originq:<chip>` 路径已可正常使用。
 
-`dummy:originq:WK_C180` 这类写法的设计初衷是按真实 backend compile/transpile，再本地含噪执行；它是**提交规则**（`submit_task(backend=...)` 专用），不是 `backend list` / `find_backend(...)` 里的枚举项。`find_backend('dummy:originq:WK_C180')` 直接抛 `ValueError: Backend ... not found`；`list_backends()` 只返回显式注册的后端（`dummy`、`dummy:virtual-line-N`、`dummy:virtual-grid-RxC`、`dummy:mps:linear-N`，加全部真实云后端）。它还需要 `unified-quantum[qiskit]`，否则 `submit_task` 会抛 `CompilationFailedError`。
+`dummy:originq:WK_C180` 这类写法的设计初衷是按真实 backend compile/transpile，再本地含噪执行；它是**提交规则**（`submit_task(backend=...)` 专用），不是 `backend list` / `find_backend(...)` 里的枚举项。`find_backend('dummy:originq:WK_C180')` 直接抛 `ValueError: Backend ... not found`；`list_backends()` 只返回显式注册的后端（`dummy`、`dummy:virtual-line-N`、`dummy:virtual-grid-RxC`、`dummy:mps:linear-N`，加全部真实云后端）。**0.0.13 起**，chip-backed compile 通道直接走核心依赖中的 qiskit，不再需要 `[qiskit]` extra；并且 `_compile_for_chip_backed_dummy` 的早返回 bug 已修复，每条线路（即便 active qubits 全在 `available_qubits` 里）都会真正执行 basis-gate compile，避免 H/CNOT 直接喂给 simulator 触发 `TopologyError`。
 
 > ⚠️ **OriginQ backend ID 大小写规则（务必严格遵守）**：
 > - **真机 / `find_backend` / `submit_task` / `dry_run_task`**：必须使用大写 chip 名加 `originq:` 前缀，**不接受**小写或 `origin:` 前缀。例如 `originq:WK_C180` 可用，`originq:wk_c180` / `origin:WK_C180` / `origin:wk_c180` 全部抛 `ValueError`。
@@ -136,7 +136,10 @@ c = Circuit(2); c.h(0); c.cnot(0, 1); c.measure(0); c.measure(1)
 
 backend_info = find_backend('originq:WK_C180')
 c_native = compile(c, backend_info, level=2)         # H/CNOT → CZ/SX/RZ
-task_id = submit_task(c_native, backend='originq', backend_name='WK_C180', shots=200)
+# 0.0.13 breaking: backend 必须是 provider:chip 完整字符串。
+# `submit_task(backend='originq', backend_name='WK_C180', ...)` 仍兼容；
+# `submit_task(backend='originq', ...)`（无 chip）会抛 ValueError。
+task_id = submit_task(c_native, backend='originq:WK_C180', shots=200)
 result = wait_for_result(task_id, timeout=300)       # → UnifiedResult (dict-like over counts)
 ```
 
@@ -158,13 +161,14 @@ if not check.success:
 > `dry_run_task` 与 `submit_task` 现在 backend 写法**完全等价**（D-U4 fix, uniqc ≥ 0.0.11.dev22）：
 > 都接受 `backend="originq:WK_C180"` 单字符串形式，也接受 `backend="originq"` + `backend_name="WK_C180"` 二元形式。推荐前者，更简洁。
 
-Quafu simulator 或真机：
+Quafu simulator 或真机（**0.0.13 deprecated**：仅供兼容；新用户推荐 OriginQ / Quark / IBM）：
 
 ```python
+# 提交前需要 `pip install pyquafu`（[quafu] extra 已移除），
+# 并接受 `numpy<2` 约束。导入时会发 DeprecationWarning。
 task_id = submit_task(
     circuit,
-    backend="quafu",
-    chip_id="ScQ-Sim10",
+    backend="quafu:ScQ-Sim10",
     shots=100,
 )
 result = wait_for_result(task_id, timeout=300)
@@ -178,7 +182,7 @@ from uniqc import QuarkOptions
 opts = QuarkOptions(chip_id="Baihua", compile=True)
 task_id = submit_task(
     circuit,
-    backend="quark",
+    backend="quark:Baihua",
     shots=100,
     options=opts,
 )
@@ -292,11 +296,13 @@ chain = sel.find_best_1D_chain(length=3)
 - 提交时使用 `backend_name=...`。
 - 云端 simulator 适合验证平台任务路径，但不一定适合作为快速 smoke test。
 
-### Quafu
+### Quafu (deprecated 0.0.13)
 
-- `ScQ-Sim10` 适合做云端 simulator 级别检查。
-- 真机提交时用当前 backend list 里的 chip id。
+- Quafu 在 0.0.13 起被 archived：`[quafu]` extra **不存在**；导入 Quafu adapter 会触发 `DeprecationWarning`；公共文档站默认隐藏 Quafu 卡片，仅推荐 `originq` / `ibm` / `quark` / `dummy`。
+- 如确需使用：`pip install pyquafu`，并接受 `numpy<2` 约束。后续版本不保证 Quafu 路径的功能完整与正确性。
+- `ScQ-Sim10` 适合做云端 simulator 级别检查；真机提交时用当前 backend list 里的 chip id。
 - 如果线路不满足拓扑，优先启用 mapping 或先 remap。
+- **0.0.13 fix**：Quafu adapter 现在端到端强制 `c[0]=LSB` bitstring 约定（与 OriginQ / dummy / simulator 一致）；之前自己写的字符串反转逻辑请删掉。
 
 ### Quark
 
@@ -308,9 +314,11 @@ chain = sel.find_best_1D_chain(length=3)
 
 ### IBM
 
-- 先确认本地 qiskit runtime 依赖和账号实例可用。
-- 如果直连 IBM Quantum 不稳定，先配置 `ibm.proxy.https` / `ibm.proxy.http`，再跑 `uniqc backend update --platform ibm`。
+- 先确认本地 qiskit runtime 依赖和账号实例可用（0.0.13 起 qiskit / qiskit-ibm-runtime 已是核心依赖，不再需要 `[qiskit]` extra）。
+- 如果直连 IBM Quantum 不稳定，先配置 `ibm.proxy.https` / `ibm.proxy.http`，再跑 `uniqc backend update --platform ibm`。`uniqc backend update --platform ibm` 在 0.0.13 实际上会刷新本地芯片 cache（之前由于 `_build_adapter(Platform.IBM)` 返回未实现 `list_backends` 的 `QiskitAdapter`，会被通用 `except Exception` 吞掉，号称成功但 cache 多日不刷新）。
 - backend 可用性、region、排队状态会变化，提交前必须重新查 backend。
+- **0.0.13 fix**：IBM/qiskit `query_batch` 之前在 `Sampler` 单 job 跨多个 PUB 时返回嵌套 `list[list[dict]]`，现已扁平化为 `list[dict]`，与 OriginQ adapter 一致。
+- **0.0.13 fix**：Qiskit adapter 端到端强制 `c[0]=LSB` bitstring 约定，与 OriginQ / dummy / simulator 一致。
 
 ## 实验记录
 

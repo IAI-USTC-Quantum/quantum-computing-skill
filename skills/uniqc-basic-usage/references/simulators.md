@@ -25,11 +25,11 @@
 pip install "unified-quantum[simulation]"
 ```
 
-Python 用法：
+Python 用法（uniqc ≥ 0.0.13 — 统一 `Simulator`）：
 
 ```python
 from uniqc import Circuit
-from uniqc.simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 
 circuit = Circuit(2)
 circuit.h(0)
@@ -39,32 +39,37 @@ circuit.measure(1)
 # 注意：`circuit.measure(0, 1)` 把两个参数都当 qubit 列表，会变成 4 条 MEASURE，
 # 触发 `simulate_pmeasure` 的 `measure_list size = 4` 错误。请逐个 qubit 调用。
 
-sim = OriginIR_Simulator(backend_type="statevector")
-probs = sim.simulate_pmeasure(circuit.originir)
-state = sim.simulate_statevector(circuit.originir)
-counts = sim.simulate_shots(circuit.originir, shots=1000)
+sim = Simulator(backend_type="statevector")
+# 0.0.13: 输入是 AnyQuantumCircuit —— Circuit / OriginIR str / QASM2 str / qiskit.QuantumCircuit / pyqpanda3
+# 都可直接传，OriginIR/QASM 在运行时自动判别，program_type= 已废除。
+probs = sim.simulate_pmeasure(circuit)
+state = sim.simulate_statevector(circuit)
+counts = sim.simulate_shots(circuit, shots=1000)
+
+# 仍可直接传字符串：
+probs2 = sim.simulate_pmeasure(circuit.originir)
+probs3 = sim.simulate_pmeasure(circuit.qasm)
 ```
+
+> ⚠ 0.0.13 breaking：`OriginIR_Simulator` / `QASM_Simulator` / `OriginIR_NoisySimulator` / `QASM_NoisySimulator` 全部移除；统一为
+> `Simulator` / `NoisySimulator`（位于 `uniqc.simulator`）。`get_simulator(...)` / `create_simulator(...)` 也不再需要 `program_type=`。
+> 旧代码做最小迁移：`from uniqc.simulator import OriginIR_Simulator` → `from uniqc.simulator import Simulator`，
+> 构造函数去掉 `program_type=`，其余调用一致。
 
 ### 统一工厂入口（`get_simulator` / `create_simulator`）
 
 ```python
 from uniqc.simulator import create_simulator, get_simulator
 
-# create_simulator 推荐：第 1 位是 backend_type，第 2 位是 program_type
 sim = create_simulator("statevector")
 sim = create_simulator("mps", chi_max=128)
-
-# get_simulator 与 create_simulator 同样采用 (backend_type, program_type)
-# 顺序（uniqc ≥ 0.0.11.dev22, B-U2 fix），与早期某些示例颠倒的写法不同。
-sim = get_simulator("statevector", "originir")
-
-# 旧写法 `uniqc.simulator.get_backend(...)` 已弃用，会发 DeprecationWarning。
+sim = get_simulator("statevector")     # 0.0.13：第二参数 program_type 已移除
 ```
 
-### 含噪声本地模拟（`OriginIR_NoisySimulator` + `error_model.*`）
+### 含噪声本地模拟（`NoisySimulator` + `error_model.*`）
 
 ```python
-from uniqc.simulator import OriginIR_NoisySimulator
+from uniqc.simulator import NoisySimulator
 from uniqc.simulator.error_model import (
     Depolarizing,
     AmplitudeDamping,
@@ -76,30 +81,33 @@ loader = ErrorLoader_GenericError(generic_error=[
     Depolarizing(0.01),
     AmplitudeDamping(0.005),
 ])
-sim = OriginIR_NoisySimulator(
+sim = NoisySimulator(
     backend_type="density_matrix",  # 必须用 density matrix
     error_loader=loader,
+    readout_error={0: [0.01, 0.02], 1: [0.01, 0.02]},
 )
-counts = sim.simulate_shots(circuit.originir, shots=2000)
+counts = sim.simulate_shots(circuit, shots=2000)
 ```
+
+> 0.0.13 fix：之前的 `NoisySimulator` MRO 在某些路径上**绕过**了噪声注入；本版本恢复了正确顺序。如需更细粒度噪声建模，参见 `uniqc-noise-simulation` skill。
 
 密度矩阵：
 
 ```python
-sim = OriginIR_Simulator(backend_type="densitymatrix")
-rho = sim.simulate_density_matrix(circuit.originir)
+sim = Simulator(backend_type="densitymatrix")
+rho = sim.simulate_density_matrix(circuit)
 ```
 
-### `OriginIR_Simulator` 方法速查
+### `Simulator` 方法速查
 
 | 方法 | 返回类型 | 说明 |
 |------|---------|------|
-| `simulate_shots(ir, shots) -> dict[int, int]` | counts dict | 有限采样结果，key 是按 cbit 顺序解码出的整数 |
-| `simulate_pmeasure(ir) -> list[float]` | 长度 `2**n_measured` 的概率向量 | 仅测量子集，向量长度按测量数决定 |
-| `simulate_statevector(ir) -> np.ndarray` | 复数 statevector，长度 `2**n_qubit` | 任何 `backend_type` 下都可用 |
-| `simulate_density_matrix(ir) -> np.ndarray` | `(2**n, 2**n)` 复矩阵 | **仅** `backend_type="density_matrix"` (或 `"densitymatrix"`) 时可用 |
+| `simulate_shots(circuit, shots) -> dict[int, int]` | counts dict | 有限采样结果，key 是按 cbit 顺序解码出的整数 |
+| `simulate_pmeasure(circuit) -> list[float]` | 长度 `2**n_measured` 的概率向量 | 仅测量子集，向量长度按测量数决定 |
+| `simulate_statevector(circuit) -> np.ndarray` | 复数 statevector，长度 `2**n_qubit` | 任何 `backend_type` 下都可用 |
+| `simulate_density_matrix(circuit) -> np.ndarray` | `(2**n, 2**n)` 复矩阵 | **仅** `backend_type="density_matrix"` (或 `"densitymatrix"`) 时可用 |
 
-**没有** `simulate(...)` 这种 “统一入口” —— 必须显式调用上面四个方法之一。
+**没有** `simulate(...)` 这种"统一入口"——必须显式调用上面四个方法之一。
 
 CLI 用法：
 
@@ -131,8 +139,8 @@ counts = sim.simulate_shots(circuit.originir, shots=4096)
 
 | 你的电路 | 推荐 |
 |---|---|
-| ≤ 24 比特、任意拓扑、要 statevector | `OriginIR_Simulator(backend_type="statevector")` |
-| ≤ 28 比特、任意拓扑、要噪声 | `OriginIR_NoisySimulator` 或 `dummy:<platform>:<chip>` |
+| ≤ 24 比特、任意拓扑、要 statevector | `Simulator(backend_type="statevector")` |
+| ≤ 28 比特、任意拓扑、要噪声 | `NoisySimulator` 或 `dummy:<platform>:<chip>` |
 | > 28 比特、一维 NN、纠缠浅 | **`MPSSimulator` / `dummy:mps:linear-N`** |
 | > 28 比特、深随机电路 | 没有 tractable 方案，请缩小比特数 |
 
@@ -205,13 +213,13 @@ task_ids = submit_batch([circuit, circuit], backend="dummy", shots=1000)
 results = [wait_for_result(task_id, timeout=60) for task_id in task_ids]
 ```
 
-CLI：
+CLI（uniqc ≥ 0.0.13：单一 `--backend` 标志，`--platform` 已移除；不带 `--backend` 默认 `dummy:local:simulator`，裸 `dummy` 等价）：
 
 ```bash
-uniqc submit bell.ir --platform dummy --shots 1000 --wait --format json
-uniqc submit bell.ir --platform dummy --backend virtual-line-3 --shots 1000 --wait
-uniqc submit bell.ir --platform dummy --backend originq:WK_C180 --shots 1000 --wait
-uniqc submit bell.ir --platform dummy --backend quark:Baihua --shots 1000 --wait
+uniqc submit bell.ir --backend dummy:local:simulator --shots 1000 --wait --format json
+uniqc submit bell.ir --backend dummy:virtual-line-3 --shots 1000 --wait
+uniqc submit bell.ir --backend dummy:originq:WK_C180 --shots 1000 --wait
+uniqc submit bell.ir --backend dummy:quark:Baihua --shots 1000 --wait
 ```
 
 Python API 中使用 `DummyOptions` 控制噪声模型：

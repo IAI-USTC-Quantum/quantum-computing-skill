@@ -42,16 +42,19 @@ uniqc --help | head -40
 uv pip install "unified-quantum[all]"
 ```
 
-按功能拆分时：
+按功能拆分时（uniqc ≥ 0.0.13）：
 
-- 本地模拟 / dummy：`unified-quantum[simulation]`
+- 核心：`pip install unified-quantum`（已自带 numpy / typer / rich / scipy / pyyaml / qiskit / qiskit-aer / qiskit-ibm-runtime——IBM、Qiskit、`dummy:originq:<chip>` / `dummy:quark:<chip>` 的 chip-backed compile 通道**都不再需要 extra**）
+- 本地高级模拟（qutip）：`unified-quantum[simulation]`
+- 可视化：`unified-quantum[visualization]`
 - OriginQ：`unified-quantum[originq]`
 - Quark：`unified-quantum[quark]`（Python ≥ 3.12）
-- Quafu：`unified-quantum[quafu]`，该平台已 deprecated，且不包含在 `[all]` 中
-- IBM：`unified-quantum[qiskit]`
+- Quafu：**已 archived，`[quafu]` extra 不存在**——如必须用，单独 `pip install pyquafu` 并接受 `numpy<2`。
 - PyTorch：`unified-quantum[pytorch]`
 
-缺 `qutip`、`torch`、`qiskit`、`quafu`、`pyqpanda3` 时，先判断是不是缺 extra，不要立刻当作核心库损坏。
+缺 `qutip`、`torch`、`pyqpanda3` 时，先判断是不是缺 extra，不要立刻当作核心库损坏。`qiskit` 装不上请按核心包重装：`pip install --upgrade unified-quantum`。0.0.13 起 `MissingDependencyError` 的报错消息会嵌入文档链接 + 具体修复指令，按提示操作即可。
+
+体检入口：`uniqc doctor` 会一次性列出每个依赖组的安装状态、token 配齐情况、cache 状态，是首选自检命令。
 
 ## CLI 与 Python 不一致
 
@@ -121,7 +124,7 @@ uniqc backend chip-display originq/WK_C180 --update
 
 | 症状 | 原因 | 处理 |
 |---|---|---|
-| `MPSSimulator: long-range 2q gate 'CNOT' on (0,3) is not supported` | MPS 不接受跨距 > 1 的双比特门 | 先 SWAP 到最近邻；或换 `OriginIR_Simulator` |
+| `MPSSimulator: long-range 2q gate 'CNOT' on (0,3) is not supported` | MPS 不接受跨距 > 1 的双比特门 | 先 SWAP 到最近邻；或换 `Simulator(backend_type="statevector")` |
 | `NotImplementedError: MPSSimulator does not support CONTROL...` | 任意控制门不在 MPS 引擎支持范围内 | 把控制门展开到 `CNOT/CZ` 加单比特门，或换稠密模拟器 |
 | `MPSSimulator.simulate_pmeasure refuses to materialise a 2**N probability vector` | N > 24 时不允许展平 | 改用 `simulate_shots(...)`；或通过 `submit_task(..., backend="dummy:mps:linear-N")`，dummy adapter 内部自动走 shots 路径 |
 | `dummy:mps:linear-N` 跟 `noise_model` 一起用时报错 | MPS 路径强制无噪声 | 想要含噪 + 大 N？目前没有 tractable 的开箱方案；要么缩小 N 用 `dummy:<platform>:<chip>`，要么手动在测量后做 readout error mitigation |
@@ -163,7 +166,7 @@ Issue 内容应包含：
 |------|----------|
 | `UnifiedQuantumError` | 所有 uniqc 自定义异常的基类（除 `StaleCalibrationError`） |
 | `BackendNotFoundError` | `find_backend()` / `_get_adapter()` 找不到后端；通常是平台名错或缺 extras |
-| `CompilationFailedError` | `compile()` / `compile_for_backend()` 失败；最常见原因是缺 `[qiskit]` 或目标不在 basis set |
+| `CompilationFailedError` | `compile()` / `compile_for_backend()` 失败；最常见原因是目标不在 basis set 或 qiskit transpile 路径出错（0.0.13 起 qiskit 是核心依赖，不再可能因缺 `[qiskit]` extra 而触发） |
 | `UnsupportedGateError` | 提交时 IR 语言或门集不在芯片白名单（IR 不兼容时硬抛，与 `local_compile` / `cloud_compile` 无关；门集不兼容且 `local_compile=0` 时抛） |
 | `CircuitTranslationError` | OriginIR ↔ QASM/适配器格式转换失败 |
 | `TaskFailedError` | `wait_for_result` 看到 task 在云端进入 failed 状态 |

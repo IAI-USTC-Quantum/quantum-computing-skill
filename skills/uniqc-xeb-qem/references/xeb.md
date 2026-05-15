@@ -66,7 +66,7 @@ results_par = xeb_workflow.run_parallel_xeb_workflow(
 )                                  # -> dict[str, XEBResult] keyed by pair label
 ```
 
-For an entangling-gate-specific pass (CZ-only):
+For an entangling-gate-specific pass (CZ-only) — uniqc 0.0.13 ships a dedicated `parallel_cz` benchmarking module under `uniqc.calibration.xeb.parallel_cz` with a **strict pre-flight policy**: `xeb_workflow` refuses to dispatch experiments whose chip-level prerequisites (calibrated CZ pairs, in-region qubits, basis-gate availability) are not satisfied, instead of failing silently downstream. The high-level workflow entry point is unchanged:
 
 ```python
 from uniqc.algorithms.workflows.xeb_workflow import run_parallel_cz_xeb_workflow
@@ -75,6 +75,12 @@ results_cz = run_parallel_cz_xeb_workflow(
     target_qubits=[0, 1, 2, 3],
     depths=[5, 10, 20],
 )
+```
+
+CLI variant (parallel-CZ XEB is exposed under the same `uniqc calibrate xeb` family as of 0.0.13; the `--type` enum now includes `parallel_cz`):
+
+```bash
+uniqc calibrate xeb --qubits 0 1 2 3 --type parallel_cz --backend dummy:originq:WK_C180 --shots 1000
 ```
 
 ## `XEBResult` fields
@@ -136,6 +142,8 @@ for h in hits:
   `'xeb_1q'` / `'xeb_2q'` / `'xeb_2q_parallel'`.
 - Using the CLI `--parallel` flag — does not exist; use the Python
   `run_parallel_xeb_workflow`.
-- Running XEB without `[qiskit]` against a chip-backed dummy
-  (`dummy:originq:WK_C180`) — `submit_task` raises `CompilationFailedError`.
-  `pip install unified-quantum[qiskit]`.
+- Running XEB against a chip-backed dummy (`dummy:originq:WK_C180`) — qiskit
+  is the transpiler. As of uniqc 0.0.13 qiskit is a **core dependency**, no
+  `[qiskit]` extra needed; `submit_task` only raises `CompilationFailedError`
+  for genuine basis-gate / topology issues (e.g. an un-calibrated CZ pair
+  caught by the new pre-flight policy).

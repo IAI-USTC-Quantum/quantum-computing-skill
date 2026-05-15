@@ -51,14 +51,14 @@ def build_energy_function(depth: int):
             "This example needs local simulation. Install unified-quantum[simulation] first."
         )
 
-    from uniqc.simulator import OriginIR_Simulator
+    from uniqc.simulator import Simulator
 
-    simulator = OriginIR_Simulator(backend_type="statevector")
+    simulator = Simulator(backend_type="statevector")
     n_qubits = 2
 
     def energy(params: np.ndarray) -> float:
         circuit = hea(n_qubits=n_qubits, depth=depth, params=params)
-        probabilities = simulator.simulate_pmeasure(circuit.originir)
+        probabilities = simulator.simulate_pmeasure(circuit)
         probs = probability_dict(probabilities, n_qubits)
 
         total = 0.0

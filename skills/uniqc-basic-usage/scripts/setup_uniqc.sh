@@ -190,15 +190,15 @@ if not check_simulation():
     raise SystemExit(2)
 
 from uniqc import Circuit
-from uniqc.simulator import OriginIR_Simulator
+from uniqc.simulator import Simulator
 
 c = Circuit(2)
 c.h(0)
 c.cnot(0, 1)
 c.measure(0, 1)
 
-sim = OriginIR_Simulator(backend_type="statevector")
-probs = sim.simulate_pmeasure(c.originir)
+sim = Simulator(backend_type="statevector")
+probs = sim.simulate_pmeasure(c)
 assert len(probs) > 0
 print("nonzero entries:", sum(1 for value in probs if float(value) > 1e-12))
 PY

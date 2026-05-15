@@ -79,13 +79,13 @@ def build_encoding_circuit(sample: np.ndarray) -> Circuit:
 
 
 def extract_quantum_features(samples: np.ndarray) -> np.ndarray:
-    from uniqc.simulator import OriginIR_Simulator
+    from uniqc.simulator import Simulator
 
-    simulator = OriginIR_Simulator(backend_type="statevector")
+    simulator = Simulator(backend_type="statevector")
     circuits = [build_encoding_circuit(sample) for sample in samples]
 
     def executor(circuit: Circuit) -> np.ndarray:
-        probabilities = simulator.simulate_pmeasure(circuit.originir)
+        probabilities = simulator.simulate_pmeasure(circuit)
         probs = {
             format(index, "04b"): float(value)
             for index, value in enumerate(probabilities)

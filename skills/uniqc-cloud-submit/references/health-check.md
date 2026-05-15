@@ -1,9 +1,36 @@
-# API key / platform health check
+# Environment & API key health check
 
-The user mentioned "uniqc doctor" — that subcommand **does not exist**. Use
-`uniqc config validate` (and `uniqc config list`) instead. They cover the
-same ground: did the user write a real config file, are the required token
-fields filled in, are the platform SDKs importable.
+uniqc 0.0.13 introduces the `uniqc doctor` subcommand — a one-shot
+environment diagnostic that bundles every check on this page. **Run it
+first.** Then drop into `uniqc config validate` / `uniqc config list` /
+`uniqc backend list` for the deeper details.
+
+## Step 0 — `uniqc doctor` (uniqc ≥ 0.0.13)
+
+```bash
+uniqc doctor                 # full env + deps + config + DB + cache + connectivity
+uniqc doctor --ai-hints      # plus next-step hints for AI agents
+```
+
+Sections it prints (each as a Rich table):
+
+1. **Environment** — uniqc version, Python version, OS, `~/.uniqc/config.yaml` path.
+2. **Core dependencies** — numpy / typer / rich / scipy / pyyaml.
+3. **Optional dependency groups** — installed version per group:
+   `originq` (pyqpanda3), `quafu` (pyquafu), `quark`
+   (quarkstudio + quarkcircuit), `qiskit`
+   (qiskit + qiskit_ibm_runtime), `simulation` (qutip),
+   `visualization` (matplotlib), `pytorch` (torch).
+4. **Config** — for each platform: token presence (masked, first 6 chars)
+   + remediation command if missing.
+5. **Task DB** — schema version + row count of `~/.uniqc/cache/tasks.sqlite`,
+   migration warnings if any.
+6. **Backend cache** — `~/.uniqc/cache/backends.json` presence + last update.
+7. **Platform connectivity** — minimum-permission ping for every configured
+   platform.
+
+If the user reports "submit keeps failing" or "something looks wrong",
+**do `uniqc doctor` first** and base the next step on its output.
 
 ## Step 1 — show the user the active config
 
@@ -20,18 +47,23 @@ uniqc config get originq           # prints the originq section
   `quark.QUARK_API_KEY` not `token`).
 - `Missing SDK` — install the matching extra (see the table below).
 
-## Step 2 — install the platform extra if needed
+## Step 2 — install the platform extra if needed (uniqc 0.0.13 layout)
 
-| Platform | Extra to install                    | Min Python | What it pulls            |
-| -------- | ----------------------------------- | ---------- | ------------------------ |
-| OriginQ  | `pip install unified-quantum[originq]` | 3.10      | `pyqpanda3`              |
-| Quafu    | `pip install unified-quantum[quafu]`   | 3.10      | `pyquafu` (deprecated)    |
-| Quark    | `pip install unified-quantum[quark]`   | **3.12**  | `pyquark`                |
-| IBM      | `pip install unified-quantum[qiskit]`  | 3.10      | `qiskit-ibm-runtime`     |
-| Chip-backed dummy (`dummy:originq:<chip>`, `dummy:quark:<chip>`) | `pip install unified-quantum[qiskit]` | 3.10 | qiskit transpiler |
+| Platform | Install                                | Min Python | What it pulls            |
+| -------- | -------------------------------------- | ---------- | ------------------------ |
+| OriginQ  | `pip install unified-quantum[originq]` | 3.10       | `pyqpanda3`              |
+| Quark    | `pip install unified-quantum[quark]`   | **3.12**   | `quarkstudio` + `quarkcircuit` |
+| IBM      | `pip install unified-quantum`          | 3.10       | qiskit / qiskit-aer / qiskit-ibm-runtime (now **core deps** in 0.0.13 — `[qiskit]` extra removed) |
+| Chip-backed dummy (`dummy:originq:<chip>`, `dummy:quark:<chip>`) | `pip install unified-quantum` | 3.10 | qiskit transpiler (core dep) |
+| Quafu (deprecated, archived) | `pip install pyquafu` (numpy<2) — `[quafu]` extra **removed** in 0.0.13 | 3.10 | `pyquafu` |
 
-`unified-quantum[all]` is a convenience meta-extra; **note it does not
-include Quafu** (kept out because Quafu is deprecated).
+`unified-quantum[all]` is a convenience meta-extra; it does **not** include
+Quafu. Quafu adapter imports emit `DeprecationWarning` at runtime; new
+code should target OriginQ / Quark / IBM.
+
+> 💡 0.0.13 also enriches every `MissingDependencyError` with a doc link
+> and the exact `pip install ...` line — when in doubt, follow the error
+> message verbatim before hand-editing.
 
 ## Step 3 — set the missing token
 

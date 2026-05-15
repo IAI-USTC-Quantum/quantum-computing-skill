@@ -20,8 +20,9 @@ Notes for readers:
   proxy onto ``counts`` so ``result["00"]`` works, but ``result["counts"]``
   does **not** (it would try to look up a bitstring named ``"counts"``).
 * For real ``originq`` (and chip-backed ``dummy:originq:<chip>``) submissions
-  you need ``unified-quantum[originq]`` (and ``[qiskit]`` for the chip-backed
-  dummy compile pass).
+  you need ``unified-quantum[originq]``. The chip-backed dummy compile pass
+  uses qiskit, which is now a **core dependency** in uniqc 0.0.13 — no
+  ``[qiskit]`` extra required.
 """
 
 from __future__ import annotations
@@ -114,9 +115,8 @@ def real_originq_example(shots: int) -> str:
     compiled = compile(circuit, backend_info, level=2)
     return submit_task(
         compiled,
-        backend="originq",
+        backend="originq:WK_C180",  # uniqc ≥ 0.0.13: provider:chip required
         shots=shots,
-        backend_name="WK_C180",
         metadata={"example": "real-originq"},
     )
 
@@ -124,8 +124,14 @@ def real_originq_example(shots: int) -> str:
 def real_quafu_example(shots: int) -> str:
     """Skeleton for a real Quafu submission.
 
+    Quafu is **deprecated and archived** as of uniqc 0.0.13. The
+    ``[quafu]`` extra has been removed; install ``pyquafu`` directly
+    if you still need it (and accept the ``numpy<2`` constraint that
+    pyquafu pulls in). Importing the Quafu adapter emits a
+    ``DeprecationWarning``. New code should target OriginQ / Quark / IBM.
+
     Requires:
-      1. ``pip install "unified-quantum[quafu]"``
+      1. ``pip install pyquafu`` (and pin ``numpy<2`` if needed)
       2. ``uniqc config set quafu.token <TOKEN>`` (uniqc does NOT read
          ``QUAFU_API_TOKEN`` automatically).
     """
@@ -134,9 +140,8 @@ def real_quafu_example(shots: int) -> str:
     circuit = build_bell_circuit()
     return submit_task(
         circuit,
-        backend="quafu",
+        backend="quafu:ScQ-Sim10",  # uniqc ≥ 0.0.13: provider:chip required
         shots=shots,
-        chip_id="ScQ-Sim10",
         metadata={"example": "real-quafu"},
     )
 
@@ -145,7 +150,9 @@ def real_ibm_example(shots: int) -> str:
     """Skeleton for a real IBM submission.
 
     Requires:
-      1. ``pip install "unified-quantum[qiskit]"``
+      1. ``pip install unified-quantum`` — qiskit, qiskit-aer, and
+         qiskit-ibm-runtime ship with the core install in uniqc 0.0.13
+         (the ``[qiskit]`` extra has been removed).
       2. ``uniqc config set ibm.token <TOKEN>`` (and, if needed,
          ``uniqc config set ibm.proxy.https <URL>``). uniqc does NOT read
          ``IBM_TOKEN`` automatically.
@@ -155,7 +162,7 @@ def real_ibm_example(shots: int) -> str:
     circuit = build_bell_circuit()
     return submit_task(
         circuit,
-        backend="ibm",
+        backend="ibm:ibm_fez",  # uniqc ≥ 0.0.13: provider:chip required
         shots=shots,
         metadata={"example": "real-ibm"},
     )

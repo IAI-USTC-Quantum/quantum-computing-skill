@@ -21,10 +21,13 @@ protocol (Cross et al. 2019, arXiv:1811.12926) is:
    two-sigma lower confidence bound > 2/3, certifies that width.
 5. `QV = 2 ^ n_max` where `n_max` is the largest passing width.
 
-> ⚠️ uniqc 0.0.13.dev0 has **no built-in QV implementation**. This skill
+> ⚠️ uniqc 0.0.13 has **no built-in QV implementation**. This skill
 > uses `qiskit.circuit.library.quantum_volume(n, depth, seed=...)` to
-> generate the circuits and loads them into uniqc via `Circuit.from_qasm`.
-> Requires `pip install unified-quantum[qiskit]`.
+> generate the circuits and loads them into uniqc via `Circuit.from_qasm`
+> (or, equivalently, by passing the qiskit `QuantumCircuit` straight into
+> any `AnyQuantumCircuit`-accepting API — uniqc 0.0.13 normalizes it
+> internally). qiskit is a **core dependency** in 0.0.13, so plain
+> `pip install unified-quantum` is sufficient — no `[qiskit]` extra.
 
 ## First decision
 
@@ -73,7 +76,8 @@ Sweep `n = 2, 3, 4, …` until a width fails. `QV = 2 ^ (n - 1)`.
   failure usually means readout / single-qubit error is dominating —
   fix that before increasing width.
 - `dry_run` against `dummy:originq:<chip>` first to ensure the
-  compile-against-chip pass works (needs `[qiskit]` extra, see below).
+  compile-against-chip pass works (qiskit is core in 0.0.13 — no
+  extra needed).
 - Apply readout EM (`uniqc-xeb-qem` skill) to the counts before the
   heavy-output computation when running on noisy hardware — readout
   alone can drag the mean below 2/3 even when the gate fidelities

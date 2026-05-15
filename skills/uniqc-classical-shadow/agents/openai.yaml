@@ -1,0 +1,7 @@
+interface:
+  display_name: "Uniqc Classical Shadow"
+  short_description: "Sample-efficient many-observable estimation via classical shadow tomography"
+  default_prompt: "Use $uniqc-classical-shadow to estimate these Pauli expectations from a single shadow dataset."
+
+policy:
+  allow_implicit_invocation: true

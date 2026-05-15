@@ -1,6 +1,6 @@
 ---
 name: uniqc-cloud-submit
-description: "Use when the user wants an end-to-end cloud / real-hardware submission with UnifiedQuantum: validate API keys, ask for / load a quantum-program file (.originir / .qasm / .py), dry-run, `submit_task`, query status, `wait_for_result`. Also covers writing a circuit in Python and persisting it as a quantum-program file. Apply for OriginQ / Quafu / Quark / IBM and chip-backed dummy backends."
+description: "Use when the user wants an end-to-end cloud / real-hardware submission with UnifiedQuantum (uniqc ≥ 0.0.13): run `uniqc doctor` for environment health, validate API keys, ask for / load a quantum-program file (.originir / .qasm / .py) or pass any AnyQuantumCircuit input, dry-run, `submit_task` (single `--backend <provider>:<chip>` flag — `--platform` removed in 0.0.13), query status with `query_task` / `poll_result`, fetch with `wait_for_result` / `get_result`. Also covers writing a circuit in Python and persisting it as a quantum-program file. Applies to OriginQ / Quark / IBM and chip-backed dummy backends; Quafu is deprecated."
 ---
 
 # Uniqc Cloud Submission Skill
@@ -11,21 +11,30 @@ simulator, or chip-backed dummy) and then track the task to results.
 
 The end-to-end shape is always the same:
 
-1. **Health-check** the configured platforms (`uniqc config validate` /
-   `uniqc config list`).
+1. **Health-check** the environment (`uniqc doctor`; deeper config-only:
+   `uniqc config validate` / `uniqc config list`).
 2. **Pick or build** a quantum-program file — `.originir`, `.qasm`,
    or a Python script that constructs a `Circuit` and writes one of the above.
+   `submit_task` accepts the unified `AnyQuantumCircuit` input
+   (Circuit / OriginIR str / QASM2 str / qiskit `QuantumCircuit` / pyqpanda3
+   circuit) — pre-saving to a file is optional but helpful for `uniqc submit`.
 3. **Dry-run** the submission to catch backend / IR / topology errors locally.
-4. **Submit** via `uniqc submit` (CLI) or `submit_task` / `submit_batch`
-   (Python). Always returns a uniqc-managed task id `uqt_<32-hex>` (uniqc
-   ≥ 0.0.12).
-5. **Query** with `uniqc task show <uid>` / `query_task(uid)`.
+4. **Submit** via `uniqc submit ... --backend <provider>:<chip>` (CLI;
+   single `--backend` flag — `--platform` is **gone** as of uniqc 0.0.13)
+   or `submit_task` / `submit_batch` (Python; `backend=` requires the
+   full `provider:chip` string — bare `"originq"` / `"ibm"` raises).
+   Always returns a uniqc-managed task id `uqt_<32-hex>` (uniqc ≥ 0.0.12).
+5. **Query** with `uniqc task show <uid>` / `query_task(uid)` /
+   `poll_result(uid)` (non-blocking single-shot status check).
 6. **Wait & fetch** with `uniqc result <uid> --wait` /
-   `wait_for_result(uid, timeout=...)`.
+   `wait_for_result(uid, timeout=...)` / `get_result(uid, timeout=...)`
+   ("I want the answer" alias for `wait_for_result`).
 
-> ⚠️ The user may say "use `uniqc doctor`" — there is **no** `uniqc doctor`
-> subcommand. Use `uniqc config validate` (and `uniqc config list`) instead.
-> Tell the user, then proceed.
+> ✅ As of uniqc 0.0.13, **`uniqc doctor` exists** and is the canonical
+> first-line health-check (environment + dependency groups + tokens +
+> task DB + backend cache + connectivity in one command). Run it before
+> anything else. `uniqc config validate` / `uniqc config list` remain
+> useful for the deeper config-only details.
 
 ## First decision — branch by user intent
 
@@ -64,9 +73,12 @@ Then:
 
 ## Practical defaults
 
-- **Always** pass `backend=` as a single `"<platform>:<backend_name>"` string
-  to `submit_task` — it works for every adapter and matches `dry_run_task`.
-  Two-arg form (`backend="originq", backend_name="WK_C180"`) still works.
+- **Always** pass `backend=` as a single `"<provider>:<chip>"` string
+  to `submit_task` — uniqc 0.0.13 enforces `provider:chip-name` format and
+  raises on bare `"originq"` / `"ibm"`. Use `"originq:WK_C180"`,
+  `"ibm:ibm_fez"`, `"quark:Baihua"`, or a `"dummy:..."` rule string.
+  The legacy two-arg form (`backend="originq", backend_name="WK_C180"`)
+  still works but is no longer the recommended pattern.
 - For OriginQ real hardware, **compile first** and pass the compiled
   `Circuit`:
   ```python
@@ -76,38 +88,49 @@ Then:
   uid = submit_task(c_native, backend="originq:WK_C180", shots=200)
   ```
   If you skip the compile, `local_compile=1` (default) does it for you via
-  qiskit (requires `unified-quantum[qiskit]`); set `local_compile=0` to skip.
-- For Quafu / Quark / IBM: same single-string `backend=` works,
-  shots small (≤ 200) for the first real attempt.
+  qiskit, which is now a **core dependency** in uniqc 0.0.13 (no extra
+  install required); set `local_compile=0` to skip. `auto_compile` is also
+  fixed in 0.0.13 to actually run when no `compile_options` are provided.
+- For Quark / IBM: same single-string `backend="<provider>:<chip>"` works,
+  shots small (≤ 200) for the first real attempt. Quafu is **deprecated and
+  archived** in 0.0.13 — `[quafu]` extra removed; users that still need
+  Quafu install `pyquafu` directly with `pip install pyquafu` and accept
+  `numpy<2`. New code should target OriginQ / Quark / IBM.
 - Never log full tokens. Read them from `~/.uniqc/config.yaml` via
   `uniqc.config.get_*_config(...)`, not from the user prompt.
 - All submits return a single string id of the form `uqt_<32-hex>` (36 chars).
   Treat platform-native ids (OriginQ MD5, IBM `cp...`, Quafu UUID) as
   legacy — they still resolve in `query_task` but emit `DeprecationWarning`.
-- `wait_for_result(uid)` returns one `UnifiedResult` for single-circuit tasks
-  and `list[UnifiedResult]` for batches — branch on `isinstance(_, list)`.
+- `wait_for_result(uid)` (and its `get_result(uid)` alias) returns one
+  `UnifiedResult` for single-circuit tasks and `list[UnifiedResult]` for
+  batches — branch on `isinstance(_, list)`. `poll_result(uid)` returns
+  `TaskInfo` immediately for non-blocking status checks.
+- Bitstring convention is now `c[0]=LSB` end-to-end across OriginQ / dummy /
+  simulator **and** Quafu / IBM (0.0.13 fix). If you previously hand-reversed
+  Quafu/IBM bitstrings to align with OriginQ, drop the reversal.
 
 ## CLI cheat sheet
 
 ```bash
-# 0. health
-uniqc config validate
+# 0. health (uniqc ≥ 0.0.13)
+uniqc doctor                       # full env + deps + tokens + cache + connectivity
+uniqc config validate              # deeper config-only check
 uniqc config list
 
 # 1. authoring (Python -> file)
 python build_circuit.py            # writes circuit.originir / circuit.qasm
 
-# 2. dry-run (no quota spent)
+# 2. dry-run (no quota spent) — single --backend flag, --platform is gone in 0.0.13
 uniqc submit circuit.originir --backend dummy:local:simulator --shots 1000 --dry-run
 uniqc submit circuit.originir --backend originq:WK_C180 --shots 200 --dry-run
 
 # 3. real submit
 uid=$(uniqc submit circuit.originir --backend originq:WK_C180 --shots 200)
-echo "$uid"                            # uqt_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+echo "$uid"                        # uqt_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 # 4. inspect status / shards
 uniqc task show "$uid"
-uniqc task shards "$uid"               # platform task id mapping
+uniqc task shards "$uid"           # platform task id mapping
 
 # 5. wait & fetch
 uniqc result "$uid" --wait
@@ -119,10 +142,11 @@ uniqc result "$uid" --wait
 from uniqc import (
     Circuit, compile, find_backend,
     dry_run_task, submit_task, submit_batch,
-    query_task, wait_for_result, get_platform_task_ids,
+    query_task, wait_for_result, get_result, poll_result,
+    get_platform_task_ids,
 )
 
-# 1. authoring
+# 1. authoring (any AnyQuantumCircuit input is accepted by submit_task)
 c = Circuit(2); c.h(0); c.cnot(0, 1); c.measure(0); c.measure(1)
 open("circuit.originir", "w").write(c.originir)
 open("circuit.qasm", "w").write(c.qasm)
@@ -139,11 +163,13 @@ uid = submit_task(c_native, backend="originq:WK_C180", shots=200)
 print(uid)                              # uqt_xxxx...
 
 # 4. inspect
-info = query_task(uid)
+info = query_task(uid)                  # cached snapshot
+info_now = poll_result(uid)             # non-blocking single-shot status
 shards = get_platform_task_ids(uid)     # list[TaskShard]
 
 # 5. wait & fetch
-result = wait_for_result(uid, timeout=300)   # -> UnifiedResult
+result = wait_for_result(uid, timeout=300)   # -> UnifiedResult (or list for batch)
+# alternative (same behavior, alternative name): get_result(uid, timeout=300)
 print(result.counts, result.shots, result.platform)
 ```
 
@@ -152,12 +178,16 @@ print(result.counts, result.shots, result.platform)
 | Symptom                                                         | Likely cause / fix                                                                                                  |
 | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | `ConfigValidationError: Missing token`                          | `uniqc config set <platform>.token <KEY>` (Quark uses `quark.QUARK_API_KEY`, not `token`).                          |
-| `Package 'pyqpanda3' is required for this feature`              | `pip install unified-quantum[originq]`. For IBM and chip-backed dummy: `[qiskit]`. For Quark: `[quark]` (Py ≥ 3.12). |
-| `CompilationFailedError` on `dummy:originq:<chip>` / IBM        | `pip install unified-quantum[qiskit]`.                                                                              |
+| `ValueError: backend must be 'provider:chip-name', got 'originq'` | uniqc 0.0.13 enforces full chip ids — use `originq:WK_C180`, `ibm:ibm_fez`, `quark:Baihua`, or `dummy:...`.       |
+| `Package 'pyqpanda3' is required for this feature`              | `pip install unified-quantum[originq]`. For Quark: `[quark]` (Py ≥ 3.12). **IBM & chip-backed dummy no longer need an extra in 0.0.13** — qiskit ships in core. |
+| `MissingDependencyError`                                        | 0.0.13 wraps every dep error with a doc link + exact `pip install …` line; follow that hint first.                 |
+| `CompilationFailedError` on `dummy:originq:<chip>` / IBM        | Likely a topology / basis-gate issue, not a missing extra (qiskit is core in 0.0.13). Check `find_backend(...)` reports the chip & the gate set is supported. |
 | `ValueError: Backend 'originq:wk_c180' not found`               | OriginQ chip names are case-sensitive on real submit; use `WK_C180`. Lowercase only works on the `dummy:originq:…` path. |
 | `UnsupportedGateError`                                          | Wrong IR for that platform (OriginQ wants OriginIR; Quafu/IBM want OpenQASM 2.0). uniqc auto-converts at submit; check that your file actually parses. |
 | `DeprecationWarning` from `query_task` with platform id         | You passed the legacy platform id; use the `uqt_*` returned by `submit_task`/`submit_batch` going forward.          |
+| `DeprecationWarning` at Quafu adapter import                    | Quafu archived in 0.0.13. Migrate to OriginQ / Quark / IBM, or `pip install pyquafu` directly and accept `numpy<2`. |
 | `wait_for_result` returns `None`                                | Job failed on the platform side — inspect `query_task(uid).status` and `query_task(uid).error`. For batches the failed shard is reported per-element. |
+| Empty table from `uniqc submit ... --wait`                      | Pre-0.0.13 the helper only handled raw dict / list; 0.0.13 unwraps `UnifiedResult` and `list[UnifiedResult]`. Upgrade. |
 
 ## Names to remember
 

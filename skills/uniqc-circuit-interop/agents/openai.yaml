@@ -1,0 +1,7 @@
+interface:
+  display_name: "Uniqc Circuit Interop"
+  short_description: "Convert across uniqc Circuit / OriginIR / QASM2 / qiskit / pyqpanda3"
+  default_prompt: "Use $uniqc-circuit-interop to convert this circuit into the format I need."
+
+policy:
+  allow_implicit_invocation: true

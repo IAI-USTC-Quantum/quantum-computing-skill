@@ -1,10 +1,13 @@
 # Building QV circuits
 
-uniqc 0.0.13.dev0 does not ship a QV circuit factory, so we use
-qiskit's `quantum_volume(n, depth, seed=...)` and load the resulting
-QASM2 into uniqc.
+uniqc 0.0.13 does not ship a QV circuit factory, so we use
+qiskit's `quantum_volume(n, depth, seed=...)` and load the result into
+uniqc. As of 0.0.13, qiskit is a **core dependency** (`pip install
+unified-quantum` is sufficient — no `[qiskit]` extra), and uniqc accepts
+qiskit `QuantumCircuit` objects directly anywhere `AnyQuantumCircuit`
+is expected.
 
-> Requires `pip install unified-quantum[qiskit]`.
+> Requires `pip install unified-quantum`.
 
 ## The minimum recipe
 

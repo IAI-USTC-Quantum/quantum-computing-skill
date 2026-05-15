@@ -1,8 +1,8 @@
 # Timeline Visualization Reference
 
-UnifiedQuantum (current 0.0.11.x) provides circuit scheduling and HTML/SVG rendering for analyzing gate parallelism, timing, and resource usage. The visualization module is an optional dependency.
+UnifiedQuantum (current 0.0.13) provides circuit scheduling and HTML/SVG rendering for analyzing gate parallelism, timing, and resource usage. The visualization module is an optional dependency.
 
-> ⚠️ `schedule_circuit` 与 `plot_time_line*` **始终**会调用 `compile()` 把逻辑门展开到 native 层，因此无论传入电路是否已用 native gate set（CZ/SX/RZ 等），都需要 `unified-quantum[qiskit]`。缺依赖会抛 `CompilationFailedError`。如果只想画静态线路图、不要时序，请改用 `circuit_to_html`（无需 `[qiskit]`）。
+> ⚠️ `schedule_circuit` 与 `plot_time_line*` **始终**会调用 `compile()` 把逻辑门展开到 native 层，因此无论传入电路是否已用 native gate set（CZ/SX/RZ 等），都需要 qiskit。0.0.13 起 qiskit / qiskit-aer / qiskit-ibm-runtime 已并入核心依赖（`[qiskit]` extra 已移除），plain `pip install unified-quantum` 即可。如果只想画静态线路图、不要时序，请改用 `circuit_to_html`。
 
 ## Quick Path
 
@@ -169,6 +169,6 @@ schedule = schedule_circuit(circuit, backend_info=backend)
 
 ## Notes
 
-- The visualization module is an optional dependency. Install with `unified-quantum[visualization]` for `matplotlib` and `pandas` support; the core `circuit_to_html` works without `matplotlib`. **`plot_time_line_html` and `schedule_circuit` always require `unified-quantum[qiskit]`** — they call `compile()` internally even on circuits that already use only native gates (`compile_to_basis=False` raises `TimelineDurationError` unless you supply `explicit_start` pulse data).
-- `circuit_to_html` does not require gate durations (it uses logical layer grouping, not physical timing) and does not require `[qiskit]`.
+- The visualization module is an optional dependency. Install with `unified-quantum[visualization]` for `matplotlib` and `pandas` support; the core `circuit_to_html` works without `matplotlib`. **`plot_time_line_html` and `schedule_circuit` rely on qiskit** — they call `compile()` internally even on circuits that already use only native gates (`compile_to_basis=False` raises `TimelineDurationError` unless you supply `explicit_start` pulse data). qiskit is a core dependency in 0.0.13 (no `[qiskit]` extra needed).
+- `circuit_to_html` does not require gate durations (it uses logical layer grouping, not physical timing).
 - `plot_time_line_html` and `schedule_circuit` require gate durations for circuits without explicit pulse timing data.
