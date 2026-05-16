@@ -102,7 +102,41 @@ Cache 位置：
 
 ```python
 from uniqc import dry_run_task, submit_task, submit_batch, query_task, wait_for_result
+from uniqc import UnifiedOptions
 ```
+
+### UnifiedOptions 跨平台提交（uniqc ≥ 0.0.13）
+
+`UnifiedOptions` 让你写 backend-agnostic 的提交代码：创建一次，在任何平台上复用：
+
+```python
+from uniqc import UnifiedOptions, submit_task, wait_for_result
+
+# 跨平台选项
+opts = UnifiedOptions(
+    optimize_level=1,        # 0=不编译, >=1=启用编译（跨平台统一语义）
+    error_mitigation=True,   # 读出纠错（平台不支持时自动 warn/raise）
+    auto_mapping=True,       # 自动逻辑-物理 qubit 映射
+    shots=1000,
+    backend_name="originq:WK_C180",  # 可选，不填用平台默认
+)
+
+# 在任何平台上使用同一组选项
+task_id = submit_task(circuit, backend="originq:WK_C180", options=opts)
+task_id = submit_task(circuit, backend="ibm:ibm_fez", options=opts)
+task_id = submit_task(circuit, backend="quark:Baihua", options=opts)
+```
+
+翻译表（`UnifiedOptions` → 平台 `BackendOptions`）：
+
+| Unified 选项 | OriginQ | Quafu | Quark | IBM |
+|---|---|---|---|---|
+| `optimize_level=0` | `circuit_optimize=False` | 忽略 | `compile=False` | `circuit_optimize=False` |
+| `optimize_level>=1` | `circuit_optimize=True` | `auto_mapping=True` | `compile=True` | `circuit_optimize=True` |
+| `error_mitigation=True` | `measurement_amend=True` | warn/raise | `correct=True` | warn/raise |
+| `auto_mapping=True` | `auto_mapping=True` | `auto_mapping=True` | warn/raise | `auto_mapping=True` |
+
+不支持的选项默认发 `UserWarning`（`strict=True` 时抛 `BackendOptionsError`）。平台特定的 escape hatch（如 Quark 的 `open_dd`、IBM 的 `task_name`）仍然直接使用对应的 `BackendOptions` 子类。
 
 dummy 排练：
 
