@@ -3,19 +3,24 @@
 ## 目录
 
 - 当前公开 ansatz
-- HEA
-- QAOA ansatz
+- Ansatz 类型系统（uniqc ≥ 0.0.13）
+- HEA（含硬件感知配置）
+- HVA（Hamiltonian Variational Ansatz）
+- QAOA ansatz（含变体）
 - UCCSD ansatz
+- ADAPT-VQE
+- Parameter / Parameters 符号参数
 - 一个典型 VQE 结构
 - 一个典型 QAOA 结构
 - 使用这些 ansatz 时记住
 
-当前 UnifiedQuantum 对变分算法更适合从“ansatz 构造器 + 自己的目标函数 / 优化器”来理解，而不是依赖一套过度封装的旧接口。
+当前 UnifiedQuantum 对变分算法更适合从”ansatz 构造器 + 自己的目标函数 / 优化器”来理解，而不是依赖一套过度封装的旧接口。
 
 ## 当前公开 ansatz
 
 ```python
-from uniqc import hea, qaoa_ansatz, uccsd_ansatz
+from uniqc import hea, hea_param_count, hva, qaoa_ansatz, uccsd_ansatz
+from uniqc import EntanglingGate, EntanglementTopology, RotationGate
 ```
 
 注意：
@@ -23,6 +28,7 @@ from uniqc import hea, qaoa_ansatz, uccsd_ansatz
 - 把这些函数当作线路生成器；优化器、目标函数和测量策略由任务决定。
 - 参数维度要和 ansatz 层数、qubit 数、Hamiltonian 结构匹配。
 - 生成线路后先本地模拟，再考虑 dummy 或真机任务。
+- `hea_param_count(n_qubits, depth, ...)` 可以在构造电路前计算所需参数数量。
 
 > ⚠️ **API 风格 caveat**：`hea / qaoa_ansatz / uccsd_ansatz` 都**返回新 `Circuit`**，与本节其余 ansatz 工厂保持一致。但 `uniqc` 顶层导出的电路构造器在历史上有两套风格：
 > - **fragment 风格（推荐 / 当前默认）**：返回新 `Circuit`，可与 `add_circuit` 拼接 —— `hea / qaoa_ansatz / uccsd_ansatz / qft_circuit / qpe_circuit / ghz_state / w_state / dicke_state_circuit / cluster_state / grover_oracle / grover_diffusion / amplitude_estimation_circuit / vqd_ansatz / thermal_state_circuit / deutsch_jozsa_circuit`（见 `uniqc/algorithms/core/circuits/`）。
@@ -30,25 +36,86 @@ from uniqc import hea, qaoa_ansatz, uccsd_ansatz
 > 
 > 完整测量类（`PauliExpectation / StateTomography / ClassicalShadow / BasisRotationMeasurement`）的设计见 [Algorithm Design](../../UnifiedQuantum/docs/source/guide/algorithm_design.md) 或 `from uniqc import PauliExpectation, StateTomography, ClassicalShadow, BasisRotationMeasurement`。
 
-## HEA
+## Ansatz 类型系统（uniqc ≥ 0.0.13）
 
 ```python
-from uniqc import hea
+from uniqc import EntanglingGate, EntanglementTopology, RotationGate
 
+# 旋转门选择
+rotation = [RotationGate.RY, RotationGate.RZ]  # 每层每 qubit 的旋转
+
+# 纠缠门选择
+entangling = EntanglingGate.CZ                  # CNOT, CZ, ISWAP, CRX, CRY, CRZ, XX, YY, ZZ
+
+# 拓扑选择
+topology = EntanglementTopology.LINEAR           # LINEAR, RING, FULL, STAR, BRICKWORK, CUSTOM
+```
+
+- `EntanglingGate` 有两个子类：非参数化（CNOT, CZ, ISWAP，每边 0 额外参数）和参数化（CRX, CRY, CRZ, XX, YY, ZZ，每边 1 参数）。
+- `EntanglementTopology` 决定纠缠层的连接方式；`CUSTOM` 需要传 `custom_edges`。
+- `backend_info` 参数可以自动从硬件连接和 basis gates 选择最优拓扑和纠缠门（通过 `select_ansatz_config`）。
+
+## HEA（含硬件感知配置）
+
+```python
+from uniqc import hea, hea_param_count
+from uniqc import EntanglingGate, EntanglementTopology, RotationGate
+
+# 基础用法（与旧版兼容）
+circuit = hea(n_qubits=4, depth=2, params=params)
+
+# 预计算参数数量
+n_params = hea_param_count(n_qubits=4, depth=2)
+params = np.random.randn(n_params) * 0.1
+circuit = hea(n_qubits=4, depth=2, params=params)
+
+# 自定义旋转门和纠缠门
 circuit = hea(
     n_qubits=4,
-    depth=2,
-    params=params,  # 长度应为 2 * n_qubits * depth
+    depth=3,
+    params=params,
+    rotation_gates=[RotationGate.RY, RotationGate.RZ],
+    entangling_gate=EntanglingGate.CZ,
+    topology=EntanglementTopology.RING,
 )
+
+# 硬件感知配置（自动选择拓扑和纠缠门）
+from uniqc import find_backend
+backend_info = find_backend("originq:WK_C180")
+n_params = hea_param_count(n_qubits=4, depth=2, backend_info=backend_info)
+params = np.random.randn(n_params) * 0.1
+circuit = hea(n_qubits=4, depth=2, params=params, backend_info=backend_info)
 ```
 
 特点：
 
-- 结构轻
-- NISQ 友好
-- 常用于最小 VQE / VQC 示例
+- NISQ 友好，常用于 VQE / VQC
+- 支持自定义旋转门集、纠缠门类型和拓扑
+- `hea_param_count` 允许在构造电路前精确计算参数数量
+- 传 `backend_info` 时自动根据硬件连接选择最优配置
 
-## QAOA ansatz
+## HVA（Hamiltonian Variational Ansatz）
+
+```python
+from uniqc import hva
+
+# Hubbard 模型示例：hopping 和 interaction 两组
+hopping = [("X0X1", 1.0), ("Y0Y1", 1.0)]
+interaction = [("Z0Z1", 0.5)]
+groups = [hopping, interaction]
+
+circuit = hva(groups, p=2)
+```
+
+要点：
+
+- `hamiltonian_groups` 是对易项组的列表，每组内算符互相对易
+- `p` 是 ansatz 层数（完整组循环的重复次数）
+- 参数长度 = `len(hamiltonian_groups) * p`
+- `hf_state` 可指定 Hartree-Fock 初态（哪些 qubit 初始化为 |1⟩）
+- 适合量子化学和凝聚态物理中的 Hamiltonian 模拟
+
+## QAOA ansatz（含变体）
 
 ```python
 from uniqc import qaoa_ansatz
@@ -71,6 +138,7 @@ circuit = qaoa_ansatz(
 - `cost_hamiltonian` 形如 `[(pauli_string, coefficient), ...]`
 - `betas`、`gammas` 长度都应等于 `p`
 - 如果不给，构造器会随机初始化
+- 支持问题特定的 mixer Hamiltonian 和多轮 schedule（uniqc ≥ 0.0.13）
 
 ## UCCSD ansatz
 
@@ -88,7 +156,43 @@ circuit = uccsd_ansatz(
 
 - 适合量子化学风格任务
 - 默认先准备 Hartree-Fock 初态
-- 参数长度取决于单激发 / 双激发计数
+- 参数长度取决于单激发 / 叫激发计数
+
+## ADAPT-VQE
+
+ADAPT-VQE（Adaptive Derivative-Assembled Pseudo-Trotter）是一种自适应变分算法，通过贪心选择 Pauli 算符池中最能降低能量的算符来逐步构建 ansatz。
+
+```python
+# ADAPT-VQE 基础设施已在 uniqc ≥ 0.0.13 中引入
+# 核心组件：算符池（operator pool）和 Pauli 单元构造
+from uniqc.algorithms.core.ansatz._operator_pool import OperatorPool
+from uniqc.algorithms.core.ansatz._pauli_unitary import PauliUnitary
+```
+
+要点：
+
+- 从预定义的 Pauli 算符池中迭代选择梯度最大的算符
+- 适合量子化学问题，比固定 ansatz（如 UCCSD）更紧凑
+- 算符池构建和 Pauli-string 解析（紧凑格式如 `"ZIZ"`）已在内部修复
+
+## Parameter / Parameters 符号参数
+
+```python
+from uniqc.circuit_builder.parameter import Parameters
+
+# 创建命名参数集
+params = Parameters(n=6)  # 6 个参数
+circuit = hea(n_qubits=2, depth=2, params=params)
+
+# 参数可索引、可命名，支持符号优化
+params[0]  # 访问第一个参数
+```
+
+要点：
+
+- `Parameters` 是符号参数容器，替代原始 float 列表
+- 支持索引访问、命名和符号优化（如与 PyTorch/autograd 集成）
+- `hea`、`hva`、`qaoa_ansatz` 等 ansatz 工厂都接受 `Parameters` 或 `np.ndarray`
 
 ## 一个典型 VQE 结构
 

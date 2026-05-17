@@ -154,6 +154,69 @@ is independently installable via `npx skills add ... --skill <name>`.
 
 - Lists the new skills under "Current Skills" with short descriptions.
 
+## [0.0.13] - 2026-05-16 — UnifiedQuantum 0.0.13 + post-0.0.13 alignment
+
+UnifiedQuantum 0.0.13 统一了模拟器 API（`Simulator` / `NoisySimulator` 替代 `OriginIR_Simulator` / `QASM_Simulator`）、将 Qiskit 提升为核心依赖、引入 `UnifiedOptions` 跨平台提交选项，并大幅扩展了 ansatz 模块（HVA、ADAPT-VQE、QAOA 变体、硬件感知配置）。Skill 已对齐：
+
+### `SKILL.md`
+
+- 版本字符串更新为 0.0.13。
+- 模拟器片段改用 `Simulator` 替代 `OriginIR_Simulator`。
+- `BackendOptions` 条目新增 `UnifiedOptions` 说明。
+- Algorithm fragments 列表新增 `hea_param_count`、`hva`、`EntanglingGate`、`EntanglementTopology`、`RotationGate`。
+- Simulation 模块说明更新为 `Simulator` / `NoisySimulator`。
+- `decompose_for_qasm2()` 跨平台 IR 分解已记录。
+- `[qiskit]` extra 标记为核心依赖，不再需要单独安装。
+- Quafu 标记为已废弃（`[quafu]` extra 移除）。
+- CLI `--platform` 更新为 `--backend` 语法。
+
+### `references/variational-algorithms.md`
+
+- 新增 "Ansatz 类型系统" 章节：`EntanglingGate`、`EntanglementTopology`、`RotationGate` 枚举。
+- HEA 章节扩展：`hea_param_count`、自定义旋转门/纠缠门/拓扑、`backend_info` 硬件感知配置。
+- 新增 HVA（Hamiltonian Variational Ansatz）章节。
+- QAOA 章节更新支持 mixer Hamiltonian 和多轮 schedule。
+- 新增 ADAPT-VQE 章节（算符池和 Pauli 单元构造）。
+- 新增 `Parameter` / `Parameters` 符号参数章节。
+- VQE 示例改用 `Simulator`。
+
+### `references/simulators.md`
+
+- 本地模拟器改用 `Simulator` 替代 `OriginIR_Simulator`。
+- 含噪声模拟改用 `NoisySimulator` 替代 `OriginIR_NoisySimulator`。
+- 新增 API 迁移说明（`OriginIR_Simulator` / `QASM_Simulator` 已删除）。
+- 工厂入口更新推荐 `Simulator()` 直接构造。
+- MPS 适用性表格更新。
+- dummy CLI 示例改用 `--backend` 语法。
+
+### `references/cloud-platforms.md`
+
+- 平台 extras 速查更新：Qiskit 为核心依赖，`[qiskit]` 已移除；Quafu 已废弃。
+- 新增 "UnifiedOptions 跨平台提交" 章节，含翻译表和用法示例。
+
+### `references/cli-guide.md`
+
+- 所有 `uniqc submit` CLI 示例改用 `--backend <provider>:<chip>` 语法。
+- 新增 CLI 变更说明（`--platform` / `-p` 已从 `submit` 移除）。
+
+### `references/best-practices.md`
+
+- 最稳用户路径更新为 `Simulator()` 和 `--backend` 语法。
+
+### `references/troubleshooting.md`
+
+- MPS 错误表更新为 `Simulator`。
+
+### `references/pytorch-integration.md`
+
+- 期望值示例改用 `Simulator`。
+
+### Examples & Scripts
+
+- `basic_circuit.py`、`qaoa_maxcut.py`、`h2_hea_vqe.py`、`mnist_classifier.py` 改用 `Simulator`。
+- `setup_uniqc.sh` 改用 `Simulator`。
+- `cli_demo.sh` 改用 `--backend` 语法。
+
 ## [0.0.12] - 2026-05-07 — UnifiedQuantum 0.0.12 alignment
 
 UnifiedQuantum 0.0.12 引入了**uniqc 自管理的任务 ID 间接层**（breaking）以及**原生批量提交**。Skill 已对齐：
